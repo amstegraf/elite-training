@@ -1,0 +1,1 @@
+"""Elite training web application."""
