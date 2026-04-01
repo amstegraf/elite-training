@@ -1,0 +1,231 @@
+:root {
+  --bg: #0f1419;
+  --surface: #1a2332;
+  --surface2: #243044;
+  --text: #e7ecf3;
+  --muted: #8b9cb3;
+  --accent: #3d9cf0;
+  --accent-dim: #2b7bc4;
+  --pr: #34c759;
+  --fr: #ff453a;
+  --warning: #ffd60a;
+  --radius: 10px;
+  --font: "Segoe UI", system-ui, sans-serif;
+  --mono: ui-monospace, "Cascadia Code", monospace;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.site-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--surface2);
+}
+
+.site-header__inner {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.site-logo {
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+  letter-spacing: -0.02em;
+}
+
+.site-logo:hover {
+  color: var(--accent);
+}
+
+.site-nav {
+  display: flex;
+  gap: 1.25rem;
+}
+
+.site-nav a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.site-nav a:hover {
+  color: var(--accent);
+}
+
+.site-main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 3rem;
+}
+
+code,
+.id-short {
+  font-family: var(--mono);
+  font-size: 0.85em;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.hint {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--text);
+  background: var(--surface2);
+}
+
+.btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn--secondary {
+  background: var(--surface2);
+  border: 1px solid var(--surface2);
+}
+
+.btn--danger {
+  background: #5c2d2a;
+  color: #ffb4b0;
+}
+
+.btn--ghost {
+  background: transparent;
+  border: 1px solid var(--surface2);
+}
+
+.btn--small {
+  padding: 0.35rem 0.65rem;
+  font-size: 0.8rem;
+}
+
+.btn--pr {
+  background: #1e4d2e;
+  color: #a8f5c0;
+}
+
+.btn--fr {
+  background: #5c2220;
+  color: #ffc8c5;
+}
+
+.btn--large {
+  padding: 0.85rem 1.75rem;
+  font-size: 1.05rem;
+  min-width: 120px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--surface2);
+  color: var(--muted);
+}
+
+.badge--active {
+  background: #1e4d2e;
+  color: #a8f5c0;
+}
+
+.badge--paused {
+  background: #4a4420;
+  color: #f5e6a8;
+}
+
+.badge--created {
+  background: var(--surface2);
+  color: var(--muted);
+}
+
+.badge--completed {
+  background: #1a3a4d;
+  color: #9fd4ff;
+}
+
+.badge--abandoned {
+  background: #3a3030;
+  color: #c4b4b4;
+}
+
+.link-back {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.link-back:hover {
+  color: var(--accent);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.toast {
+  position: fixed;
+  bottom: 1.25rem;
+  right: 1.25rem;
+  padding: 0.65rem 1rem;
+  background: var(--surface2);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.toast[hidden] {
+  display: none;
+}

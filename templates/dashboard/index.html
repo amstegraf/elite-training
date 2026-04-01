@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Elite Training{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', path='css/dashboard/dashboard.css') }}">
+{% endblock %}
+{% block content %}
+<div class="dashboard">
+  <section class="dashboard__hero">
+    <h1>No-error training</h1>
+    <p class="dashboard__lede">Track PR, FR, and consecutive perfect racks. One JSON file per session under <code>sessions/</code>.</p>
+    <form class="dashboard__new" method="post" action="/session/new">
+      <label class="sr-only" for="focus">Focus (optional)</label>
+      <input id="focus" name="focus" type="text" placeholder="Today’s focus (optional)" autocomplete="off">
+      <button type="submit" class="btn btn--primary">Start session</button>
+    </form>
+  </section>
+
+  <section class="dashboard__stats" aria-label="Totals">
+    <div class="stat-card">
+      <span class="stat-card__label">Sessions</span>
+      <span class="stat-card__value">{{ snapshot.session_count }}</span>
+    </div>
+    <div class="stat-card stat-card--pr">
+      <span class="stat-card__label">Total PR</span>
+      <span class="stat-card__value">{{ snapshot.total_pr }}</span>
+    </div>
+    <div class="stat-card stat-card--fr">
+      <span class="stat-card__label">Total FR</span>
+      <span class="stat-card__value">{{ snapshot.total_fr }}</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-card__label">Training time</span>
+      <span class="stat-card__value">{{ snapshot.total_training_ms | format_duration_ms }}</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-card__label">Best CPR (session)</span>
+      <span class="stat-card__value">{{ snapshot.best_cpr_ever }}</span>
+    </div>
+  </section>
+
+  <section class="dashboard__bests" aria-label="Personal bests">
+    <h2>Personal bests</h2>
+    <ul class="bests-list">
+      <li>Best CPR ever: <strong>{{ bests.best_cpr_ever }}</strong></li>
+      <li>Most PR in one session: <strong>{{ bests.most_pr_single_session }}</strong></li>
+      <li>Longest session: <strong>{{ bests.longest_session_ms | format_duration_ms }}</strong></li>
+    </ul>
+  </section>
+
+  <section class="dashboard__sessions">
+    <h2>Recent sessions</h2>
+    {% if not sessions %}
+    <p class="muted">No sessions yet. Start one above.</p>
+    {% else %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Started</th>
+            <th>Status</th>
+            <th>Focus</th>
+            <th>PR / FR</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in sessions %}
+          {% set ns = namespace(pr=0, fr=0) %}
+          {% for b in s.blocks %}{% set ns.pr = ns.pr + b.pr %}{% set ns.fr = ns.fr + b.fr %}{% endfor %}
+          <tr>
+            <td><code class="id-short">{{ s.started_at[:16] | replace('T', ' ') }}</code></td>
+            <td><span class="badge badge--{{ s.status.value }}">{{ s.status.value }}</span></td>
+            <td>{{ s.focus or '—' }}</td>
+            <td>{{ ns.pr }} / {{ ns.fr }}</td>
+            <td class="actions">
+              <button type="button" class="btn btn--ghost btn--small js-open-session" data-session-id="{{ s.id }}">View</button>
+              <a class="btn btn--small" href="/session/{{ s.id }}">Open</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </section>
+</div>
+
+<div id="session-modal" class="modal" hidden aria-modal="true" role="dialog" aria-labelledby="session-modal-title">
+  <div class="modal__backdrop js-close-modal"></div>
+  <div class="modal__panel">
+    <header class="modal__header">
+      <h2 id="session-modal-title">Session</h2>
+      <button type="button" class="modal__close js-close-modal" aria-label="Close">&times;</button>
+    </header>
+    <div id="session-modal-body" class="modal__body"></div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', path='js/dashboard/session_modal.js') }}" defer></script>
+{% endblock %}

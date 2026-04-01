@@ -76,6 +76,8 @@ def start_session(session_id: str) -> Optional[TrainingSession]:
         return None
     if session.status in (SessionStatus.COMPLETED, SessionStatus.ABANDONED):
         return session
+    if session.status == SessionStatus.ACTIVE:
+        return session
     from datetime import datetime, timezone
 
     session.status = SessionStatus.ACTIVE
@@ -210,3 +212,12 @@ def session_totals(session: TrainingSession) -> tuple[int, int, int]:
     pr = sum(b.pr for b in session.blocks)
     fr = sum(b.fr for b in session.blocks)
     return pr, fr, session_cpr_best(session)
+
+
+def update_session_notes(session_id: str, notes: Optional[str]) -> Optional[TrainingSession]:
+    session = load_session(session_id)
+    if not session:
+        return None
+    session.notes = notes.strip() if notes else None
+    save_session(session)
+    return session

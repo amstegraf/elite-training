@@ -1,0 +1,42 @@
+{# Fragment only — loaded into dashboard modal #}
+<div class="session-detail-partial">
+  <dl class="detail-grid">
+    <dt>ID</dt>
+    <dd><code>{{ session.id }}</code></dd>
+    <dt>Started</dt>
+    <dd>{{ session.started_at }}</dd>
+    {% if session.ended_at %}
+    <dt>Ended</dt>
+    <dd>{{ session.ended_at }}</dd>
+    {% endif %}
+    <dt>Status</dt>
+    <dd><span class="badge badge--{{ session.status.value }}">{{ session.status.value }}</span></dd>
+    {% if session.focus %}
+    <dt>Focus</dt>
+    <dd>{{ session.focus }}</dd>
+    {% endif %}
+    <dt>Duration (active)</dt>
+    <dd>{{ duration_ms | format_duration_ms }}</dd>
+    <dt>PR / FR (session)</dt>
+    <dd>{{ pr }} / {{ fr }}</dd>
+    <dt>Best CPR</dt>
+    <dd>{{ cpr_best }}</dd>
+  </dl>
+  {% if session.notes %}
+  <div class="session-detail-partial__notes">
+    <h3>Notes</h3>
+    <p>{{ session.notes }}</p>
+  </div>
+  {% endif %}
+  {% if session.blocks %}
+  <h3>Blocks</h3>
+  <ul class="partial-block-list">
+    {% for b in session.blocks %}
+    <li>
+      <strong>{{ b.name }}</strong> — {{ b.pr }} PR, {{ b.fr }} FR, CPR best {{ b.cpr_best }}
+      {% if b.target %}<span class="muted">({{ b.target }})</span>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</div>

@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Session {{ session.id[:8] }}… — Elite Training{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', path='css/session/session.css') }}">
+{% endblock %}
+{% block content %}
+<div
+  id="session-live"
+  class="session-live"
+  data-session-id="{{ session.id }}"
+>
+  <script type="application/json" id="timer-state-json">{{ timer_state | tojson }}</script>
+
+  <header class="session-live__header">
+    <a href="/" class="link-back">← Dashboard</a>
+    <h1>Session <code>{{ session.id[:8] }}…</code></h1>
+    <p class="session-live__meta">
+      Status: <span id="status-label" class="badge badge--{{ session.status.value }}">{{ session.status.value }}</span>
+      {% if session.focus %}· Focus: {{ session.focus }}{% endif %}
+    </p>
+  </header>
+
+  <section class="session-live__timers" aria-label="Timers">
+    <div class="timer-card">
+      <span class="timer-card__label">Session active</span>
+      <span id="session-timer" class="timer-card__value" data-ms="{{ timer_state.session_active_ms }}">{{ timer_state.session_active_ms | format_duration_ms }}</span>
+    </div>
+    <div class="timer-card">
+      <span class="timer-card__label">Current block</span>
+      <span id="block-timer" class="timer-card__value" data-ms="{{ timer_state.block_active_ms }}">{{ timer_state.block_active_ms | format_duration_ms }}</span>
+    </div>
+  </section>
+
+  <section class="session-live__controls">
+    <h2 class="sr-only">Session controls</h2>
+    <div class="btn-row">
+      {% if session.status == SessionStatus.CREATED %}
+      <button type="button" class="btn btn--primary" data-action="start">Begin training</button>
+      {% endif %}
+      {% if session.status == SessionStatus.ACTIVE %}
+      <button type="button" class="btn" data-action="pause">Pause</button>
+      {% endif %}
+      {% if session.status == SessionStatus.PAUSED %}
+      <button type="button" class="btn btn--primary" data-action="resume">Resume</button>
+      {% endif %}
+      {% if session.status.value not in ['completed', 'abandoned'] %}
+      <button type="button" class="btn btn--danger" data-action="complete">End session</button>
+      <button type="button" class="btn btn--ghost" data-action="abandon">Abandon</button>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="session-live__log" aria-label="Logging">
+    <h2>Current block</h2>
+    {% if session.current_block() %}
+    {% set b = session.current_block() %}
+    <div class="block-panel">
+      <h3>{{ b.name }}</h3>
+      {% if b.purpose %}<p class="muted">{{ b.purpose }}</p>{% endif %}
+      <div class="metrics-row">
+        <div class="metric metric--pr"><span class="metric__label">PR</span><span id="metric-pr" class="metric__value">{{ b.pr }}</span></div>
+        <div class="metric metric--fr"><span class="metric__label">FR</span><span id="metric-fr" class="metric__value">{{ b.fr }}</span></div>
+        <div class="metric"><span class="metric__label">CPR now</span><span id="metric-cpr-cur" class="metric__value">{{ b.cpr_current }}</span></div>
+        <div class="metric"><span class="metric__label">CPR best (block)</span><span id="metric-cpr-best" class="metric__value">{{ b.cpr_best }}</span></div>
+        <div class="metric"><span class="metric__label">CPR best (session)</span><span id="metric-cpr-sess" class="metric__value">{{ timer_state.cpr_session_best }}</span></div>
+      </div>
+      <div class="btn-row btn-row--log">
+        <button type="button" class="btn btn--pr btn--large" data-action="pr" {% if session.status != SessionStatus.ACTIVE %}disabled{% endif %}>PR</button>
+        <button type="button" class="btn btn--fr btn--large" data-action="fr" {% if session.status != SessionStatus.ACTIVE %}disabled{% endif %}>FR</button>
+      </div>
+    </div>
+    {% else %}
+    <p class="muted">Add a block below before logging.</p>
+    {% endif %}
+
+    <h2>Blocks</h2>
+    <form class="inline-form" id="add-block-form">
+      <input type="text" name="name" placeholder="Block name" required value="Pure run-out">
+      <input type="text" name="purpose" placeholder="Purpose (optional)">
+      <input type="text" name="target" placeholder="Target (optional)">
+      <button type="submit" class="btn btn--secondary">Add block</button>
+    </form>
+    {% if session.blocks %}
+    <ul class="block-list">
+      {% for b in session.blocks %}
+      <li class="{% if b.id == session.current_block_id %}is-current{% endif %}">
+        <button type="button" class="block-list__btn" data-action="set-block" data-block-id="{{ b.id }}">{{ b.name }}</button>
+        <span class="muted">{{ b.pr }} PR / {{ b.fr }} FR · CPR {{ b.cpr_best }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    <p class="hint muted">Click a block name to make it current (timer and logs apply to it).</p>
+    {% endif %}
+  </section>
+
+  <section class="session-live__notes">
+    <h2>Session notes</h2>
+    <form id="notes-form" class="notes-form">
+      <textarea name="notes" rows="3" placeholder="Patterns, fatigue, pressure…">{{ session.notes or '' }}</textarea>
+      <button type="submit" class="btn btn--secondary">Save notes</button>
+    </form>
+  </section>
+
+  <p id="session-toast" class="toast" role="status" aria-live="polite" hidden></p>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', path='js/common/app.js') }}" defer></script>
+<script src="{{ url_for('static', path='js/session/timer.js') }}" defer></script>
+{% endblock %}
