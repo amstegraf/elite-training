@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 
+from app.block_presets import BLOCK_PRESETS
 from app.deps import get_templates
 from app.models import SessionStatus
 from app.services.session_store import load_session
@@ -23,5 +24,6 @@ async def session_page(request: Request, session_id: str) -> object:
             "session": session,
             "timer_state": state,
             "SessionStatus": SessionStatus,
+            "block_presets": BLOCK_PRESETS,
         },
     )

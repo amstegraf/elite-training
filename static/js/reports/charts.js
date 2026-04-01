@@ -20,8 +20,30 @@
 
   async function load() {
     if (typeof Chart === "undefined") return;
-    const res = await fetch("/api/reports/weekly?include_abandoned=false");
-    const data = await res.json();
+    let res;
+    try {
+      res = await fetch("/api/reports/weekly?include_abandoned=false");
+    } catch {
+      if (typeof window.showAppToast === "function") {
+        window.showAppToast("Could not load report data (network error).", { error: true });
+      }
+      return;
+    }
+    if (!res.ok) {
+      if (typeof window.showAppToast === "function") {
+        window.showAppToast(`Could not load report data (${res.status}).`, { error: true });
+      }
+      return;
+    }
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      if (typeof window.showAppToast === "function") {
+        window.showAppToast("Report data was not valid JSON.", { error: true });
+      }
+      return;
+    }
     const labels = data.labels || [];
 
     if (labels.length === 0) {

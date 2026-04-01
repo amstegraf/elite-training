@@ -21,10 +21,20 @@
       openModal();
       body.innerHTML = "<p class=\"muted\">Loading…</p>";
       try {
-        const res = await fetch(`/partials/session/${id}`);
+        const res = await fetch(`/partials/session/${encodeURIComponent(id)}`);
+        if (!res.ok) {
+          body.innerHTML = "<p>Could not load session.</p>";
+          if (typeof window.showAppToast === "function") {
+            window.showAppToast(`Could not load session (${res.status}).`, { error: true });
+          }
+          return;
+        }
         body.innerHTML = await res.text();
       } catch {
         body.innerHTML = "<p>Could not load session.</p>";
+        if (typeof window.showAppToast === "function") {
+          window.showAppToast("Network error while loading session.", { error: true });
+        }
       }
     });
   });

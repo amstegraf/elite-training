@@ -128,6 +128,34 @@
     });
   });
 
+  const presetsEl = document.getElementById("block-presets-data");
+  let blockPresets = [];
+  if (presetsEl) {
+    try {
+      blockPresets = JSON.parse(presetsEl.textContent);
+    } catch {
+      blockPresets = [];
+    }
+  }
+
+  document.querySelectorAll(".js-add-preset").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const idx = parseInt(btn.getAttribute("data-preset-index"), 10);
+      const preset = blockPresets[idx];
+      if (!preset) return;
+      const fd = new FormData();
+      fd.set("name", preset.name || "Block");
+      fd.set("purpose", preset.purpose != null ? String(preset.purpose) : "");
+      fd.set("target", preset.target != null ? String(preset.target) : "");
+      const data = await post("block", fd);
+      if (data.ok) {
+        window.location.reload();
+      } else {
+        showToast(data.error || "Failed to add block");
+      }
+    });
+  });
+
   const addBlockForm = document.getElementById("add-block-form");
   if (addBlockForm) {
     addBlockForm.addEventListener("submit", async (e) => {

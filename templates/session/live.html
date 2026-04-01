@@ -74,11 +74,20 @@
     {% endif %}
 
     <h2>Blocks</h2>
+    <script type="application/json" id="block-presets-data">{{ block_presets | tojson }}</script>
+    <div class="block-presets" role="group" aria-label="Preset blocks from training plan">
+      <span class="block-presets__label">Quick add</span>
+      <div class="block-presets__buttons">
+        {% for p in block_presets %}
+        <button type="button" class="btn btn--ghost btn--small js-add-preset" data-preset-index="{{ loop.index0 }}">{{ p.name }}</button>
+        {% endfor %}
+      </div>
+    </div>
     <form class="inline-form" id="add-block-form">
-      <input type="text" name="name" placeholder="Block name" required value="Pure run-out">
+      <input type="text" name="name" placeholder="Custom block name" required>
       <input type="text" name="purpose" placeholder="Purpose (optional)">
       <input type="text" name="target" placeholder="Target (optional)">
-      <button type="submit" class="btn btn--secondary">Add block</button>
+      <button type="submit" class="btn btn--secondary">Add custom block</button>
     </form>
     {% if session.blocks %}
     <ul class="block-list">

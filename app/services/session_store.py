@@ -221,3 +221,12 @@ def update_session_notes(session_id: str, notes: Optional[str]) -> Optional[Trai
     session.notes = notes.strip() if notes else None
     save_session(session)
     return session
+
+
+def delete_session(session_id: str) -> bool:
+    """Remove session file from disk. Reports and dashboard ignore missing files."""
+    path = _path(session_id)
+    if not path.is_file():
+        return False
+    path.unlink()
+    return True

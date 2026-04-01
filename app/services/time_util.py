@@ -3,8 +3,10 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Optional
 
+from app.models import SessionStatus
+
 if TYPE_CHECKING:
-    from app.models import TrainingSession, TrainingBlock
+    from app.models import TrainingBlock, TrainingSession
 
 
 def parse_iso(ts: str) -> datetime:
@@ -20,8 +22,6 @@ def now_ms() -> int:
 
 def flush_active_elapsed(session: "TrainingSession") -> None:
     """Add elapsed time since last_resume_at to session and current block."""
-    from app.models import SessionStatus
-
     if session.status != SessionStatus.ACTIVE or not session.last_resume_at:
         return
     start = parse_iso(session.last_resume_at)
@@ -36,26 +36,18 @@ def flush_active_elapsed(session: "TrainingSession") -> None:
 
 
 def pause_clock(session: "TrainingSession") -> None:
-    from app.models import SessionStatus
-
     if session.status == SessionStatus.ACTIVE:
         flush_active_elapsed(session)
     session.last_resume_at = None
 
 
 def resume_clock(session: "TrainingSession") -> None:
-    from datetime import datetime, timezone
-
-    from app.models import SessionStatus
-
     if session.status == SessionStatus.ACTIVE:
         session.last_resume_at = datetime.now(timezone.utc).isoformat()
 
 
 def effective_session_active_ms(session: "TrainingSession") -> int:
     """Total session active ms including in-flight interval since last_resume_at."""
-    from app.models import SessionStatus
-
     base = session.session_active_ms
     if session.status != SessionStatus.ACTIVE or not session.last_resume_at:
         return base

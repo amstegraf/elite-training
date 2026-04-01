@@ -9,6 +9,18 @@ from app.timer_state import build_timer_state
 router = APIRouter(prefix="/api/session", tags=["session-api"])
 
 
+def _delete_session_response(session_id: str) -> dict:
+    if store.delete_session(session_id):
+        return {"ok": True}
+    return {"ok": False, "error": "Session file not found on disk."}
+
+
+# POST …/delete avoids clients/proxies that mishandle DELETE on some setups.
+@router.post("/{session_id}/delete")
+async def api_delete_session_post(session_id: str) -> dict:
+    return _delete_session_response(session_id)
+
+
 def _json(session):
     if session is None:
         return {"ok": False, "error": "Session not found"}
@@ -105,3 +117,8 @@ async def api_set_block(session_id: str, block_id: str = Form(...)) -> dict:
 async def api_notes(session_id: str, notes: str = Form("")) -> dict:
     session = store.update_session_notes(session_id, notes)
     return _json(session)
+
+
+@router.delete("/{session_id}")
+async def api_delete_session(session_id: str) -> dict:
+    return _delete_session_response(session_id)

@@ -345,6 +345,12 @@ code,
   opacity: 1;
 }
 
+.toast.toast--error {
+  border-color: rgba(239, 68, 68, 0.45);
+  background: rgba(50, 20, 20, 0.92);
+  color: #fecaca;
+}
+
 /* Forms general */
 input[type="text"], textarea {
   font-family: var(--font);
