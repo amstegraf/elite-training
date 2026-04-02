@@ -97,12 +97,32 @@ async def api_add_block(
     name: str = Form(...),
     purpose: str = Form(""),
     target: str = Form(""),
+    summary: str = Form(""),
+    details: str = Form(""),
 ) -> dict:
+    def parse_details_text(text: str) -> list[str]:
+        out: list[str] = []
+        for raw in (text or "").splitlines():
+            line = raw.strip()
+            if not line:
+                continue
+            # Allow users to paste bullet glyphs like "• foo" and normalize to "foo".
+            if line.startswith("• "):
+                line = line[2:].strip()
+            elif line.startswith("- "):
+                line = line[2:].strip()
+            elif line.startswith("* "):
+                line = line[2:].strip()
+            out.append(line)
+        return out
+
     session = store.add_block(
         session_id,
         name=name.strip() or "Block",
         purpose=purpose.strip(),
         target=target.strip() or None,
+        summary=summary.strip() or None,
+        details=parse_details_text(details),
     )
     return _json(session)
 

@@ -97,6 +97,29 @@
   font-size: 1.4rem;
 }
 
+.block-details {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) - 2px);
+}
+
+.block-details__summary {
+  margin: 0.25rem 0 0;
+  font-weight: 700;
+}
+
+.block-details__list {
+  margin: 0.25rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.block-details__list li {
+  margin: 0.35rem 0;
+  color: var(--text);
+}
+
 .metrics-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
@@ -174,6 +197,30 @@
 .inline-form input {
   flex: 1;
   min-width: 140px;
+}
+
+/* Custom block form (matches screenshot layout: 1 row of inputs, then details) */
+#add-block-form {
+  margin-bottom: 1.5rem;
+  animation: fadeIn 0.85s ease-out;
+}
+
+.block-form__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
+}
+
+.block-form__row input {
+  flex: 1;
+  min-width: 160px;
+}
+
+.block-form__details {
+  width: 100%;
+  min-height: 110px;
+  margin-bottom: 0.75rem;
 }
 
 /* Block List */

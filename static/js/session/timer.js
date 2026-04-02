@@ -146,6 +146,11 @@
       const fd = new FormData();
       fd.set("name", preset.name || "Block");
       fd.set("purpose", preset.purpose != null ? String(preset.purpose) : "");
+      fd.set("summary", preset.summary != null ? String(preset.summary) : "");
+      fd.set(
+        "details",
+        Array.isArray(preset.details) ? preset.details.join("\n") : "",
+      );
       fd.set("target", preset.target != null ? String(preset.target) : "");
       const data = await post("block", fd);
       if (data.ok) {

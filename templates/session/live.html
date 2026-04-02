@@ -56,7 +56,17 @@
     {% set b = session.current_block() %}
     <div class="block-panel">
       <h3>{{ b.name }}</h3>
+      {% if b.summary %}<p class="block-details__summary">{{ b.summary }}</p>{% endif %}
       {% if b.purpose %}<p class="muted">{{ b.purpose }}</p>{% endif %}
+      {% if b.details %}
+      <div class="block-details">
+        <ul class="block-details__list">
+          {% for line in b.details %}
+          <li>{{ line }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
       <div class="metrics-row">
         <div class="metric metric--pr"><span class="metric__label">PR</span><span id="metric-pr" class="metric__value">{{ b.pr }}</span></div>
         <div class="metric metric--fr"><span class="metric__label">FR</span><span id="metric-fr" class="metric__value">{{ b.fr }}</span></div>
@@ -83,10 +93,19 @@
         {% endfor %}
       </div>
     </div>
-    <form class="inline-form" id="add-block-form">
-      <input type="text" name="name" placeholder="Custom block name" required>
-      <input type="text" name="purpose" placeholder="Purpose (optional)">
-      <input type="text" name="target" placeholder="Target (optional)">
+    <form id="add-block-form">
+      <div class="block-form__row">
+        <input type="text" name="name" placeholder="Custom block name" required>
+        <input type="text" name="summary" placeholder="Summary / Goal (one line)" >
+        <input type="text" name="purpose" placeholder="Purpose (optional)">
+        <input type="text" name="target" placeholder="Target (optional)">
+      </div>
+      <textarea
+        class="block-form__details"
+        name="details"
+        rows="3"
+        placeholder="• Goal / setup&#10;• Rules&#10;• Reset condition&#10;• Why it matters"
+      ></textarea>
       <button type="submit" class="btn btn--secondary">Add custom block</button>
     </form>
     {% if session.blocks %}

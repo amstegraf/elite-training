@@ -24,6 +24,10 @@ class TrainingBlock(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
     name: str = "Block"
     purpose: str = ""
+    # One-line block summary (optional). Used for accountability and quick scanning.
+    summary: Optional[str] = None
+    # Bullet-like details. Stored as a list so we can render cleanly as <ul>.
+    details: list[str] = Field(default_factory=list)
     target: Optional[str] = None
     block_active_ms: int = 0
     pr: int = 0

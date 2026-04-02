@@ -8,8 +8,14 @@ from typing import Optional
 from uuid import uuid4
 
 from app.config import SESSIONS_DIR
+from app.block_presets import BLOCK_PRESETS
 from app.models import SessionStatus, TrainingBlock, TrainingSession, utc_now_iso
 from app.services.time_util import flush_active_elapsed, pause_clock, resume_clock
+
+
+_PRESET_BY_NAME: dict[str, dict[str, object]] = {
+    p.get("name"): p for p in BLOCK_PRESETS if p.get("name")
+}
 
 
 def ensure_sessions_dir() -> None:
@@ -44,7 +50,40 @@ def load_session(session_id: str) -> Optional[TrainingSession]:
         return None
     with open(path, encoding="utf-8") as f:
         data = json.load(f)
-    return TrainingSession.model_validate(data)
+    session = TrainingSession.model_validate(data)
+    _enrich_session_blocks_with_presets(session)
+    return session
+
+
+def _enrich_session_blocks_with_presets(session: TrainingSession) -> bool:
+    """
+    Backfill summary/details for blocks created before we added those fields.
+    If we make changes, we persist them so the session JSON stays self-contained.
+    """
+    changed = False
+    for block in session.blocks:
+        preset = _PRESET_BY_NAME.get(block.name)
+        if not preset:
+            continue
+
+        preset_summary = preset.get("summary")
+        preset_details = preset.get("details")
+
+        if (block.summary is None or not str(block.summary).strip()) and isinstance(
+            preset_summary, str
+        ):
+            block.summary = preset_summary
+            changed = True
+
+        if (not block.details) and isinstance(preset_details, list) and preset_details:
+            # Ensure JSON-serializable list[str]
+            details_list = [str(x) for x in preset_details]
+            block.details = details_list
+            changed = True
+
+    if changed:
+        save_session(session)
+    return changed
 
 
 def list_sessions() -> list[TrainingSession]:
@@ -54,7 +93,9 @@ def list_sessions() -> list[TrainingSession]:
         try:
             with open(p, encoding="utf-8") as f:
                 data = json.load(f)
-            out.append(TrainingSession.model_validate(data))
+            session = TrainingSession.model_validate(data)
+            _enrich_session_blocks_with_presets(session)
+            out.append(session)
         except (json.JSONDecodeError, ValueError):
             continue
     return out
@@ -140,16 +181,40 @@ def add_block(
     name: str,
     purpose: str = "",
     target: Optional[str] = None,
+    summary: Optional[str] = None,
+    details: Optional[list[str]] = None,
 ) -> Optional[TrainingSession]:
     session = load_session(session_id)
     if not session:
         return None
     if session.status not in (SessionStatus.CREATED, SessionStatus.ACTIVE, SessionStatus.PAUSED):
         return session
-    block = TrainingBlock(name=name, purpose=purpose or "", target=target)
+
+    preset = _PRESET_BY_NAME.get(name)
+    if preset:
+        if (summary is None or not str(summary).strip()) and isinstance(
+            preset.get("summary"), str
+        ):
+            summary = preset["summary"]  # type: ignore[assignment]
+        if (not details) and isinstance(preset.get("details"), list) and preset.get("details"):
+            details = [str(x) for x in preset["details"]]  # type: ignore[index]
+
+    block = TrainingBlock(
+        name=name,
+        purpose=purpose or "",
+        target=target,
+        summary=summary.strip() if summary else None,
+        details=details or [],
+    )
     session.blocks.append(block)
-    if session.current_block_id is None:
-        session.current_block_id = block.id
+    # Adding a block should make it the active/current one, so its description and
+    # logging immediately apply to it (matches your Quick Add expectation).
+    if session.status == SessionStatus.ACTIVE:
+        # Flush time into the previous current block, then restart the active interval
+        # so the new block starts counting immediately.
+        flush_active_elapsed(session)
+        resume_clock(session)
+    session.current_block_id = block.id
     save_session(session)
     return session
 
