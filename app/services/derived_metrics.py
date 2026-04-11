@@ -18,20 +18,24 @@ def default_balls_cleared_for_rack(rack: RackRecord) -> int:
 
 
 def best_run_balls_for_rack(rack: RackRecord) -> int:
-    """Longest streak of balls made without a logged miss (segment between miss balls)."""
-    if not rack.misses:
+    """Longest streak of balls made without a terminating miss (ignoring PLAYABLE outcome)."""
+    terminal_misses = [m for m in rack.misses if m.outcome != MissOutcome.PLAYABLE]
+    if not terminal_misses:
         bc = rack.balls_cleared
         if bc is not None:
             return min(9, bc)
         return 9
-    balls_sorted = sorted({m.ball_number for m in rack.misses})
+    
+    balls_sorted = sorted({m.ball_number for m in terminal_misses})
     prev = 0
     best = 0
     for b in balls_sorted:
         streak = b - 1 - prev
         best = max(best, streak)
         prev = b
-    tail = 9 - prev
+        
+    bc = rack.balls_cleared if rack.balls_cleared is not None else 9
+    tail = bc - prev
     best = max(best, tail)
     return max(0, min(9, best))
 

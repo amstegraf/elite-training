@@ -145,8 +145,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (ctxTypes) {
         const typeOpt = cloneObj(commonLineOptions);
         typeOpt.plugins.legend = { display: true, position: 'top' };
-        typeOpt.scales.x.stacked = true;
-        typeOpt.scales.y.stacked = true;
+        typeOpt.scales.x.stacked = false;
+        typeOpt.scales.y.stacked = false;
         typeOpt.scales.y.max = 100;
         
         new Chart(ctxTypes, {

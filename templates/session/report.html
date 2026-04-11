@@ -68,6 +68,14 @@
     </article>
   </div>
 
+  <article class="card card--wide" style="margin-bottom: 1.5rem;">
+    <h2>Best Run per Rack</h2>
+    <p class="muted">Visualize your streaks sequentially across this session.</p>
+    <div style="position: relative; height: 300px; width: 100%;">
+      <canvas id="chart-rack-runs"></canvas>
+    </div>
+  </article>
+
   <article class="card card--wide">
     <h2>Racks</h2>
     {% if session.racks %}
@@ -102,21 +110,72 @@
     <button type="button" class="btn btn--ghost" id="btn-delete-session">Delete session</button>
   </form>
 </section>
-<script>
-  (function () {
-    const btn = document.getElementById("btn-delete-session");
-    if (!btn) return;
-    btn.addEventListener("click", async () => {
-      if (!confirm("Delete this session permanently?")) return;
-      const res = await fetch("/api/sessions/{{ session.id }}", { method: "DELETE" });
-      if (res.ok) {
-        window.location.href = "/history";
-      } else if (window.showToast) {
-        window.showToast("Could not delete session", true);
-      } else {
-        alert("Could not delete session");
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    (function () {
+      const btn = document.getElementById("btn-delete-session");
+      if (btn) {
+        btn.addEventListener("click", async () => {
+          if (!confirm("Delete this session permanently?")) return;
+          const res = await fetch("/api/sessions/{{ session.id }}", { method: "DELETE" });
+          if (res.ok) {
+            window.location.href = "/history";
+          } else if (window.showToast) {
+            window.showToast("Could not delete session", true);
+          } else {
+            alert("Could not delete session");
+          }
+        });
       }
-    });
-  })();
-</script>
+
+      // Chart.js rendering for Best Runs per Rack
+      const rawData = {{ chart_data_json|safe }};
+      const canvas = document.getElementById('chart-rack-runs');
+      if (canvas && rawData.labels && rawData.labels.length > 0) {
+        Chart.defaults.font.family = '"Outfit", "Inter", system-ui, sans-serif';
+        Chart.defaults.color = '#8e9199';
+        Chart.defaults.scale.grid.color = 'rgba(0, 0, 0, 0.04)';
+        
+        new Chart(canvas, {
+          type: 'line',
+          data: {
+            labels: rawData.labels,
+            datasets: [{
+              label: 'Best Run',
+              data: rawData.runs,
+              borderColor: '#ff694b',
+              backgroundColor: 'rgba(255, 105, 75, 0.2)',
+              fill: true,
+              tension: 0.3,
+              borderWidth: 3,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              pointBorderColor: '#ff694b',
+              pointBackgroundColor: '#fff',
+              pointBorderWidth: 2
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: 'rgba(26, 27, 31, 0.9)',
+                titleFont: { size: 13, family: '"Outfit"' },
+                bodyFont: { size: 14, family: '"Cascadia Code", monospace' },
+                padding: 12,
+                cornerRadius: 8,
+              }
+            },
+            scales: {
+              y: { beginAtZero: true, border: { display: false }, max: 9 },
+              x: { grid: { display: false }, border: { display: false } }
+            },
+            interaction: { mode: 'nearest', axis: 'x', intersect: false }
+          }
+        });
+      }
+    })();
+  </script>
 {% endblock %}

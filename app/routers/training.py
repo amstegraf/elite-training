@@ -7,7 +7,7 @@ from fastapi.responses import RedirectResponse
 from app.deps import get_templates
 from app.models import PrecisionSessionStatus
 from app.services import programs_repo
-from app.services.derived_metrics import miss_type_percentages, aggregate_sessions_progress
+from app.services.derived_metrics import miss_type_percentages, aggregate_sessions_progress, best_run_balls_for_rack
 from app.services.sessions_repo import list_sessions, load_session
 
 router = APIRouter()
@@ -47,6 +47,12 @@ async def session_report_page(request: Request, session_id: str) -> object:
     program_name = pair[0].name if pair else "Program"
     plan_name = pair[1].name if pair else "Plan"
     pct = miss_type_percentages(session.miss_type_counts)
+    
+    # Chart data
+    rack_runs = [best_run_balls_for_rack(r) for r in session.racks if r.ended_at]
+    rack_labels = [f"Rack {i+1}" for i in range(len(rack_runs))]
+    chart_data = { "labels": rack_labels, "runs": rack_runs }
+
     return templates.TemplateResponse(
         request,
         "session/report.html",
@@ -55,6 +61,7 @@ async def session_report_page(request: Request, session_id: str) -> object:
             "program_name": program_name,
             "plan_name": plan_name,
             "miss_type_pct": pct,
+            "chart_data_json": json.dumps(chart_data)
         },
     )
 

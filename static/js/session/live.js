@@ -77,7 +77,17 @@
       }
     }
     items.sort((a, b) => (a.m.createdAt < b.m.createdAt ? 1 : -1));
+    
+    let lastRack = null;
+
     items.slice(0, 12).forEach(({ rack, m }) => {
+      if (lastRack !== null && lastRack !== rack) {
+        const sep = document.createElement("li");
+        sep.innerHTML = `<hr style="border: 0; border-top: 1px dashed var(--border); margin: 0.25rem 0;" />`;
+        missFeed.appendChild(sep);
+      }
+      lastRack = rack;
+
       const li = document.createElement("li");
       li.style.display = "flex";
       li.style.alignItems = "center";
