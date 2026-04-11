@@ -107,31 +107,17 @@
           <input type="checkbox" name="types" value="speed"> 
           <span>Speed</span>
         </label>
-        <label class="check-chip">
-          <input type="checkbox" name="types" value="combined"> 
-          <span>Combined</span>
-        </label>
       </div>
     </div>
     
-    <div class="miss-modal__row">
-      <label>
+    <div class="miss-modal__group">
+      <label style="display: block; width: 100%;">
         <div style="font-weight: 600; font-size: 0.9rem;">Outcome</div>
-        <select name="outcome" id="miss-outcome" required>
+        <select name="outcome" id="miss-outcome" required style="width: 100%; margin-top: 0.35rem;">
           <option value="" disabled selected>— Select outcome —</option>
           <option value="playable">Playable (poor shape)</option>
           <option value="pot_miss">Pot miss</option>
           <option value="no_shot_position">No shot (position)</option>
-          <option value="both">Both</option>
-        </select>
-      </label>
-      <label>
-        <div style="font-weight: 600; font-size: 0.9rem;">Confidence <span class="muted font-normal" style="font-weight: 400; font-size: 0.85rem;">(optional)</span></div>
-        <select name="confidence" id="miss-confidence">
-          <option value="">—</option>
-          <option value="high">High</option>
-          <option value="medium">Medium</option>
-          <option value="low">Low</option>
         </select>
       </label>
     </div>

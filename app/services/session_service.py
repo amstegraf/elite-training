@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from app.models import (
-    Confidence,
     MissEvent,
     MissOutcome,
     MissType,
@@ -147,7 +146,6 @@ def add_miss(
     ball_number: int,
     types: list[MissType],
     outcome: MissOutcome,
-    confidence: Confidence | None,
 ) -> PrecisionSession:
     session = load_session(session_id)
     if not session:
@@ -165,7 +163,6 @@ def add_miss(
         ball_number=ball_number,
         types=types,
         outcome=outcome,
-        confidence=confidence,
         ends_run=None,
     )
     rack.misses.append(miss)

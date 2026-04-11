@@ -11,6 +11,18 @@ from app.services.derived_metrics import (
 )
 
 
+def test_miss_event_strips_legacy_combined_type_and_ignores_confidence() -> None:
+    e = MissEvent.model_validate(
+        {
+            "ballNumber": 2,
+            "types": ["position", "combined"],
+            "outcome": "playable",
+            "confidence": "high",
+        }
+    )
+    assert e.types == [MissType.POSITION]
+
+
 def test_miss_breaks_run_defaults() -> None:
     assert miss_breaks_run(
         MissEvent(ball_number=1, types=[], outcome=MissOutcome.POT_MISS)

@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Optional
 from uuid import uuid4
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 def utc_now_iso() -> str:
@@ -17,20 +17,14 @@ class MissType(str, Enum):
     ALIGNMENT = "alignment"
     DELIVERY = "delivery"
     SPEED = "speed"
-    COMBINED = "combined"
 
 
 class MissOutcome(str, Enum):
     POT_MISS = "pot_miss"
     PLAYABLE = "playable"
     NO_SHOT_POSITION = "no_shot_position"
+    # Kept for legacy session JSON only (not offered in the log UI).
     BOTH = "both"
-
-
-class Confidence(str, Enum):
-    HIGH = "high"
-    MEDIUM = "medium"
-    LOW = "low"
 
 
 class TableType(str, Enum):
@@ -113,16 +107,26 @@ class SessionRuleOverrides(BaseModel):
 
 
 class MissEvent(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
+    model_config = ConfigDict(
+        populate_by_name=True,
+        serialize_by_alias=True,
+        extra="ignore",
+    )
 
     id: str = Field(default_factory=lambda: str(uuid4()), alias="id")
     ball_number: int = Field(ge=1, le=9, alias="ballNumber")
     types: list[MissType] = Field(default_factory=list)
     outcome: MissOutcome
-    confidence: Optional[Confidence] = None
     # Legacy JSON field; metrics derive run-breaking from ``outcome`` only.
     ends_run: Optional[bool] = Field(default=None, alias="endsRun")
     created_at: str = Field(default_factory=utc_now_iso, alias="createdAt")
+
+    @field_validator("types", mode="before")
+    @classmethod
+    def _strip_legacy_combined_type(cls, v: object) -> object:
+        if not isinstance(v, list):
+            return v
+        return [x for x in v if str(x) != "combined"]
 
 
 class RackRecord(BaseModel):
@@ -137,13 +141,16 @@ class RackRecord(BaseModel):
 
 
 class MissTypeCounts(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
+    model_config = ConfigDict(
+        populate_by_name=True,
+        serialize_by_alias=True,
+        extra="ignore",
+    )
 
     position: int = 0
     alignment: int = 0
     delivery: int = 0
     speed: int = 0
-    combined: int = 0
 
 
 class PrecisionSession(BaseModel):

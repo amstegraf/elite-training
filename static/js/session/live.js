@@ -222,7 +222,6 @@
       ballNumber: parseInt(missForm.elements['ball_number'].value, 10),
       types,
       outcome,
-      confidence: missForm.confidence.value || null,
     };
     const res = await fetch(`/api/sessions/${sessionId}/racks/${rack.id}/misses`, {
       method: "POST",

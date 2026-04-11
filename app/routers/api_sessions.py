@@ -4,7 +4,6 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.models import (
-    Confidence,
     MissOutcome,
     MissType,
     SessionMode,
@@ -47,7 +46,6 @@ class AddMissBody(BaseModel):
     ball_number: int = Field(ge=1, le=15, alias="ballNumber")
     types: list[MissType]
     outcome: MissOutcome
-    confidence: Confidence | None = None
 
 
 def _handle(exc: Exception) -> None:
@@ -148,7 +146,6 @@ def api_add_miss(session_id: str, rack_id: str, body: AddMissBody) -> dict:
             ball_number=body.ball_number,
             types=body.types,
             outcome=body.outcome,
-            confidence=body.confidence,
         )
         return {"session": s.model_dump(by_alias=True)}
     except (SessionNotFoundError, BadRequestError) as e:

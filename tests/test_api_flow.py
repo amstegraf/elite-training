@@ -29,7 +29,6 @@ def test_program_session_flow(client) -> None:
             "ballNumber": 4,
             "types": ["position", "alignment"],
             "outcome": "pot_miss",
-            "confidence": "high",
         },
     )
     assert r4.status_code == 200

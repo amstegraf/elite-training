@@ -297,17 +297,15 @@ document.addEventListener('DOMContentLoaded', () => {
             'Position (true)',
             'Alignment (true)',
             'Delivery (true)',
-            'Speed (true)',
-            'Combined (true)'
+            'Speed (true)'
         ];
         const typeKeys = [
             'miss_type_position',
             'miss_type_alignment',
             'miss_type_delivery',
-            'miss_type_speed',
-            'miss_type_combined'
+            'miss_type_speed'
         ];
-        const typeColors = ['#a78bfa', '#f472b6', '#fcd34d', '#38bdf8', '#9ca3af'];
+        const typeColors = ['#a78bfa', '#f472b6', '#fcd34d', '#38bdf8'];
         const sessionPalette = [
             '#a78bfa',
             '#f472b6',

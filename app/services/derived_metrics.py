@@ -82,8 +82,6 @@ def accumulate_miss_counts(counts: MissTypeCounts, miss: MissEvent) -> None:
             counts.delivery += 1
         elif t == MissType.SPEED:
             counts.speed += 1
-        elif t == MissType.COMBINED:
-            counts.combined += 1
 
 
 def no_shot_increment(outcome: MissOutcome) -> int:
@@ -232,21 +230,19 @@ def breaking_miss_type_counts(session: PrecisionSession) -> MissTypeCounts:
 
 
 def miss_type_percentages(counts: MissTypeCounts) -> dict[str, float]:
-    total = counts.position + counts.alignment + counts.delivery + counts.speed + counts.combined
+    total = counts.position + counts.alignment + counts.delivery + counts.speed
     if total == 0:
         return {
             "position": 0.0,
             "alignment": 0.0,
             "delivery": 0.0,
             "speed": 0.0,
-            "combined": 0.0,
         }
     return {
         "position": round(100.0 * counts.position / total, 1),
         "alignment": round(100.0 * counts.alignment / total, 1),
         "delivery": round(100.0 * counts.delivery / total, 1),
         "speed": round(100.0 * counts.speed / total, 1),
-        "combined": round(100.0 * counts.combined / total, 1),
     }
 
 
@@ -271,7 +267,6 @@ def aggregate_sessions_progress(sessions: list[PrecisionSession]) -> dict[str, l
     pct_alignment = []
     pct_delivery = []
     pct_speed = []
-    pct_combined = []
 
     ball_miss_hist = {str(i): 0 for i in range(1, 16)}
     conversion_eff: list[float | None] = []
@@ -320,7 +315,6 @@ def aggregate_sessions_progress(sessions: list[PrecisionSession]) -> dict[str, l
         pct_alignment.append(pct["alignment"])
         pct_delivery.append(pct["delivery"])
         pct_speed.append(pct["speed"])
-        pct_combined.append(pct["combined"])
 
         for r in s.racks:
             for m in r.misses:
@@ -359,7 +353,6 @@ def aggregate_sessions_progress(sessions: list[PrecisionSession]) -> dict[str, l
         "miss_type_alignment": pct_alignment,
         "miss_type_delivery": pct_delivery,
         "miss_type_speed": pct_speed,
-        "miss_type_combined": pct_combined,
         "hist_labels": hist_labels,
         "hist_data": hist_data,
     }
