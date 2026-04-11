@@ -577,7 +577,7 @@ input::placeholder, textarea::placeholder {
   border-radius: 18px;
   padding: 0;
   box-shadow: var(--shadow-lg);
-  max-width: 420px;
+  max-width: 460px;
   width: calc(100% - 2rem);
 }
 

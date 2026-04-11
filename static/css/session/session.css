@@ -462,3 +462,71 @@
   cursor: not-allowed;
   filter: grayscale(1);
 }
+
+/* Pool ball radio buttons */
+.ball-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem;
+  justify-items: center;
+}
+
+.ball-chip {
+  position: relative;
+  display: inline-flex;
+  cursor: pointer;
+  justify-content: center;
+  align-items: center;
+}
+
+.ball-chip input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ball-chip span {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: #fff;
+  border: 3px solid transparent;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s, border-color 0.2s;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  font-family: var(--font);
+}
+
+.ball-chip input:checked + span {
+  transform: scale(1.15);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+  border-color: var(--text);
+  z-index: 10;
+}
+
+/* Colors specifically for balls */
+.ball-1 span { background-color: #f6d32d; color: #222; text-shadow: none; border: 1px solid var(--border); }
+.ball-2 span { background-color: #3584e4; }
+.ball-3 span { background-color: #ed333b; }
+.ball-4 span { background-color: #9141ac; }
+.ball-5 span { background-color: #ff7800; }
+.ball-6 span { background-color: #33d17a; }
+.ball-7 span { background-color: #8f5c38; }
+.ball-8 span { background-color: #242424; }
+.ball-9 span {
+  background: linear-gradient(135deg, #ffffff 28%, #f6d32d 28%, #f6d32d 72%, #ffffff 72%);
+  color: #222;
+  text-shadow: none;
+  border: 1px solid var(--border);
+}
+
+/* Adjust checked border for bright balls */
+.ball-1 input:checked + span,
+.ball-9 input:checked + span {
+  border-color: #222;
+}

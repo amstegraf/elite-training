@@ -11,7 +11,6 @@
   const btnEndSession = document.getElementById("btn-end-session");
   const missForm = document.getElementById("miss-form");
   const rackForm = document.getElementById("rack-end-form");
-  const missBall = document.getElementById("miss-ball");
   const missCancel = document.getElementById("miss-cancel");
   const rackCancel = document.getElementById("rack-cancel");
   const rackBalls = document.getElementById("rack-balls");
@@ -69,7 +68,23 @@
     items.sort((a, b) => (a.m.createdAt < b.m.createdAt ? 1 : -1));
     items.slice(0, 12).forEach(({ rack, m }) => {
       const li = document.createElement("li");
-      li.textContent = `Rack ${rack} · ball ${m.ballNumber} · ${m.types.join(", ")} · ${m.outcome}`;
+      li.style.display = "flex";
+      li.style.alignItems = "center";
+      li.style.gap = "1rem";
+      li.style.padding = "0.85rem 0";
+      
+      const typesHtml = m.types.map(t => `<span class="pill pill--active" style="margin-left:0; margin-right:0.35rem; font-size: 0.7rem; background: var(--surface2); color: var(--text); border: 1px solid var(--border);">${t}</span>`).join('');
+      const outcomeText = m.outcome.replace('_', ' ');
+
+      li.innerHTML = `
+        <div class="ball-chip ball-${m.ballNumber}" style="pointer-events: none; width: 36px; height: 36px; flex-shrink: 0; box-shadow: none;">
+          <span style="width: 36px; height: 36px; font-size: 0.95rem; box-shadow: none;">${m.ballNumber}</span>
+        </div>
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 0.25rem;">
+          <div class="row-actions" style="margin: 0; gap: 0;">${typesHtml}</div>
+          <div class="muted small" style="text-transform: capitalize;">Rack ${rack} &middot; ${outcomeText}</div>
+        </div>
+      `;
       missFeed.appendChild(li);
     });
   }
@@ -130,8 +145,10 @@
     currentDurationSeconds = live.effectiveDuration || 0;
     
     const rack = currentRack();
-    if (missBall && live.suggestedNextBall != null) {
-      missBall.value = String(live.suggestedNextBall);
+    if (missForm && live.suggestedNextBall != null) {
+      if (missForm.elements['ball_number']) {
+        missForm.elements['ball_number'].value = String(live.suggestedNextBall);
+      }
     }
     render();
   }
@@ -172,7 +189,7 @@
       (i) => i.value
     );
     const payload = {
-      ballNumber: parseInt(missBall.value, 10),
+      ballNumber: parseInt(missForm.elements['ball_number'].value, 10),
       types,
       outcome: missForm.outcome.value,
       confidence: missForm.confidence.value || null,

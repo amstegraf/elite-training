@@ -73,13 +73,24 @@
       <p class="muted small">Record an error to track your progression.</p>
     </div>
     
-    <label>Ball number
-      <input name="ball_number" id="miss-ball" type="number" min="1" max="9" required class="input-large">
-    </label>
+    <div class="miss-modal__group" style="margin-bottom: 0.5rem">
+      <span class="label-text">Ball missed</span>
+      <div class="ball-grid">
+        <label class="ball-chip ball-1"><input type="radio" name="ball_number" value="1" required><span>1</span></label>
+        <label class="ball-chip ball-2"><input type="radio" name="ball_number" value="2" required><span>2</span></label>
+        <label class="ball-chip ball-3"><input type="radio" name="ball_number" value="3" required><span>3</span></label>
+        <label class="ball-chip ball-4"><input type="radio" name="ball_number" value="4" required><span>4</span></label>
+        <label class="ball-chip ball-5"><input type="radio" name="ball_number" value="5" required><span>5</span></label>
+        <label class="ball-chip ball-6"><input type="radio" name="ball_number" value="6" required><span>6</span></label>
+        <label class="ball-chip ball-7"><input type="radio" name="ball_number" value="7" required><span>7</span></label>
+        <label class="ball-chip ball-8"><input type="radio" name="ball_number" value="8" required><span>8</span></label>
+        <label class="ball-chip ball-9"><input type="radio" name="ball_number" value="9" required><span>9</span></label>
+      </div>
+    </div>
     
     <div class="miss-modal__group">
-      <span class="label-text">Miss types</span>
-      <div class="chip-grid">
+      <span class="label-text" style="text-align: center;">Miss types</span>
+      <div class="chip-grid" style="justify-content: center;">
         <label class="check-chip">
           <input type="checkbox" name="types" value="position"> 
           <span>Position</span>
@@ -104,14 +115,16 @@
     </div>
     
     <div class="miss-modal__row">
-      <label>Outcome
+      <label>
+        <div style="font-weight: 600; font-size: 0.9rem;">Outcome</div>
         <select name="outcome" id="miss-outcome" required>
           <option value="pot_miss">Pot miss</option>
           <option value="no_shot_position">No shot (position)</option>
           <option value="both">Both</option>
         </select>
       </label>
-      <label>Confidence <span class="muted font-normal">(optional)</span>
+      <label>
+        <div style="font-weight: 600; font-size: 0.9rem;">Confidence <span class="muted font-normal" style="font-weight: 400; font-size: 0.85rem;">(optional)</span></div>
         <select name="confidence" id="miss-confidence">
           <option value="">—</option>
           <option value="high">High</option>

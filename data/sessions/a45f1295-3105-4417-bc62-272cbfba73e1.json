@@ -13,13 +13,13 @@
   "mode": "rack",
   "ruleOverrides": null,
   "totalRacks": 0,
-  "totalMisses": 0,
+  "totalMisses": 1,
   "avgBallsClearedPerRack": null,
   "bestRunBalls": 0,
   "noShotPositionCount": 0,
   "missTypeCounts": {
-    "position": 0,
-    "alignment": 0,
+    "position": 1,
+    "alignment": 1,
     "delivery": 0,
     "speed": 0,
     "combined": 0
@@ -31,7 +31,19 @@
       "startedAt": "2026-04-11T16:50:05.705732+00:00",
       "endedAt": null,
       "ballsCleared": null,
-      "misses": []
+      "misses": [
+        {
+          "id": "6448dd13-3f10-4136-bb2f-67983e181841",
+          "ballNumber": 3,
+          "types": [
+            "position",
+            "alignment"
+          ],
+          "outcome": "pot_miss",
+          "confidence": null,
+          "createdAt": "2026-04-11T17:11:38.386853+00:00"
+        }
+      ]
     }
   ],
   "currentRackId": "deb4e5ca-89b9-4c0f-8af5-03a4f9873c38"
