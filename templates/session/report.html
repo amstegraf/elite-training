@@ -17,7 +17,7 @@
     </div>
   </header>
 
-  <div class="grid grid--2" style="margin-bottom: 1.5rem;">
+  <div class="grid grid--2" style="margin-bottom: 1.5rem; align-items: stretch;">
     <!-- Performance Layer -->
     <div style="display: flex; flex-direction: column; gap: 1.5rem;">
       <div class="reports__kpi-grid">
@@ -75,48 +75,52 @@
       </div>
     </div>
     
-    <!-- Rack Consistency -->
-    <article class="card card--wide">
-      <h2>Rack Consistency <span style="font-size: 1rem; color: var(--muted); font-weight: normal;">(balls cleared)</span></h2>
-      <p class="muted" style="margin-top: 0;">Gap between worst and best rack shows volatility vs your baseline average. Pot and position success are session-wide (see docs/metric-position-success.md).</p>
+    <!-- Consistency & Execution Layer -->
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+      <article class="card" style="flex: 1;">
+        <h2 style="margin: 0 0 1rem; font-size: 1.15rem;">Rack Consistency</h2>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; height: 100%;">
+          <div style="text-align: center; padding: 1rem; background: var(--surface2); border-radius: 12px; display: flex; flex-direction: column; justify-content: center;">
+            <div class="muted" style="font-size: 0.85rem; margin-bottom: 0.25rem;">Worst</div>
+            <div style="font-size: 2rem; font-weight: 700; color: #dc2626;">{% if session.worst_rack_balls_cleared is not none %}{{ session.worst_rack_balls_cleared }}{% else %}—{% endif %}</div>
+          </div>
+          <div style="text-align: center; padding: 1rem; background: var(--surface); box-shadow: var(--shadow); border-radius: 12px; display: flex; flex-direction: column; justify-content: center;">
+            <div class="muted" style="font-size: 0.85rem; margin-bottom: 0.25rem;">Average</div>
+            <div style="font-size: 2rem; font-weight: 700;">{% if session.avg_balls_cleared_per_rack is not none %}{{ "%.2f"|format(session.avg_balls_cleared_per_rack) }}{% else %}—{% endif %}</div>
+          </div>
+          <div style="text-align: center; padding: 1rem; background: var(--pr); border-radius: 12px; display: flex; flex-direction: column; justify-content: center;">
+            <div class="muted" style="font-size: 0.85rem; margin-bottom: 0.25rem;">Best</div>
+            <div style="font-size: 2rem; font-weight: 700;">{% if session.best_rack_balls_cleared is not none %}{{ session.best_rack_balls_cleared }}{% else %}—{% endif %}</div>
+          </div>
+        </div>
+      </article>
       
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-top: auto; padding-top: 1rem;">
-        <div style="text-align: center; padding: 1.5rem; background: var(--surface2); border-radius: 16px;">
-          <div class="muted" style="font-size: 0.85rem; margin-bottom: 0.25rem;">Worst</div>
-          <div style="font-size: 2rem; font-weight: 700; color: #dc2626;">{% if session.worst_rack_balls_cleared is not none %}{{ session.worst_rack_balls_cleared }}{% else %}—{% endif %}</div>
-        </div>
-        <div style="text-align: center; padding: 1.5rem; background: var(--surface); box-shadow: var(--shadow); border-radius: 16px;">
-          <div class="muted" style="font-size: 0.85rem; margin-bottom: 0.25rem;">Average</div>
-          <div style="font-size: 2rem; font-weight: 700;">{% if session.avg_balls_cleared_per_rack is not none %}{{ "%.2f"|format(session.avg_balls_cleared_per_rack) }}{% else %}—{% endif %}</div>
-        </div>
-        <div style="text-align: center; padding: 1.5rem; background: var(--pr); border-radius: 16px;">
-          <div class="muted" style="font-size: 0.85rem; margin-bottom: 0.25rem;">Best</div>
-          <div style="font-size: 2rem; font-weight: 700;">{% if session.best_rack_balls_cleared is not none %}{{ session.best_rack_balls_cleared }}{% else %}—{% endif %}</div>
-        </div>
-        <div style="text-align: center; padding: 1.5rem; background: var(--surface2); border: 1px solid var(--border); border-radius: 16px;">
-          <div class="muted" style="font-size: 0.85rem; margin-bottom: 0.25rem;">Pot success</div>
-          <div style="font-size: 2rem; font-weight: 700; color: var(--text);">
-            {% if session.pot_success_rate is not none %}
-            {{ "%.1f"|format(session.pot_success_rate * 100) }}<span style="font-size: 1rem; color: var(--muted); font-weight: 600;">%</span>
-            {% else %}—{% endif %}
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+        <article class="stat-card" style="display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem; background: var(--surface);">
+          <div>
+            <h2 style="margin: 0 0 0.15rem; font-size: 1.05rem;">Pot success</h2>
+            <span class="muted mono" style="font-size: 0.8rem; display: inline-block; margin-top: 0.15rem;">{{ session.total_balls_cleared }} / {{ session.pot_attempts }} attempts</span>
           </div>
-          {% if session.pot_attempts > 0 %}
-          <div class="muted mono" style="font-size: 0.75rem; margin-top: 0.35rem;">{{ session.total_balls_cleared }} / {{ session.pot_attempts }}</div>
-          {% endif %}
-        </div>
-        <div style="text-align: center; padding: 1.5rem; background: var(--surface2); border: 1px solid var(--border); border-radius: 16px;">
-          <div class="muted" style="font-size: 0.85rem; margin-bottom: 0.25rem;">Position success</div>
-          <div style="font-size: 2rem; font-weight: 700; color: var(--text);">
-            {% if session.position_success_rate is not none %}
-            {{ "%.1f"|format(session.position_success_rate * 100) }}<span style="font-size: 1rem; color: var(--muted); font-weight: 600;">%</span>
-            {% else %}—{% endif %}
+          <div style="text-align: right;">
+            <div style="font-size: 1.85rem; font-weight: 700; line-height: 1; color: var(--text);">
+              {% if session.pot_success_rate is not none %}{{ "%.1f"|format(session.pot_success_rate * 100) }}<span style="font-size: 0.95rem; color: var(--muted); font-weight: 600;">%</span>{% else %}—{% endif %}
+            </div>
           </div>
-          {% if session.total_balls_cleared > 0 %}
-          <div class="muted mono" style="font-size: 0.75rem; margin-top: 0.35rem;">1 − {{ session.position_related_miss_count }} / {{ session.total_balls_cleared }}</div>
-          {% endif %}
-        </div>
+        </article>
+
+        <article class="stat-card" style="display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem; background: var(--surface);">
+          <div>
+            <h2 style="margin: 0 0 0.15rem; font-size: 1.05rem;">Pos. success</h2>
+            <span class="muted mono" style="font-size: 0.8rem; display: inline-block; margin-top: 0.15rem;">1 − {{ session.position_related_miss_count }} / {{ session.total_balls_cleared }}</span>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 1.85rem; font-weight: 700; line-height: 1; color: var(--text);">
+              {% if session.position_success_rate is not none %}{{ "%.1f"|format(session.position_success_rate * 100) }}<span style="font-size: 0.95rem; color: var(--muted); font-weight: 600;">%</span>{% else %}—{% endif %}
+            </div>
+          </div>
+        </article>
       </div>
-    </article>
+    </div>
   </div>
 
   <div class="reports__kpi-grid" style="margin-bottom: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));">
