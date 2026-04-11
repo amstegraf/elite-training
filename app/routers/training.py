@@ -13,6 +13,7 @@ from app.services.derived_metrics import (
     miss_type_percentages,
     recompute_session_aggregates,
 )
+from app.services.rack_conversion_tiers import rack_conversion_tier_label
 from app.services.sessions_repo import list_sessions, load_session
 
 router = APIRouter()
@@ -46,9 +47,10 @@ async def session_report_page(request: Request, session_id: str) -> object:
     session = load_session(session_id)
     if not session:
         return RedirectResponse(url="/", status_code=302)
-    # Derive totals (e.g. totalBallsCleared, flow efficiency, true miss rate, rack spread) from racks
+    # Derive totals (e.g. totalBallsCleared, flow efficiency, true miss rate, rack conversion, rack spread) from racks
     # stored session fields, so older JSON without those keys still reports correctly.
     recompute_session_aggregates(session)
+    rack_conversion_tier = rack_conversion_tier_label(session.rack_conversion_rate)
     templates = get_templates()
     root = programs_repo.load_programs_file()
     pair = programs_repo.get_plan(root, session.plan_id)
@@ -69,7 +71,8 @@ async def session_report_page(request: Request, session_id: str) -> object:
             "program_name": program_name,
             "plan_name": plan_name,
             "miss_type_pct": pct,
-            "chart_data_json": json.dumps(chart_data)
+            "chart_data_json": json.dumps(chart_data),
+            "rack_conversion_tier": rack_conversion_tier,
         },
     )
 

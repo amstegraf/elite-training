@@ -57,6 +57,21 @@
           </div>
           <p class="muted" style="margin: 0.5rem 0 0; font-size: 0.8rem; line-height: 1.35;">Hard run-ending failures per rack.</p>
         </article>
+
+        <article class="stat-card stat-card--pr">
+          <div class="stat-card__label">Rack conversion rate</div>
+          <div class="stat-card__value">
+            {% if session.rack_conversion_rate is not none %}
+            {{ "%.1f"|format(session.rack_conversion_rate * 100) }}<span style="font-size: 1rem; color: var(--muted); font-weight: normal;">%</span>
+            {% else %}—{% endif %}
+          </div>
+          {% if rack_conversion_tier %}
+          <p style="margin: 0.65rem 0 0;">
+            <span class="pill pill--active" style="font-weight: 600;">{{ rack_conversion_tier }}</span>
+          </p>
+          {% endif %}
+          <p class="muted" style="margin: 0.5rem 0 0; font-size: 0.8rem; line-height: 1.35;">Racks cleared (9) ÷ ended racks — run-outs vs attempts. Tier uses the same bands as your dashboard profile.</p>
+        </article>
       </div>
     </div>
     
@@ -152,6 +167,9 @@
       <h2>Session Details</h2>
       <dl class="kv kv--spread">
         <dt>Total racks</dt><dd>{{ session.total_racks }}</dd>
+        <dt>Racks completed (9)</dt><dd>{{ session.racks_completed }}</dd>
+        <dt>Rack conversion</dt><dd>{% if session.rack_conversion_rate is not none %}{{ "%.1f"|format(session.rack_conversion_rate * 100) }}%{% else %}—{% endif %}</dd>
+        <dt>Rack tier (session)</dt><dd>{% if rack_conversion_tier %}{{ rack_conversion_tier }}{% else %}—{% endif %}</dd>
         <dt>Balls cleared (session)</dt><dd>{{ session.total_balls_cleared }}</dd>
         <dt>Duration</dt><dd>{{ session.duration_seconds // 3600 }}:{{ "%02d" | format((session.duration_seconds % 3600) // 60) }}:{{ "%02d" | format(session.duration_seconds % 60) }}</dd>
         <dt>No shot (pos)</dt><dd>{{ session.no_shot_position_count }}</dd>

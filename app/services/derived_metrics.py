@@ -194,6 +194,10 @@ def recompute_session_aggregates(session: PrecisionSession) -> None:
         else:
             session.avg_balls_before_true_miss = None
 
+        session.racks_completed = sum(
+            1 for r in ended if r.balls_cleared is not None and r.balls_cleared == 9
+        )
+
         total_bc = sum((r.balls_cleared or 0) for r in ended)
         session.total_balls_cleared = total_bc
         denom = total_bc + session.training_miss_count
@@ -209,13 +213,16 @@ def recompute_session_aggregates(session: PrecisionSession) -> None:
         session.conversion_efficiency = None
         session.worst_rack_balls_cleared = None
         session.best_rack_balls_cleared = None
+        session.racks_completed = 0
 
     session.total_racks = len(ended)
     tr = session.total_racks
     if tr > 0:
         session.true_miss_rate = round(session.true_miss_count / tr, 4)
+        session.rack_conversion_rate = round(session.racks_completed / tr, 4)
     else:
         session.true_miss_rate = None
+        session.rack_conversion_rate = None
 
 
 def breaking_miss_type_counts(session: PrecisionSession) -> MissTypeCounts:
@@ -270,6 +277,7 @@ def aggregate_sessions_progress(sessions: list[PrecisionSession]) -> dict[str, l
     ball_miss_hist = {str(i): 0 for i in range(1, 16)}
     conversion_eff: list[float | None] = []
     true_miss_rates: list[float | None] = []
+    rack_conversion_rates: list[float | None] = []
     worst_rack_balls: list[int | None] = []
     best_rack_balls: list[int | None] = []
     avg_rack_balls: list[float] = []
@@ -296,6 +304,9 @@ def aggregate_sessions_progress(sessions: list[PrecisionSession]) -> dict[str, l
         conversion_eff.append(s.conversion_efficiency)
         true_miss_rates.append(
             round(s.true_miss_rate, 3) if s.true_miss_rate is not None else None
+        )
+        rack_conversion_rates.append(
+            round(s.rack_conversion_rate, 3) if s.rack_conversion_rate is not None else None
         )
         worst_rack_balls.append(s.worst_rack_balls_cleared)
         best_rack_balls.append(s.best_rack_balls_cleared)
@@ -343,6 +354,7 @@ def aggregate_sessions_progress(sessions: list[PrecisionSession]) -> dict[str, l
         "flow_efficiency": conversion_eff,
         "conversion_efficiency": conversion_eff,
         "true_miss_rates": true_miss_rates,
+        "rack_conversion_rates": rack_conversion_rates,
         "worst_rack_balls": worst_rack_balls,
         "best_rack_balls": best_rack_balls,
         "avg_rack_balls": avg_rack_balls,

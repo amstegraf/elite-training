@@ -6,6 +6,10 @@ from fastapi.responses import RedirectResponse
 from app.deps import get_templates
 from app.models import FocusType, PrecisionSessionStatus, SessionMode, TableType
 from app.services import programs_repo
+from app.services.rack_conversion_tiers import (
+    overall_rack_conversion_breakdown,
+    rack_conversion_tier_label,
+)
 from app.services.session_service import BadRequestError, start_session
 from app.services.sessions_repo import list_sessions
 
@@ -24,13 +28,20 @@ async def dashboard(request: Request) -> object:
     programs_root = programs_repo.load_programs_file()
     templates = get_templates()
     cont = _latest_in_progress()
+    all_sessions = list_sessions(limit=500)
+    g_rate, g_rc, g_tr = overall_rack_conversion_breakdown(all_sessions)
+    global_rack_tier = rack_conversion_tier_label(g_rate)
     return templates.TemplateResponse(
         request,
         "dashboard/index.html",
         {
             "programs_root": programs_root,
             "continue_session_id": cont,
-            "recent_sessions": list_sessions(limit=15),
+            "recent_sessions": all_sessions[:15],
+            "global_rack_conversion_rate": g_rate,
+            "global_rack_conversion_tier": global_rack_tier,
+            "global_racks_completed": g_rc,
+            "global_total_racks": g_tr,
         },
     )
 

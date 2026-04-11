@@ -194,6 +194,11 @@ class PrecisionSession(BaseModel):
     )
     # True misses ÷ ended racks (hard failure rate).
     true_miss_rate: Optional[float] = Field(default=None, ge=0, alias="trueMissRate")
+    # Ended racks with full clearance (9) vs ended racks (run-out rate).
+    racks_completed: int = Field(default=0, ge=0, alias="racksCompleted")
+    rack_conversion_rate: Optional[float] = Field(
+        default=None, ge=0, le=1, alias="rackConversionRate"
+    )
     # Balls cleared per rack spread (consistency); avg matches avgBallsClearedPerRack.
     worst_rack_balls_cleared: Optional[int] = Field(
         default=None, ge=0, le=9, alias="worstRackBallsCleared"

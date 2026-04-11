@@ -3,47 +3,211 @@
   "id": "64a0bb9f-0182-4644-b17c-4ae9b4c3ae79",
   "programId": "3c9bbe08-5084-4da2-9738-3ab30c3096d2",
   "planId": "6c6a3746-9733-469a-9e4e-5ba8e203c085",
-  "status": "in_progress",
+  "status": "completed",
   "startedAt": "2026-04-11T19:40:21.570013+00:00",
-  "endedAt": null,
-  "durationSeconds": 234,
-  "isPaused": false,
-  "lastUnpausedAt": "2026-04-11T19:56:34.247173+00:00",
+  "endedAt": "2026-04-11T20:37:22.845212+00:00",
+  "durationSeconds": 2154,
+  "isPaused": true,
+  "lastUnpausedAt": "2026-04-11T20:18:05.700612+00:00",
   "tableType": "eight_ft",
   "mode": "rack",
   "ruleOverrides": null,
-  "totalRacks": 0,
-  "totalMisses": 0,
-  "avgBallsClearedPerRack": null,
-  "bestRunBalls": 0,
-  "trueMissCount": 0,
-  "trainingMissCount": 0,
-  "avgBallsBeforeTrueMiss": null,
-  "totalBallsCleared": 0,
-  "conversionEfficiency": null,
-  "trueMissRate": null,
-  "worstRackBallsCleared": null,
-  "bestRackBallsCleared": null,
-  "recoveryCount": 0,
-  "failedRecoveryCount": 0,
-  "recoveryRate": null,
-  "failedRecoveryRate": null,
-  "noShotPositionCount": 0,
+  "totalRacks": 5,
+  "totalMisses": 12,
+  "avgBallsClearedPerRack": 4.6,
+  "bestRunBalls": 9,
+  "trueMissCount": 2,
+  "trainingMissCount": 10,
+  "avgBallsBeforeTrueMiss": 3.5,
+  "totalBallsCleared": 23,
+  "conversionEfficiency": 0.697,
+  "trueMissRate": 0.4,
+  "worstRackBallsCleared": 2,
+  "bestRackBallsCleared": 9,
+  "recoveryCount": 8,
+  "failedRecoveryCount": 2,
+  "recoveryRate": 0.8,
+  "failedRecoveryRate": 0.2,
+  "noShotPositionCount": 2,
   "missTypeCounts": {
-    "position": 0,
-    "alignment": 0,
+    "position": 11,
+    "alignment": 1,
     "delivery": 0,
-    "speed": 0
+    "speed": 7
   },
   "racks": [
     {
       "id": "b728ab31-a7dd-4c47-9406-3735413c1621",
       "rackNumber": 1,
       "startedAt": "2026-04-11T19:40:21.570013+00:00",
-      "endedAt": null,
-      "ballsCleared": null,
-      "misses": []
+      "endedAt": "2026-04-11T20:09:12.758971+00:00",
+      "ballsCleared": 3,
+      "misses": [
+        {
+          "id": "e09a2642-8abc-4241-b6a0-060180c95025",
+          "ballNumber": 1,
+          "types": [
+            "position",
+            "speed"
+          ],
+          "outcome": "playable",
+          "endsRun": null,
+          "createdAt": "2026-04-11T20:06:22.186016+00:00"
+        },
+        {
+          "id": "abd13ec0-570b-4b88-981b-ea4910b4a6fe",
+          "ballNumber": 4,
+          "types": [
+            "position"
+          ],
+          "outcome": "pot_miss",
+          "endsRun": null,
+          "createdAt": "2026-04-11T20:09:00.297140+00:00"
+        }
+      ]
+    },
+    {
+      "id": "6b4f6a44-9617-497d-a4a4-94bc537f59d4",
+      "rackNumber": 2,
+      "startedAt": "2026-04-11T20:09:16.571140+00:00",
+      "endedAt": "2026-04-11T20:24:06.627472+00:00",
+      "ballsCleared": 9,
+      "misses": [
+        {
+          "id": "72429164-bca9-4caa-9bd6-80070c1be5d5",
+          "ballNumber": 2,
+          "types": [
+            "position"
+          ],
+          "outcome": "playable",
+          "endsRun": null,
+          "createdAt": "2026-04-11T20:23:56.780518+00:00"
+        }
+      ]
+    },
+    {
+      "id": "e78a6535-ee8f-40e2-b95b-310af60f1620",
+      "rackNumber": 3,
+      "startedAt": "2026-04-11T20:24:08.703143+00:00",
+      "endedAt": "2026-04-11T20:26:57.476943+00:00",
+      "ballsCleared": 2,
+      "misses": [
+        {
+          "id": "e7aa8b21-0e9e-4fd8-b62e-a4640f08daab",
+          "ballNumber": 1,
+          "types": [
+            "position",
+            "speed"
+          ],
+          "outcome": "playable",
+          "endsRun": null,
+          "createdAt": "2026-04-11T20:26:09.553907+00:00"
+        },
+        {
+          "id": "6fb75da4-6644-4902-b993-3cc7bfa6fce8",
+          "ballNumber": 2,
+          "types": [
+            "position"
+          ],
+          "outcome": "no_shot_position",
+          "endsRun": null,
+          "createdAt": "2026-04-11T20:26:51.218646+00:00"
+        }
+      ]
+    },
+    {
+      "id": "098d02b5-b806-4784-b3f2-b0064ff54685",
+      "rackNumber": 4,
+      "startedAt": "2026-04-11T20:26:59.511552+00:00",
+      "endedAt": "2026-04-11T20:31:28.972489+00:00",
+      "ballsCleared": 4,
+      "misses": [
+        {
+          "id": "08fed2eb-e360-44cd-bdab-afd6bede9a2c",
+          "ballNumber": 2,
+          "types": [
+            "position",
+            "speed"
+          ],
+          "outcome": "playable",
+          "endsRun": null,
+          "createdAt": "2026-04-11T20:29:40.670439+00:00"
+        },
+        {
+          "id": "5c0ca897-8c0e-419a-894d-3a2ff7258064",
+          "ballNumber": 3,
+          "types": [
+            "position",
+            "speed"
+          ],
+          "outcome": "playable",
+          "endsRun": null,
+          "createdAt": "2026-04-11T20:30:19.244516+00:00"
+        },
+        {
+          "id": "0bb97f30-7aa6-4967-b202-f8f6419fad53",
+          "ballNumber": 5,
+          "types": [
+            "alignment"
+          ],
+          "outcome": "pot_miss",
+          "endsRun": null,
+          "createdAt": "2026-04-11T20:31:25.194623+00:00"
+        }
+      ]
+    },
+    {
+      "id": "dd972ecf-6036-4379-8ab3-5aeab20ddefe",
+      "rackNumber": 5,
+      "startedAt": "2026-04-11T20:32:16.744200+00:00",
+      "endedAt": "2026-04-11T20:37:09.604034+00:00",
+      "ballsCleared": 5,
+      "misses": [
+        {
+          "id": "5081fbb0-45ba-4313-bcf1-6ed0e6193618",
+          "ballNumber": 1,
+          "types": [
+            "position",
+            "speed"
+          ],
+          "outcome": "playable",
+          "endsRun": null,
+          "createdAt": "2026-04-11T20:35:08.050473+00:00"
+        },
+        {
+          "id": "fb5d0769-bfd3-4b3c-93e1-58694c74acb4",
+          "ballNumber": 3,
+          "types": [
+            "position",
+            "speed"
+          ],
+          "outcome": "playable",
+          "endsRun": null,
+          "createdAt": "2026-04-11T20:35:17.259507+00:00"
+        },
+        {
+          "id": "862d1ea7-e7dc-4a1f-b852-7d9086e6bf65",
+          "ballNumber": 4,
+          "types": [
+            "position",
+            "speed"
+          ],
+          "outcome": "playable",
+          "endsRun": null,
+          "createdAt": "2026-04-11T20:36:40.086560+00:00"
+        },
+        {
+          "id": "77257879-931c-4ab0-920e-aaa8f8fc4ddd",
+          "ballNumber": 5,
+          "types": [
+            "position"
+          ],
+          "outcome": "no_shot_position",
+          "endsRun": null,
+          "createdAt": "2026-04-11T20:36:55.480172+00:00"
+        }
+      ]
     }
   ],
-  "currentRackId": "b728ab31-a7dd-4c47-9406-3735413c1621"
+  "currentRackId": null
 }

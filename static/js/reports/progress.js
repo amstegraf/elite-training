@@ -180,6 +180,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // 3b2b. Rack conversion rate (0–1 → %)
+    const ctxRackConv = document.getElementById('chart-rack-conversion');
+    const rcSeries = data.rack_conversion_rates;
+    if (ctxRackConv && rcSeries && rcSeries.length && rcSeries.some((v) => v != null)) {
+        const rcPct = rcSeries.map((v) => (v == null ? null : Math.round(v * 1000) / 10));
+        const rcOpt = cloneObj(commonLineOptions);
+        rcOpt.scales.y.max = 100;
+        new Chart(ctxRackConv, {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Rack conversion %',
+                    data: rcPct,
+                    borderColor: prColor,
+                    backgroundColor: prColorLight,
+                    fill: true
+                }]
+            },
+            options: rcOpt
+        });
+    }
+
     // 3b3. Worst / avg / best balls cleared per rack
     const ctxSpread = document.getElementById('chart-rack-spread');
     if (
