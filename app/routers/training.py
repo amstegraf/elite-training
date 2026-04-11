@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import json
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 
 from app.deps import get_templates
 from app.models import PrecisionSessionStatus
 from app.services import programs_repo
-from app.services.derived_metrics import miss_type_percentages
+from app.services.derived_metrics import miss_type_percentages, aggregate_sessions_progress
 from app.services.sessions_repo import list_sessions, load_session
 
 router = APIRouter()
@@ -71,4 +72,19 @@ async def history_page(request: Request) -> object:
         request,
         "history/index.html",
         {"sessions": sessions, "plan_labels": plan_labels},
+    )
+
+
+@router.get("/progress")
+async def progress_page(request: Request) -> object:
+    templates = get_templates()
+    sessions = list_sessions(limit=500)
+    progress_data = aggregate_sessions_progress(sessions)
+    
+    return templates.TemplateResponse(
+        request,
+        "progress/index.html",
+        {
+            "progress_data_json": json.dumps(progress_data)
+        },
     )

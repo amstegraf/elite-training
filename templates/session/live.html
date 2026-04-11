@@ -27,12 +27,23 @@
         <div class="stat-card__label">Misses session</div>
         <div class="stat-card__value" id="miss-total">0</div>
       </article>
+
     </div>
 
     <article class="card card--live hud-actions-card">
       <div id="rules-banner" class="rules-banner" hidden></div>
       
-      <div class="hud-cta-container">
+      <div class="hud-cta-container" style="display:flex; flex-direction:column; align-items:center; gap: 2rem;">
+        
+        <div class="massive-timer-container" style="text-align:center;">
+          <div id="session-duration" style="font-size: 4rem; font-weight: 700; line-height: 1; color: var(--text); font-family: 'Outfit', sans-serif; letter-spacing: -1.5px; margin-bottom: 0.5rem;">00:00:00</div>
+          <button type="button" class="btn btn--ghost btn--sm" id="btn-pause" style="border-radius: 999px; padding-left: 1rem; padding-right: 1rem;">
+            <svg id="icon-pause" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block; margin-right:6px; vertical-align:text-bottom;"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+            <svg id="icon-play" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none; margin-right:6px; vertical-align:text-bottom;"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            <span id="btn-pause-text">Pause timing</span>
+          </button>
+        </div>
+
         <button type="button" class="btn-log-massive" id="btn-log-miss">
           Log Miss
         </button>
@@ -63,7 +74,7 @@
     </div>
     
     <label>Ball number
-      <input name="ball_number" id="miss-ball" type="number" min="1" max="15" required class="input-large">
+      <input name="ball_number" id="miss-ball" type="number" min="1" max="9" required class="input-large">
     </label>
     
     <div class="miss-modal__group">
@@ -121,8 +132,8 @@
   <form method="dialog" id="rack-end-form" class="modal__body">
     <h2>End rack</h2>
     <p class="muted">Adjust balls cleared if the default is wrong.</p>
-    <label>Balls cleared (0–15)
-      <input name="balls_cleared" id="rack-balls" type="number" min="0" max="15">
+    <label>Balls cleared (0–9)
+      <input name="balls_cleared" id="rack-balls" type="number" min="0" max="9">
     </label>
     <menu class="modal__actions">
       <button type="button" class="btn btn--ghost" id="rack-cancel">Cancel</button>

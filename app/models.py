@@ -115,7 +115,7 @@ class MissEvent(BaseModel):
     model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
 
     id: str = Field(default_factory=lambda: str(uuid4()), alias="id")
-    ball_number: int = Field(ge=1, le=15, alias="ballNumber")
+    ball_number: int = Field(ge=1, le=9, alias="ballNumber")
     types: list[MissType] = Field(default_factory=list)
     outcome: MissOutcome
     confidence: Optional[Confidence] = None
@@ -129,7 +129,7 @@ class RackRecord(BaseModel):
     rack_number: int = Field(ge=1, alias="rackNumber")
     started_at: str = Field(default_factory=utc_now_iso, alias="startedAt")
     ended_at: Optional[str] = Field(default=None, alias="endedAt")
-    balls_cleared: Optional[int] = Field(default=None, ge=0, le=15, alias="ballsCleared")
+    balls_cleared: Optional[int] = Field(default=None, ge=0, le=9, alias="ballsCleared")
     misses: list[MissEvent] = Field(default_factory=list)
 
 
@@ -155,6 +155,9 @@ class PrecisionSession(BaseModel):
     )
     started_at: str = Field(default_factory=utc_now_iso, alias="startedAt")
     ended_at: Optional[str] = Field(default=None, alias="endedAt")
+    duration_seconds: int = Field(default=0, ge=0, alias="durationSeconds")
+    is_paused: bool = Field(default=False, alias="isPaused")
+    last_unpaused_at: Optional[str] = Field(default=None, alias="lastUnpausedAt")
     table_type: TableType = Field(alias="tableType")
     mode: SessionMode = Field(default=SessionMode.RACK, alias="mode")
     rule_overrides: Optional[SessionRuleOverrides] = Field(

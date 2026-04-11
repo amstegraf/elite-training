@@ -21,7 +21,35 @@
   const rackHint = document.getElementById("rack-state-hint");
   const missFeed = document.getElementById("miss-feed");
 
+  const btnPause = document.getElementById("btn-pause");
+  const iconPause = document.getElementById("icon-pause");
+  const iconPlay = document.getElementById("icon-play");
+  const btnPauseText = document.getElementById("btn-pause-text");
+  const durationLabel = document.getElementById("session-duration");
+
   let live = null;
+  let currentDurationSeconds = 0;
+  let timerInterval = null;
+
+  function formatTime(totalSeconds) {
+    const hrs = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const secs = Math.floor(totalSeconds % 60);
+    return [hrs, mins, secs].map(v => String(v).padStart(2, '0')).join(':');
+  }
+
+  function updateTimerUI() {
+    if (durationLabel) {
+      durationLabel.textContent = formatTime(currentDurationSeconds);
+    }
+  }
+
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    if (!live || live.session.isPaused) return;
+    currentDurationSeconds++;
+    updateTimerUI();
+  }, 1000);
 
   function currentRack() {
     if (!live || !live.session) return null;
@@ -77,6 +105,19 @@
       rulesBanner.textContent = "";
     }
     renderMissFeed(session);
+
+    if (btnPause && iconPause && iconPlay) {
+      if (session.isPaused) {
+        iconPause.style.display = "none";
+        iconPlay.style.display = "inline-block";
+        if (btnPauseText) btnPauseText.textContent = "Resume timing";
+      } else {
+        iconPause.style.display = "inline-block";
+        iconPlay.style.display = "none";
+        if (btnPauseText) btnPauseText.textContent = "Pause timing";
+      }
+    }
+    updateTimerUI();
   }
 
   async function refresh() {
@@ -86,11 +127,35 @@
       return;
     }
     live = await res.json();
+    currentDurationSeconds = live.effectiveDuration || 0;
+    
     const rack = currentRack();
     if (missBall && live.suggestedNextBall != null) {
       missBall.value = String(live.suggestedNextBall);
     }
     render();
+  }
+
+  if (btnPause) {
+    btnPause.addEventListener("click", async () => {
+      if (!live) return;
+      const willPause = !live.session.isPaused;
+      // Optimistic update
+      live.session.isPaused = willPause;
+      render();
+      
+      const res = await fetch(`/api/sessions/${sessionId}/pause`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pause: willPause })
+      });
+      if (!res.ok) {
+        // Revert on err
+        live.session.isPaused = !willPause;
+        render();
+        if (window.showToast) window.showToast("Could not toggle pause", true);
+      }
+    });
   }
 
   btnMiss.addEventListener("click", () => {

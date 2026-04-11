@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "id": "a45f1295-3105-4417-bc62-272cbfba73e1",
+  "programId": "3c9bbe08-5084-4da2-9738-3ab30c3096d2",
+  "planId": "6c6a3746-9733-469a-9e4e-5ba8e203c085",
+  "status": "in_progress",
+  "startedAt": "2026-04-11T16:50:05.705732+00:00",
+  "endedAt": null,
+  "durationSeconds": 135,
+  "isPaused": true,
+  "lastUnpausedAt": "2026-04-11T16:52:28.294072+00:00",
+  "tableType": "eight_ft",
+  "mode": "rack",
+  "ruleOverrides": null,
+  "totalRacks": 0,
+  "totalMisses": 0,
+  "avgBallsClearedPerRack": null,
+  "bestRunBalls": 0,
+  "noShotPositionCount": 0,
+  "missTypeCounts": {
+    "position": 0,
+    "alignment": 0,
+    "delivery": 0,
+    "speed": 0,
+    "combined": 0
+  },
+  "racks": [
+    {
+      "id": "deb4e5ca-89b9-4c0f-8af5-03a4f9873c38",
+      "rackNumber": 1,
+      "startedAt": "2026-04-11T16:50:05.705732+00:00",
+      "endedAt": null,
+      "ballsCleared": null,
+      "misses": []
+    }
+  ],
+  "currentRackId": "deb4e5ca-89b9-4c0f-8af5-03a4f9873c38"
+}

@@ -160,3 +160,17 @@ def api_delete_session(session_id: str) -> dict:
     if not delete_session(session_id):
         raise HTTPException(status_code=404, detail="Session not found")
     return {"ok": True}
+
+
+class PauseSessionBody(BaseModel):
+    pause: bool
+
+
+@router.post("/{session_id}/pause")
+def api_pause_session(session_id: str, body: PauseSessionBody) -> dict:
+    from app.services.session_service import toggle_session_pause
+    try:
+        s = toggle_session_pause(session_id, body.pause)
+        return {"session": s.model_dump(by_alias=True)}
+    except (SessionNotFoundError, BadRequestError) as e:
+        _handle(e)

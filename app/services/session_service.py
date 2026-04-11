@@ -62,6 +62,7 @@ def start_session(
         rule_overrides=rule_overrides,
         racks=[rack],
         current_rack_id=rack.id,
+        last_unpaused_at=utc_now_iso(),
     )
     recompute_session_aggregates(session)
     save_session(session)
@@ -79,6 +80,16 @@ def end_session(session_id: str) -> PrecisionSession:
         raise BadRequestError("End the current rack before ending the session")
     session.status = PrecisionSessionStatus.COMPLETED
     session.ended_at = utc_now_iso()
+    
+    if not session.is_paused:
+        t0 = session.last_unpaused_at or session.started_at
+        if t0:
+            from datetime import datetime, timezone
+            now = datetime.now(timezone.utc)
+            last = datetime.fromisoformat(t0)
+            session.duration_seconds += int(max(0, (now - last).total_seconds()))
+    session.is_paused = True
+
     recompute_session_aggregates(session)
     save_session(session)
     return session
@@ -161,6 +172,33 @@ def add_miss(
     return session
 
 
+def toggle_session_pause(session_id: str, pause: bool) -> PrecisionSession:
+    session = load_session(session_id)
+    if not session:
+        raise SessionNotFoundError
+    if session.status != PrecisionSessionStatus.IN_PROGRESS:
+        raise BadRequestError("Session is not in progress")
+        
+    if session.is_paused == pause:
+        return session
+        
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc)
+    if pause:
+        t0 = session.last_unpaused_at or session.started_at
+        if t0:
+            last = datetime.fromisoformat(t0)
+            elapsed = (now - last).total_seconds()
+            session.duration_seconds += int(max(0, elapsed))
+        session.is_paused = True
+    else:
+        session.is_paused = False
+        session.last_unpaused_at = now.isoformat()
+        
+    save_session(session)
+    return session
+
+
 def get_live_context(session_id: str) -> dict:
     session = load_session(session_id)
     if not session:
@@ -181,9 +219,20 @@ def get_live_context(session_id: str) -> dict:
     rack_end_suggestion = None
     if rack and not rack.ended_at:
         rack_end_suggestion = default_balls_cleared_for_rack(rack)
+        
+    effective_duration = session.duration_seconds
+    if not session.is_paused:
+        t0 = session.last_unpaused_at or session.started_at
+        if t0:
+            from datetime import datetime, timezone
+            now = datetime.now(timezone.utc)
+            last = datetime.fromisoformat(t0)
+            effective_duration += int(max(0, (now - last).total_seconds()))
+        
     return {
         "session": session.model_dump(by_alias=True),
         "suggestedNextBall": suggested_next_ball_number(rack),
         "rackEndSuggestion": rack_end_suggestion,
         "rules": rules_out,
+        "effectiveDuration": effective_duration,
     }

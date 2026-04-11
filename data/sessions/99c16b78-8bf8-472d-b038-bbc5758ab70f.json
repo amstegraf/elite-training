@@ -3,20 +3,20 @@
   "id": "99c16b78-8bf8-472d-b038-bbc5758ab70f",
   "programId": "3c9bbe08-5084-4da2-9738-3ab30c3096d2",
   "planId": "6c6a3746-9733-469a-9e4e-5ba8e203c085",
-  "status": "in_progress",
+  "status": "completed",
   "startedAt": "2026-04-11T15:32:52.006666+00:00",
-  "endedAt": null,
+  "endedAt": "2026-04-11T16:44:47.671008+00:00",
   "tableType": "eight_ft",
   "mode": "rack",
   "ruleOverrides": null,
-  "totalRacks": 0,
-  "totalMisses": 0,
-  "avgBallsClearedPerRack": null,
-  "bestRunBalls": 0,
+  "totalRacks": 1,
+  "totalMisses": 2,
+  "avgBallsClearedPerRack": 2.0,
+  "bestRunBalls": 4,
   "noShotPositionCount": 0,
   "missTypeCounts": {
-    "position": 0,
-    "alignment": 0,
+    "position": 1,
+    "alignment": 1,
     "delivery": 0,
     "speed": 0,
     "combined": 0
@@ -26,10 +26,31 @@
       "id": "c3015b8c-fbd4-47a4-9faa-d4b3a7441a71",
       "rackNumber": 1,
       "startedAt": "2026-04-11T15:32:52.006666+00:00",
-      "endedAt": null,
-      "ballsCleared": null,
-      "misses": []
+      "endedAt": "2026-04-11T16:44:44.084335+00:00",
+      "ballsCleared": 2,
+      "misses": [
+        {
+          "id": "de0176f3-1911-40e7-91da-ba718de276a4",
+          "ballNumber": 1,
+          "types": [
+            "alignment"
+          ],
+          "outcome": "pot_miss",
+          "confidence": null,
+          "createdAt": "2026-04-11T16:38:44.341378+00:00"
+        },
+        {
+          "id": "156c5652-a9c8-4d08-b6f7-15e5491f1502",
+          "ballNumber": 6,
+          "types": [
+            "position"
+          ],
+          "outcome": "pot_miss",
+          "confidence": null,
+          "createdAt": "2026-04-11T16:38:57.934034+00:00"
+        }
+      ]
     }
   ],
-  "currentRackId": "c3015b8c-fbd4-47a4-9faa-d4b3a7441a71"
+  "currentRackId": null
 }

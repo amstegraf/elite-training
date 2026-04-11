@@ -131,7 +131,10 @@
   <article class="card card--wide">
     <div class="row row--spread">
       <h2>Recent sessions</h2>
-      <a class="btn btn--ghost btn--sm" href="/history">View all history</a>
+      <div class="row-actions">
+        <a class="btn btn--pr btn--sm" href="/progress">View progress</a>
+        <a class="btn btn--ghost btn--sm" href="/history">View all history</a>
+      </div>
     </div>
     {% if recent_sessions %}
     <div class="table-wrap">
@@ -140,6 +143,7 @@
           <tr>
             <th>Started</th>
             <th>Status</th>
+            <th>Duration</th>
             <th>Racks</th>
             <th>Misses</th>
             <th></th>
@@ -156,6 +160,7 @@
               <span class="badge badge--completed">Completed</span>
               {% endif %}
             </td>
+            <td class="mono font-normal">{{ s.duration_seconds // 3600 }}:{{ "%02d" | format((s.duration_seconds % 3600) // 60) }}:{{ "%02d" | format(s.duration_seconds % 60) }}</td>
             <td>{{ s.total_racks }}</td>
             <td>{{ s.total_misses }}</td>
             <td class="actions" style="justify-content:flex-end">

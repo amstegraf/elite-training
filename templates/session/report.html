@@ -60,7 +60,8 @@
       <h2>Session Details</h2>
       <dl class="kv kv--spread">
         <dt>Total racks</dt><dd>{{ session.total_racks }}</dd>
-        <dt>No shot (position)</dt><dd>{{ session.no_shot_position_count }}</dd>
+        <dt>Duration</dt><dd>{{ session.duration_seconds // 3600 }}:{{ "%02d" | format((session.duration_seconds % 3600) // 60) }}:{{ "%02d" | format(session.duration_seconds % 60) }}</dd>
+        <dt>No shot (pos)</dt><dd>{{ session.no_shot_position_count }}</dd>
         <dt>Table</dt><dd>{{ session.table_type.value }}</dd>
         <dt>Mode</dt><dd>{{ session.mode.value }}</dd>
       </dl>

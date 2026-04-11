@@ -113,3 +113,70 @@ def suggested_next_ball_number(rack: RackRecord | None) -> int:
         return 1
     last = rack.misses[-1].ball_number
     return min(9, max(1, last + 1))
+
+
+def aggregate_sessions_progress(sessions: list[PrecisionSession]) -> dict[str, list]:
+    sessions_asc = sorted(sessions, key=lambda s: s.started_at)
+    
+    labels = []
+    avg_balls_cleared = []
+    misses_per_rack = []
+    no_shot_counts = []
+    best_runs = []
+    
+    pct_position = []
+    pct_alignment = []
+    pct_delivery = []
+    pct_speed = []
+    pct_combined = []
+    
+    ball_miss_hist = {str(i): 0 for i in range(1, 16)}
+    
+    for s in sessions_asc:
+        # We only plot completed sessions with at least one rack
+        if s.status.value != "completed" or not s.total_racks:
+            continue
+            
+        labels.append(s.started_at[:10])
+        avg_balls_cleared.append(round(s.avg_balls_cleared_per_rack or 0, 2))
+        misses_per_rack.append(round(s.total_misses / max(1, s.total_racks), 2))
+        no_shot_counts.append(s.no_shot_position_count)
+        best_runs.append(s.best_run_balls)
+        
+        pct = miss_type_percentages(s.miss_type_counts)
+        pct_position.append(pct["position"])
+        pct_alignment.append(pct["alignment"])
+        pct_delivery.append(pct["delivery"])
+        pct_speed.append(pct["speed"])
+        pct_combined.append(pct["combined"])
+        
+        for r in s.racks:
+            for m in r.misses:
+                b_str = str(m.ball_number)
+                if b_str in ball_miss_hist:
+                    ball_miss_hist[b_str] += 1
+                    
+    # Only keep up to the max ball that actually has misses (minimum 9)
+    max_ball = 9
+    for i in range(15, 9, -1):
+        if ball_miss_hist[str(i)] > 0:
+            max_ball = i
+            break
+            
+    hist_labels = [str(i) for i in range(1, max_ball + 1)]
+    hist_data = [ball_miss_hist[str(i)] for i in range(1, max_ball + 1)]
+                    
+    return {
+        "labels": labels,
+        "avg_balls_cleared": avg_balls_cleared,
+        "misses_per_rack": misses_per_rack,
+        "no_shot_counts": no_shot_counts,
+        "best_runs": best_runs,
+        "miss_type_position": pct_position,
+        "miss_type_alignment": pct_alignment,
+        "miss_type_delivery": pct_delivery,
+        "miss_type_speed": pct_speed,
+        "miss_type_combined": pct_combined,
+        "hist_labels": hist_labels,
+        "hist_data": hist_data
+    }
