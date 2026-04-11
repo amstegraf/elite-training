@@ -197,29 +197,17 @@
   }
 
   btnMiss.addEventListener("click", () => {
-    syncMissEndsRunUi();
     if (dialog) dialog.showModal();
   });
   missCancel.addEventListener("click", () => dialog.close());
   rackCancel.addEventListener("click", () => rackDialog.close());
 
-  const missOutcome = document.getElementById("miss-outcome");
-  const missEndsRunWrap = document.getElementById("miss-ends-run-wrap");
-  const missEndsRunCb = document.getElementById("miss-ends-run");
-
-  function syncMissEndsRunUi() {
-    if (!missOutcome || !missEndsRunWrap || !missEndsRunCb) return;
-    const v = missOutcome.value;
-    const soft = v === "playable" || v === "no_shot_position";
-    missEndsRunWrap.hidden = !soft;
-    if (!soft) missEndsRunCb.checked = false;
-  }
-  if (missOutcome) missOutcome.addEventListener("change", syncMissEndsRunUi);
-
   function missBreaksRunClient(m) {
-    if (m.endsRun === true) return true;
-    if (m.endsRun === false) return false;
-    return m.outcome === "pot_miss" || m.outcome === "both";
+    return (
+      m.outcome === "pot_miss" ||
+      m.outcome === "no_shot_position" ||
+      m.outcome === "both"
+    );
   }
 
   missForm.addEventListener("submit", async (e) => {
@@ -236,9 +224,6 @@
       outcome,
       confidence: missForm.confidence.value || null,
     };
-    if (outcome === "playable" || outcome === "no_shot_position") {
-      payload.endsRun = !!(missEndsRunCb && missEndsRunCb.checked);
-    }
     const res = await fetch(`/api/sessions/${sessionId}/racks/${rack.id}/misses`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

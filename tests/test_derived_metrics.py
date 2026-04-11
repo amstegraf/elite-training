@@ -16,18 +16,26 @@ def test_miss_breaks_run_defaults() -> None:
         MissEvent(ball_number=1, types=[], outcome=MissOutcome.POT_MISS)
     )
     assert miss_breaks_run(MissEvent(ball_number=1, types=[], outcome=MissOutcome.BOTH))
+    assert miss_breaks_run(
+        MissEvent(ball_number=1, types=[], outcome=MissOutcome.NO_SHOT_POSITION)
+    )
     assert not miss_breaks_run(
         MissEvent(ball_number=1, types=[], outcome=MissOutcome.PLAYABLE)
     )
     assert not miss_breaks_run(
-        MissEvent(ball_number=1, types=[], outcome=MissOutcome.NO_SHOT_POSITION)
+        MissEvent(
+            ball_number=1,
+            types=[],
+            outcome=MissOutcome.PLAYABLE,
+            ends_run=True,
+        )
     )
     assert miss_breaks_run(
         MissEvent(
             ball_number=1,
             types=[],
-            outcome=MissOutcome.NO_SHOT_POSITION,
-            ends_run=True,
+            outcome=MissOutcome.POT_MISS,
+            ends_run=False,
         )
     )
 
@@ -37,7 +45,21 @@ def test_default_balls_cleared_no_misses() -> None:
     assert default_balls_cleared_for_rack(r) == 9
 
 
-def test_default_balls_cleared_soft_only_returns_none() -> None:
+def test_default_balls_cleared_playable_only_returns_none() -> None:
+    r = RackRecord(
+        rack_number=1,
+        misses=[
+            MissEvent(
+                ball_number=3,
+                types=[MissType.POSITION],
+                outcome=MissOutcome.PLAYABLE,
+            )
+        ],
+    )
+    assert default_balls_cleared_for_rack(r) is None
+
+
+def test_default_balls_cleared_no_shot_infers_cleared() -> None:
     r = RackRecord(
         rack_number=1,
         misses=[
@@ -48,7 +70,7 @@ def test_default_balls_cleared_soft_only_returns_none() -> None:
             )
         ],
     )
-    assert default_balls_cleared_for_rack(r) is None
+    assert default_balls_cleared_for_rack(r) == 2
 
 
 def test_default_balls_cleared_first_pot_miss_ball_5() -> None:
@@ -66,8 +88,8 @@ def test_best_run_clean_rack() -> None:
     assert best_run_balls_for_rack(r) == 9
 
 
-def test_best_run_no_shot_only_uses_balls_cleared() -> None:
-    """Rack 2 style: one soft no-shot log but 9 balls cleared → run is 9."""
+def test_best_run_no_shot_breaks_then_tail() -> None:
+    """No shot (position) ends the run; tail after ball 4 with bc=9 → max segment is 5."""
     r = RackRecord(
         rack_number=2,
         balls_cleared=9,
@@ -79,7 +101,7 @@ def test_best_run_no_shot_only_uses_balls_cleared() -> None:
             )
         ],
     )
-    assert best_run_balls_for_rack(r) == 9
+    assert best_run_balls_for_rack(r) == 5
 
 
 def test_best_run_pot_miss_segments() -> None:
@@ -128,7 +150,7 @@ def test_recompute_session_totals() -> None:
 
 
 def test_recompute_soft_vs_true_example_session_shape() -> None:
-    """Regression: mixed soft + one pot miss → one true miss, best run from soft rack = bc."""
+    """Regression: no-shot counts as true miss; one rack has playable + pot miss."""
     from app.models import PrecisionSessionStatus, SessionMode, TableType
 
     r2 = RackRecord(
@@ -170,14 +192,14 @@ def test_recompute_soft_vs_true_example_session_shape() -> None:
         racks=[r2, r4],
     )
     recompute_session_aggregates(s)
-    assert s.best_run_balls == 9
-    assert s.true_miss_count == 1
-    assert s.training_miss_count == 2
-    assert s.avg_balls_before_true_miss == 6.0
+    assert s.best_run_balls == 6
+    assert s.true_miss_count == 2
+    assert s.training_miss_count == 1
+    assert s.avg_balls_before_true_miss == 4.5
     assert s.total_balls_cleared == 15
     assert s.conversion_efficiency is not None
-    assert s.conversion_efficiency == round(15 / 17, 4)
-    assert s.true_miss_rate == round(1 / 2, 4)
+    assert s.conversion_efficiency == round(15 / 16, 4)
+    assert s.true_miss_rate == 1.0
     assert s.worst_rack_balls_cleared == 6
     assert s.best_rack_balls_cleared == 9
 
@@ -214,7 +236,7 @@ def test_rack_recovery_training_chain_then_end() -> None:
         ],
     )
     ok, fail = rack_recovery_counts(r)
-    assert ok == 3 and fail == 0
+    assert ok == 0 and fail == 1
 
 
 def test_session_recovery_invariant() -> None:
@@ -276,6 +298,6 @@ def test_aggregate_progress_recomputes_stale_session_fields() -> None:
     )
     out = aggregate_sessions_progress([s])
     assert out["labels"]
-    assert out["best_runs"] == [9]
-    assert out["true_misses_per_rack"] == [0.0]
-    assert out["training_logs_per_rack"] == [1.0]
+    assert out["best_runs"] == [5]
+    assert out["true_misses_per_rack"] == [1.0]
+    assert out["training_logs_per_rack"] == [0.0]

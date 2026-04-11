@@ -120,7 +120,7 @@ class MissEvent(BaseModel):
     types: list[MissType] = Field(default_factory=list)
     outcome: MissOutcome
     confidence: Optional[Confidence] = None
-    # When set: overrides whether this log breaks the ball run (streak / true-miss KPIs).
+    # Legacy JSON field; metrics derive run-breaking from ``outcome`` only.
     ends_run: Optional[bool] = Field(default=None, alias="endsRun")
     created_at: str = Field(default_factory=utc_now_iso, alias="createdAt")
 

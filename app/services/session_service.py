@@ -148,7 +148,6 @@ def add_miss(
     types: list[MissType],
     outcome: MissOutcome,
     confidence: Confidence | None,
-    ends_run: bool | None = None,
 ) -> PrecisionSession:
     session = load_session(session_id)
     if not session:
@@ -167,7 +166,7 @@ def add_miss(
         types=types,
         outcome=outcome,
         confidence=confidence,
-        ends_run=ends_run,
+        ends_run=None,
     )
     rack.misses.append(miss)
     recompute_session_aggregates(session)

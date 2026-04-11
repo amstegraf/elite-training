@@ -11,12 +11,15 @@ from app.models import (
 
 
 def miss_breaks_run(m: MissEvent) -> bool:
-    """Whether this logged event ends the current ball run for streak / true-miss KPIs."""
-    if m.ends_run is True:
-        return True
-    if m.ends_run is False:
-        return False
-    return m.outcome in (MissOutcome.POT_MISS, MissOutcome.BOTH)
+    """Whether this logged event ends the current ball run for streak / true-miss KPIs.
+
+    Derived from outcome only (``endsRun`` on stored events is legacy and ignored).
+    """
+    return m.outcome in (
+        MissOutcome.POT_MISS,
+        MissOutcome.NO_SHOT_POSITION,
+        MissOutcome.BOTH,
+    )
 
 
 def breaking_miss_ball_numbers(rack: RackRecord) -> list[int]:

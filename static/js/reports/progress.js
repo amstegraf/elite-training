@@ -290,26 +290,80 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 5. Miss Type Distribution (Stacked Bar)
+    // 5. Miss type % on run-breaking misses — X = miss categories (not dates) so every type gets a bar.
     const ctxTypes = document.getElementById('chart-miss-types');
-    if (ctxTypes) {
+    if (ctxTypes && data.labels && data.labels.length) {
+        const typeLabels = [
+            'Position (true)',
+            'Alignment (true)',
+            'Delivery (true)',
+            'Speed (true)',
+            'Combined (true)'
+        ];
+        const typeKeys = [
+            'miss_type_position',
+            'miss_type_alignment',
+            'miss_type_delivery',
+            'miss_type_speed',
+            'miss_type_combined'
+        ];
+        const typeColors = ['#a78bfa', '#f472b6', '#fcd34d', '#38bdf8', '#9ca3af'];
+        const sessionPalette = [
+            '#a78bfa',
+            '#f472b6',
+            '#fcd34d',
+            '#38bdf8',
+            '#9ca3af',
+            '#ff694b',
+            '#7c3aed',
+            '#14b8a6',
+            '#f97316',
+            '#64748b'
+        ];
+        const n = data.labels.length;
+        let missTypeDatasets;
+        if (n === 1) {
+            missTypeDatasets = [
+                {
+                    label: data.labels[0],
+                    data: typeKeys.map((k) =>
+                        data[k] && data[k][0] != null ? Number(data[k][0]) : 0
+                    ),
+                    backgroundColor: typeColors,
+                    borderRadius: 4
+                }
+            ];
+        } else {
+            missTypeDatasets = data.labels.map((lab, i) => ({
+                label: lab,
+                data: typeKeys.map((k) =>
+                    data[k] && data[k][i] != null ? Number(data[k][i]) : 0
+                ),
+                backgroundColor: sessionPalette[i % sessionPalette.length],
+                borderRadius: 4
+            }));
+        }
+
         const typeOpt = cloneObj(commonLineOptions);
         typeOpt.plugins.legend = { display: true, position: 'top' };
-        typeOpt.scales.x.stacked = false;
-        typeOpt.scales.y.stacked = false;
-        typeOpt.scales.y.max = 100;
-        
+        typeOpt.scales.x = {
+            ...typeOpt.scales.x,
+            stacked: false
+        };
+        typeOpt.scales.y = {
+            ...typeOpt.scales.y,
+            stacked: false,
+            max: 100,
+            beginAtZero: true
+        };
+        typeOpt.elements.bar = { borderRadius: 4 };
+        typeOpt.interaction = { mode: 'index', axis: 'x', intersect: false };
+
         new Chart(ctxTypes, {
             type: 'bar',
             data: {
-                labels: data.labels,
-                datasets: [
-                    { label: 'Position (true)', data: data.miss_type_position, backgroundColor: '#a78bfa' },
-                    { label: 'Alignment (true)', data: data.miss_type_alignment, backgroundColor: '#f472b6' },
-                    { label: 'Delivery (true)', data: data.miss_type_delivery, backgroundColor: '#fcd34d' },
-                    { label: 'Speed (true)', data: data.miss_type_speed, backgroundColor: '#38bdf8' },
-                    { label: 'Combined (true)', data: data.miss_type_combined, backgroundColor: '#9ca3af' }
-                ]
+                labels: typeLabels,
+                datasets: missTypeDatasets
             },
             options: typeOpt
         });
