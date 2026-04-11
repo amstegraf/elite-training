@@ -162,9 +162,8 @@
     </article>
   </div>
 
-  <div class="grid grid--2" style="margin-top: 1.5rem;">
-    <article class="card card--wide">
-      <h2>Failure Breakdown</h2>
+  <article class="card card--wide">
+    <h2>Failure Breakdown</h2>
       <div class="css-bar-chart">
         {% set types = [
           ('Position', miss_type_pct.position, '#a78bfa'),
@@ -185,27 +184,51 @@
       </div>
     </article>
 
-    <article class="card card--wide">
-      <h2>Session Details</h2>
-      <dl class="kv kv--spread">
-        <dt>Total racks</dt><dd>{{ session.total_racks }}</dd>
-        <dt>Racks completed (9)</dt><dd>{{ session.racks_completed }}</dd>
-        <dt>Rack conversion</dt><dd>{% if session.rack_conversion_rate is not none %}{{ "%.1f"|format(session.rack_conversion_rate * 100) }}%{% else %}—{% endif %}</dd>
-        <dt>Rack tier (session)</dt><dd>{% if rack_conversion_tier %}{{ rack_conversion_tier }}{% else %}—{% endif %}</dd>
-        <dt>Pot success</dt><dd>{% if session.pot_success_rate is not none %}{{ "%.1f"|format(session.pot_success_rate * 100) }}% <span class="muted">({{ session.total_balls_cleared }} / {{ session.pot_attempts }})</span>{% else %}—{% endif %}</dd>
-        <dt>Logged pot miss (shots)</dt><dd>{{ session.pot_miss_shot_count }}</dd>
-        <dt>Position success</dt><dd>{% if session.position_success_rate is not none %}{{ "%.1f"|format(session.position_success_rate * 100) }}% <span class="muted">(1 − {{ session.position_related_miss_count }} / {{ session.total_balls_cleared }})</span>{% else %}—{% endif %}</dd>
-        <dt>Position-related misses</dt><dd>{{ session.position_related_miss_count }}</dd>
-        <dt>Balls cleared (session)</dt><dd>{{ session.total_balls_cleared }}</dd>
-        <dt>Duration</dt><dd>{{ session.duration_seconds // 3600 }}:{{ "%02d" | format((session.duration_seconds % 3600) // 60) }}:{{ "%02d" | format(session.duration_seconds % 60) }}</dd>
-        <dt>No shot (pos)</dt><dd>{{ session.no_shot_position_count }}</dd>
-        <dt>Table</dt><dd>{{ session.table_type.value }}</dd>
-        <dt>Mode</dt><dd>{{ session.mode.value }}</dd>
-        <dt>Recoveries</dt><dd>{{ session.recovery_count }}</dd>
-        <dt>Failed recoveries</dt><dd>{{ session.failed_recovery_count }}</dd>
-      </dl>
+    <article class="card card--wide" style="display: flex; flex-direction: column;">
+      <h2 style="margin-bottom: 0;">Session Details</h2>
+      
+      <div style="flex-grow: 1; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-top: 1.5rem; align-content: space-between;">
+        
+        <div>
+          <h3 class="eyebrow" style="margin-bottom: 0.75rem;">Profile & Time</h3>
+          <dl class="kv kv--spread">
+            <dt>Table</dt><dd class="mono" style="text-transform: capitalize;">{{ session.table_type.value }}</dd>
+            <dt>Mode</dt><dd class="mono" style="text-transform: capitalize;">{{ session.mode.value }}</dd>
+            <dt>Duration</dt><dd class="mono">{{ session.duration_seconds // 3600 }}:{{ "%02d" | format((session.duration_seconds % 3600) // 60) }}:{{ "%02d" | format(session.duration_seconds % 60) }}</dd>
+            <dt>Balls cleared</dt><dd class="mono">{{ session.total_balls_cleared }}</dd>
+          </dl>
+        </div>
+
+        <div>
+          <h3 class="eyebrow" style="color: var(--accent-brand); margin-bottom: 0.75rem;">Execution Matrix</h3>
+          <dl class="kv kv--spread">
+            <dt>Pot success</dt><dd class="mono">{% if session.pot_success_rate is not none %}{{ "%.1f"|format(session.pot_success_rate * 100) }}%{% else %}—{% endif %}</dd>
+            <dt>Pot misses</dt><dd class="mono">{{ session.pot_miss_shot_count }} <span class="muted" style="font-size: 0.75rem;">/ {{ session.pot_attempts }} attempts</span></dd>
+            <dt>Position success</dt><dd class="mono">{% if session.position_success_rate is not none %}{{ "%.1f"|format(session.position_success_rate * 100) }}%{% else %}—{% endif %}</dd>
+            <dt>Pos. errors</dt><dd class="mono">{{ session.position_related_miss_count }}</dd>
+          </dl>
+        </div>
+
+        <div>
+          <h3 class="eyebrow" style="color: var(--pr-dim); margin-bottom: 0.75rem;">Racks & Conversion</h3>
+          <dl class="kv kv--spread">
+            <dt>Total / Run-outs</dt><dd class="mono">{{ session.total_racks }} <span class="muted" style="font-size: 0.75rem;">/ {{ session.racks_completed }} completed</span></dd>
+            <dt>Conversion rate</dt><dd class="mono">{% if session.rack_conversion_rate is not none %}{{ "%.1f"|format(session.rack_conversion_rate * 100) }}%{% else %}—{% endif %}</dd>
+            <dt>Session tier</dt><dd class="mono">{% if rack_conversion_tier %}{{ rack_conversion_tier }}{% else %}—{% endif %}</dd>
+          </dl>
+        </div>
+
+        <div>
+          <h3 class="eyebrow" style="color: #a78bfa; margin-bottom: 0.75rem;">Training Resilience</h3>
+          <dl class="kv kv--spread">
+            <dt>No shot (pos)</dt><dd class="mono">{{ session.no_shot_position_count }}</dd>
+            <dt>Recoveries</dt><dd class="mono"><span style="color: #6d28d9;">{{ session.recovery_count }}</span></dd>
+            <dt>Failed recoveries</dt><dd class="mono"><span style="color: #db2777;">{{ session.failed_recovery_count }}</span></dd>
+          </dl>
+        </div>
+
+      </div>
     </article>
-  </div>
 
   <article class="card card--wide" style="margin-bottom: 1.5rem;">
     <h2>Best Run per Rack</h2>
