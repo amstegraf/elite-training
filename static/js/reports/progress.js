@@ -137,6 +137,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // 3b0. Pot success (0–1 → %)
+    const ctxPot = document.getElementById('chart-pot-success');
+    const potSeries = data.pot_success_rates;
+    if (ctxPot && potSeries && potSeries.length && potSeries.some((v) => v != null)) {
+        const potPct = potSeries.map((v) => (v == null ? null : Math.round(v * 1000) / 10));
+        const potOpt = cloneObj(commonLineOptions);
+        potOpt.scales.y.max = 100;
+        new Chart(ctxPot, {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Pot success %',
+                    data: potPct,
+                    borderColor: prColor,
+                    backgroundColor: prColorLight,
+                    fill: true
+                }]
+            },
+            options: potOpt
+        });
+    }
+
     // 3b. Flow efficiency (0–1 stored → display %); key is flow_efficiency with legacy fallback
     const ctxConv = document.getElementById('chart-conversion');
     const flowSeries = data.flow_efficiency || data.conversion_efficiency;

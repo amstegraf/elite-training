@@ -19,22 +19,38 @@
   <p class="banner banner--warn">Could not start session. Pick a valid plan.</p>
   {% endif %}
 
-  {% if global_total_racks > 0 and global_rack_conversion_rate is not none %}
-  <article class="card card--wide" style="margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; padding: 1.5rem 2rem;">
-    <div>
-      <h2 style="margin: 0 0 0.25rem; font-size: 1.25rem;">Rack conversion</h2>
-      <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.5rem;">
-        {% if global_rack_conversion_tier %}
-          {% set tier = global_rack_conversion_tier %}
-          {% include 'partials/tier_badge.html' %}
-        {% endif %}
-        <span class="muted mono" style="font-size: 0.9rem;">{{ global_racks_completed }} / {{ global_total_racks }} racks</span>
+  {% if (global_total_racks > 0 and global_rack_conversion_rate is not none) or (global_pot_attempts > 0 and global_pot_success_rate is not none) %}
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+    {% if global_total_racks > 0 and global_rack_conversion_rate is not none %}
+    <article class="card card--wide" style="margin-bottom: 0; display: flex; align-items: center; justify-content: space-between; padding: 1.5rem 2rem;">
+      <div>
+        <h2 style="margin: 0 0 0.25rem; font-size: 1.25rem;">Rack conversion</h2>
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.5rem;">
+          {% if global_rack_conversion_tier %}
+            {% set tier = global_rack_conversion_tier %}
+            {% include 'partials/tier_badge.html' %}
+          {% endif %}
+          <span class="muted mono" style="font-size: 0.9rem;">{{ global_racks_completed }} / {{ global_total_racks }} racks</span>
+        </div>
       </div>
-    </div>
-    <div style="text-align: right;">
-      <div style="font-size: 2.25rem; font-weight: 700; line-height: 1;">{{ "%.1f"|format(global_rack_conversion_rate * 100) }}<span style="font-size: 1.1rem; color: var(--muted); font-weight: 600;">%</span></div>
-    </div>
-  </article>
+      <div style="text-align: right;">
+        <div style="font-size: 2.25rem; font-weight: 700; line-height: 1;">{{ "%.1f"|format(global_rack_conversion_rate * 100) }}<span style="font-size: 1.1rem; color: var(--muted); font-weight: 600;">%</span></div>
+      </div>
+    </article>
+    {% endif %}
+    {% if global_pot_attempts > 0 and global_pot_success_rate is not none %}
+    <article class="card card--wide" style="margin-bottom: 0; display: flex; align-items: center; justify-content: space-between; padding: 1.5rem 2rem;">
+      <div>
+        <h2 style="margin: 0 0 0.25rem; font-size: 1.25rem;">Pot success</h2>
+        <p class="muted" style="margin: 0.35rem 0 0; font-size: 0.85rem; max-width: 22rem;">Overall: Σ balls potted ÷ Σ pot attempts (same as session reports; pot miss / both only).</p>
+        <span class="muted mono" style="font-size: 0.9rem; display: inline-block; margin-top: 0.5rem;">{{ global_pot_potted }} / {{ global_pot_attempts }}</span>
+      </div>
+      <div style="text-align: right;">
+        <div style="font-size: 2.25rem; font-weight: 700; line-height: 1;">{{ "%.1f"|format(global_pot_success_rate * 100) }}<span style="font-size: 1.1rem; color: var(--muted); font-weight: 600;">%</span></div>
+      </div>
+    </article>
+    {% endif %}
+  </div>
   {% endif %}
 
   <div class="dashboard__grid">

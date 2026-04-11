@@ -199,6 +199,13 @@ class PrecisionSession(BaseModel):
     rack_conversion_rate: Optional[float] = Field(
         default=None, ge=0, le=1, alias="rackConversionRate"
     )
+    # Pot success: balls potted (ended racks) ÷ (potted + logged pot_miss / both). No-shot & playable
+    # do not add failed pot attempts — balls never reached are not counted as misses here.
+    pot_miss_shot_count: int = Field(default=0, ge=0, alias="potMissShotCount")
+    pot_attempts: int = Field(default=0, ge=0, alias="potAttempts")
+    pot_success_rate: Optional[float] = Field(
+        default=None, ge=0, le=1, alias="potSuccessRate"
+    )
     # Balls cleared per rack spread (consistency); avg matches avgBallsClearedPerRack.
     worst_rack_balls_cleared: Optional[int] = Field(
         default=None, ge=0, le=9, alias="worstRackBallsCleared"

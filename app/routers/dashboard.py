@@ -6,6 +6,7 @@ from fastapi.responses import RedirectResponse
 from app.deps import get_templates
 from app.models import FocusType, PrecisionSessionStatus, SessionMode, TableType
 from app.services import programs_repo
+from app.services.derived_metrics import overall_pot_success_breakdown
 from app.services.rack_conversion_tiers import (
     overall_rack_conversion_breakdown,
     rack_conversion_tier_label,
@@ -31,6 +32,7 @@ async def dashboard(request: Request) -> object:
     all_sessions = list_sessions(limit=500)
     g_rate, g_rc, g_tr = overall_rack_conversion_breakdown(all_sessions)
     global_rack_tier = rack_conversion_tier_label(g_rate)
+    pot_rate, pot_made, pot_att = overall_pot_success_breakdown(all_sessions)
     return templates.TemplateResponse(
         request,
         "dashboard/index.html",
@@ -42,6 +44,9 @@ async def dashboard(request: Request) -> object:
             "global_rack_conversion_tier": global_rack_tier,
             "global_racks_completed": g_rc,
             "global_total_racks": g_tr,
+            "global_pot_success_rate": pot_rate,
+            "global_pot_potted": pot_made,
+            "global_pot_attempts": pot_att,
         },
     )
 

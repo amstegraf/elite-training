@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
+
 from app.models import (
     MissEvent,
     MissOutcome,
     MissType,
     MissTypeCounts,
     PrecisionSession,
+    PrecisionSessionStatus,
     RackRecord,
 )
 
@@ -87,6 +90,16 @@ def no_shot_increment(outcome: MissOutcome) -> int:
     if outcome in (MissOutcome.NO_SHOT_POSITION, MissOutcome.BOTH):
         return 1
     return 0
+
+
+def count_pot_miss_outcomes(session: PrecisionSession) -> int:
+    """Logged outcomes that are a missed pot attempt (pot miss or both)."""
+    n = 0
+    for r in session.racks:
+        for m in r.misses:
+            if m.outcome in (MissOutcome.POT_MISS, MissOutcome.BOTH):
+                n += 1
+    return n
 
 
 def rack_recovery_counts(rack: RackRecord) -> tuple[int, int]:
@@ -224,6 +237,15 @@ def recompute_session_aggregates(session: PrecisionSession) -> None:
         session.true_miss_rate = None
         session.rack_conversion_rate = None
 
+    pot_fail = count_pot_miss_outcomes(session)
+    made = session.total_balls_cleared
+    session.pot_miss_shot_count = pot_fail
+    session.pot_attempts = made + pot_fail
+    if session.pot_attempts > 0:
+        session.pot_success_rate = round(made / session.pot_attempts, 4)
+    else:
+        session.pot_success_rate = None
+
 
 def breaking_miss_type_counts(session: PrecisionSession) -> MissTypeCounts:
     """Tag counts for run-breaking events only (true misses / streak breaks)."""
@@ -259,6 +281,24 @@ def suggested_next_ball_number(rack: RackRecord | None) -> int:
     return min(9, max(1, last + 1))
 
 
+def overall_pot_success_breakdown(
+    sessions: Iterable[PrecisionSession],
+) -> tuple[float | None, int, int]:
+    """Weighted pot success: Σ potted ÷ Σ pot attempts over completed sessions (same rule as session report)."""
+    made = 0
+    miss = 0
+    for s in sessions:
+        if s.status != PrecisionSessionStatus.COMPLETED:
+            continue
+        recompute_session_aggregates(s)
+        made += s.total_balls_cleared
+        miss += s.pot_miss_shot_count
+    attempts = made + miss
+    if attempts == 0:
+        return None, 0, 0
+    return round(made / attempts, 4), made, attempts
+
+
 def aggregate_sessions_progress(sessions: list[PrecisionSession]) -> dict[str, list]:
     sessions_asc = sorted(sessions, key=lambda s: s.started_at)
 
@@ -278,6 +318,7 @@ def aggregate_sessions_progress(sessions: list[PrecisionSession]) -> dict[str, l
     conversion_eff: list[float | None] = []
     true_miss_rates: list[float | None] = []
     rack_conversion_rates: list[float | None] = []
+    pot_success_rates: list[float | None] = []
     worst_rack_balls: list[int | None] = []
     best_rack_balls: list[int | None] = []
     avg_rack_balls: list[float] = []
@@ -307,6 +348,9 @@ def aggregate_sessions_progress(sessions: list[PrecisionSession]) -> dict[str, l
         )
         rack_conversion_rates.append(
             round(s.rack_conversion_rate, 3) if s.rack_conversion_rate is not None else None
+        )
+        pot_success_rates.append(
+            round(s.pot_success_rate, 3) if s.pot_success_rate is not None else None
         )
         worst_rack_balls.append(s.worst_rack_balls_cleared)
         best_rack_balls.append(s.best_rack_balls_cleared)
@@ -355,6 +399,7 @@ def aggregate_sessions_progress(sessions: list[PrecisionSession]) -> dict[str, l
         "conversion_efficiency": conversion_eff,
         "true_miss_rates": true_miss_rates,
         "rack_conversion_rates": rack_conversion_rates,
+        "pot_success_rates": pot_success_rates,
         "worst_rack_balls": worst_rack_balls,
         "best_rack_balls": best_rack_balls,
         "avg_rack_balls": avg_rack_balls,
