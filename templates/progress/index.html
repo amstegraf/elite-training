@@ -5,36 +5,21 @@
 <style>
   .progress-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-    gap: 1.5rem;
-    margin-top: 1.5rem;
+    grid-template-columns: 1fr;
+    gap: 2rem;
   }
   .chart-card {
     background: var(--surface);
     border-radius: var(--radius);
-    padding: 1.5rem;
+    padding: 2rem;
     box-shadow: var(--shadow);
     border: 1px solid var(--border);
     display: flex;
     flex-direction: column;
   }
-  .chart-card h2 {
+  .chart-card h3 {
     font-size: 1.25rem;
     margin: 0 0 0.5rem;
-  }
-  .chart-card .muted {
-    margin-bottom: 1.5rem;
-    font-size: 0.9rem;
-  }
-  .chart-container {
-    position: relative;
-    height: 300px;
-    width: 100%;
-  }
-  @media (max-width: 600px) {
-    .progress-grid {
-      grid-template-columns: 1fr;
-    }
   }
 </style>
 {% endblock %}
@@ -47,101 +32,134 @@
       <p class="dashboard__lede">Watch your metrics evolve over time across all your training sessions.</p>
     </div>
   </header>
+  <div class="section-title" style="margin-top: 2.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+    <div style="width: 12px; height: 12px; border-radius: 50%; background: var(--pr);"></div>
+    <h2 style="margin: 0; font-size: 1.5rem;">Target: Maximization <span class="muted" style="font-weight: normal; font-size: 1.1rem; margin-left: 0.25rem;">(Aim High)</span></h2>
+  </div>
 
   <div class="progress-grid">
-    <!-- Chart 1: Avg Balls Cleared (Primary KPI) -->
     <article class="chart-card">
-      <h2>Avg Balls Cleared per Rack</h2>
-      <p class="muted">Your primary performance metric. Combines position, potting, and decision making.</p>
-      <div class="chart-container">
-        <canvas id="chart-avg-balls"></canvas>
-      </div>
-    </article>
-
-    <!-- Chart 2: True misses vs training logs per rack -->
-    <article class="chart-card">
-      <h2>Misses per rack</h2>
-      <p class="muted"><strong>True misses</strong> end a ball run when the outcome is <strong>pot miss</strong> (or legacy <strong>both</strong>). <strong>No shot (position)</strong> and <strong>playable</strong> are soft logs for streaks here; no-shot is still counted in its own KPI.</p>
-      <div class="chart-container">
-        <canvas id="chart-misses-rack"></canvas>
-      </div>
-    </article>
-
-    <!-- Chart 3: Best Run / Max Balls -->
-    <article class="chart-card">
-      <h2>Best run (streaks)</h2>
-      <p class="muted">Longest ball run without a <strong>true</strong> miss (same rules as session reports). No-shot / playable logs do not reset the streak.</p>
-      <div class="chart-container">
-        <canvas id="chart-best-run"></canvas>
-      </div>
-    </article>
-
-    <!-- Chart 3b: Flow efficiency -->
-    <article class="chart-card">
-      <h2>Flow efficiency</h2>
-      <p class="muted">Balls cleared ÷ (balls cleared + training misses) per session — continuity, not raw success only.</p>
-      <div class="chart-container">
-        <canvas id="chart-conversion"></canvas>
-      </div>
-    </article>
-
-    <!-- Chart 3b0: Pot success -->
-    <article class="chart-card">
-      <h2>Pot success</h2>
+      <h3 style="display: flex; align-items: center; gap: 0.4rem;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+        Pot success
+      </h3>
       <p class="muted">Potted balls ÷ pot attempts per session. Attempts = potted + pot-miss / both logs; no-shot &amp; playable excluded from denominator as missed pots.</p>
       <div class="chart-container">
         <canvas id="chart-pot-success"></canvas>
       </div>
     </article>
 
-    <!-- Chart 3b0b: Position success -->
     <article class="chart-card">
-      <h2>Position success</h2>
+      <h3 style="display: flex; align-items: center; gap: 0.4rem;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+        Position success
+      </h3>
       <p class="muted">Per session: 1 − (position-related misses ÷ balls cleared). Miss = no-shot/both outcome, or any miss with a position tag (docs/metric-position-success.md).</p>
       <div class="chart-container">
         <canvas id="chart-position-success"></canvas>
       </div>
     </article>
 
-    <!-- Chart 3b2: True miss rate -->
     <article class="chart-card">
-      <h2>True miss rate</h2>
-      <p class="muted">True misses ÷ ended racks per session (hard failures per rack). Lower is stricter run discipline.</p>
-      <div class="chart-container">
-        <canvas id="chart-true-miss-rate"></canvas>
-      </div>
-    </article>
-
-    <!-- Chart 3b2b: Rack conversion -->
-    <article class="chart-card">
-      <h2>Rack conversion rate</h2>
+      <h3 style="display: flex; align-items: center; gap: 0.4rem;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+        Rack conversion rate
+      </h3>
       <p class="muted">Ended racks where you cleared all 9 balls ÷ total ended racks that session — raw run-out rate.</p>
       <div class="chart-container">
         <canvas id="chart-rack-conversion"></canvas>
       </div>
     </article>
 
-    <!-- Chart 3b3: Rack consistency -->
     <article class="chart-card">
-      <h2>Rack consistency</h2>
+      <h3 style="display: flex; align-items: center; gap: 0.4rem;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+        Avg Balls Cleared per Rack
+      </h3>
+      <p class="muted">Your primary performance metric. Combines position, potting, and decision making.</p>
+      <div class="chart-container">
+        <canvas id="chart-avg-balls"></canvas>
+      </div>
+    </article>
+
+    <article class="chart-card">
+      <h3 style="display: flex; align-items: center; gap: 0.4rem;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+        Flow efficiency
+      </h3>
+      <p class="muted">Balls cleared ÷ (balls cleared + training misses) per session — continuity, not raw success only.</p>
+      <div class="chart-container">
+        <canvas id="chart-conversion"></canvas>
+      </div>
+    </article>
+
+    <article class="chart-card">
+      <h3 style="display: flex; align-items: center; gap: 0.4rem;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+        Best run (streaks)
+      </h3>
+      <p class="muted">Longest ball run without a <strong>true</strong> miss (same rules as session reports). No-shot / playable logs do not reset the streak.</p>
+      <div class="chart-container">
+        <canvas id="chart-best-run"></canvas>
+      </div>
+    </article>
+
+    <article class="chart-card">
+      <h3 style="display: flex; align-items: center; gap: 0.4rem;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+        Recovery vs failed recovery
+      </h3>
+      <p class="muted">After each training miss: % where the next log was <strong>not</strong> a true miss (recovery) vs <strong>was</strong> a true miss (failed). Denominator = training misses in that session (see docs/recovery-metric.md).</p>
+      <div class="chart-container">
+        <canvas id="chart-recovery"></canvas>
+      </div>
+    </article>
+  </div>
+
+  <div class="section-title" style="margin-top: 4rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+    <div style="width: 12px; height: 12px; border-radius: 50%; background: #dc2626;"></div>
+    <h2 style="margin: 0; font-size: 1.5rem;">Target: Minimization <span class="muted" style="font-weight: normal; font-size: 1.1rem; margin-left: 0.25rem;">(Aim Low)</span></h2>
+  </div>
+
+  <div class="progress-grid">
+    <article class="chart-card">
+      <h3 style="display: flex; align-items: center; gap: 0.4rem;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+        True miss rate
+      </h3>
+      <p class="muted">True misses ÷ ended racks per session (hard failures per rack). Lower is stricter run discipline.</p>
+      <div class="chart-container">
+        <canvas id="chart-true-miss-rate"></canvas>
+      </div>
+    </article>
+
+    <article class="chart-card">
+      <h3 style="display: flex; align-items: center; gap: 0.4rem;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+        Misses per rack
+      </h3>
+      <p class="muted"><strong>True misses</strong> end a ball run when the outcome is <strong>pot miss</strong> (or legacy <strong>both</strong>). <strong>No shot (position)</strong> and <strong>playable</strong> are soft logs for streaks here; no-shot is still counted in its own KPI.</p>
+      <div class="chart-container">
+        <canvas id="chart-misses-rack"></canvas>
+      </div>
+    </article>
+
+    <article class="chart-card">
+      <h3 style="display: flex; align-items: center; gap: 0.4rem;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+        Rack consistency
+      </h3>
       <p class="muted">Balls cleared per rack: worst vs average vs best. A wide gap flags volatility.</p>
       <div class="chart-container">
         <canvas id="chart-rack-spread"></canvas>
       </div>
     </article>
 
-    <!-- Chart 3c: Recovery (resilience) -->
     <article class="chart-card">
-      <h2>Recovery vs failed recovery</h2>
-      <p class="muted">After each training miss: % where the next log was <strong>not</strong> a true miss (recovery) vs <strong>was</strong> a true miss (failed). Denominator = training misses in that session (see docs/recovery-metric.md).</p>
-      <div class="chart-container">
-        <canvas id="chart-recovery"></canvas>
-      </div>
-    </article>
-
-    <!-- Chart 4: "No Shot" Focus -->
-    <article class="chart-card">
-      <h2>"No Shot Due to Position" Count</h2>
+      <h3 style="display: flex; align-items: center; gap: 0.4rem;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+        "No Shot Due to Position" Count
+      </h3>
       <p class="muted">Critical metric. We expect a sharp drop early as positional play improves.</p>
       <div class="chart-container">
         <canvas id="chart-no-shot"></canvas>
