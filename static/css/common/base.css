@@ -40,7 +40,8 @@
 
 body {
   margin: 0;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   font-family: var(--font);
   background: var(--bg);
   /* The image has a grainy/gradient background, we can simulate a soft gradient */
@@ -63,7 +64,7 @@ body {
 /* Layout */
 .app-layout {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
   padding: 1.5rem;
   gap: 1.5rem;
 }
