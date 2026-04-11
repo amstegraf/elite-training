@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "programs": [
+    {
+      "id": "3c9bbe08-5084-4da2-9738-3ab30c3096d2",
+      "name": "Precision (sample)",
+      "durationDays": 90,
+      "active": true,
+      "plans": [
+        {
+          "id": "6c6a3746-9733-469a-9e4e-5ba8e203c085",
+          "programId": "3c9bbe08-5084-4da2-9738-3ab30c3096d2",
+          "name": "Phase 1 — 20 cm",
+          "focusType": "mixed",
+          "targetDiameterCm": 20.0,
+          "sessionsPerWeek": 4,
+          "durationWeeks": 12,
+          "rules": {
+            "resetAfterConsecutiveMisses": 3,
+            "warnAtConsecutiveMisses": 2,
+            "enabled": true
+          }
+        }
+      ]
+    }
+  ]
+}

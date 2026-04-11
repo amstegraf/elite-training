@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Session report · Elite Training{% endblock %}
+{% block content %}
+<section class="page animate-in">
+  <header class="page__header">
+    <div>
+      <p class="eyebrow">{{ program_name }} · {{ plan_name }}</p>
+      <h1>Session report</h1>
+      <p class="lede mono">{{ session.started_at[:19] }}{% if session.ended_at %} → {{ session.ended_at[:19] }}{% endif %}</p>
+    </div>
+    <div class="row-actions">
+      <a class="btn btn--ghost" href="/history">History</a>
+      <a class="btn" href="/">Dashboard</a>
+    </div>
+  </header>
+
+  <div class="grid grid--2">
+    <article class="card">
+      <h2>Summary</h2>
+      <dl class="kv">
+        <dt>Total racks</dt><dd>{{ session.total_racks }}</dd>
+        <dt>Total misses</dt><dd>{{ session.total_misses }}</dd>
+        <dt>Avg balls / rack</dt><dd>{% if session.avg_balls_cleared_per_rack is not none %}{{ "%.2f"|format(session.avg_balls_cleared_per_rack) }}{% else %}—{% endif %}</dd>
+        <dt>Best run (balls)</dt><dd>{{ session.best_run_balls }}</dd>
+        <dt>No shot (position)</dt><dd>{{ session.no_shot_position_count }}</dd>
+        <dt>Table</dt><dd>{{ session.table_type.value }}</dd>
+        <dt>Mode</dt><dd>{{ session.mode.value }}</dd>
+      </dl>
+    </article>
+    <article class="card">
+      <h2>Miss types (%)</h2>
+      <dl class="kv">
+        <dt>Position</dt><dd>{{ miss_type_pct.position }}%</dd>
+        <dt>Alignment</dt><dd>{{ miss_type_pct.alignment }}%</dd>
+        <dt>Delivery</dt><dd>{{ miss_type_pct.delivery }}%</dd>
+        <dt>Speed</dt><dd>{{ miss_type_pct.speed }}%</dd>
+        <dt>Combined</dt><dd>{{ miss_type_pct.combined }}%</dd>
+      </dl>
+    </article>
+  </div>
+
+  <article class="card card--wide">
+    <h2>Racks</h2>
+    {% if session.racks %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Balls cleared</th>
+            <th>Misses</th>
+            <th>Ended</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in session.racks %}
+          <tr>
+            <td>{{ r.rack_number }}</td>
+            <td>{% if r.balls_cleared is not none %}{{ r.balls_cleared }}{% else %}—{% endif %}</td>
+            <td>{{ r.misses|length }}</td>
+            <td class="muted">{% if r.ended_at %}{{ r.ended_at[:19] }}{% else %}Open{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="muted">No racks recorded.</p>
+    {% endif %}
+  </article>
+
+  <form class="inline-danger" method="dialog" onsubmit="return false;">
+    <button type="button" class="btn btn--ghost" id="btn-delete-session">Delete session</button>
+  </form>
+</section>
+<script>
+  (function () {
+    const btn = document.getElementById("btn-delete-session");
+    if (!btn) return;
+    btn.addEventListener("click", async () => {
+      if (!confirm("Delete this session permanently?")) return;
+      const res = await fetch("/api/sessions/{{ session.id }}", { method: "DELETE" });
+      if (res.ok) {
+        window.location.href = "/history";
+      } else if (window.showToast) {
+        window.showToast("Could not delete session", true);
+      } else {
+        alert("Could not delete session");
+      }
+    });
+  })();
+</script>
+{% endblock %}

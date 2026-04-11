@@ -1,0 +1,74 @@
+from __future__ import annotations
+
+from fastapi import APIRouter, Request
+from fastapi.responses import RedirectResponse
+
+from app.deps import get_templates
+from app.models import PrecisionSessionStatus
+from app.services import programs_repo
+from app.services.derived_metrics import miss_type_percentages
+from app.services.sessions_repo import list_sessions, load_session
+
+router = APIRouter()
+
+
+@router.get("/session/{session_id}")
+async def session_live_page(request: Request, session_id: str) -> object:
+    session = load_session(session_id)
+    if not session:
+        return RedirectResponse(url="/", status_code=302)
+    if session.status == PrecisionSessionStatus.COMPLETED:
+        return RedirectResponse(url=f"/session/{session_id}/report", status_code=302)
+    templates = get_templates()
+    root = programs_repo.load_programs_file()
+    pair = programs_repo.get_plan(root, session.plan_id)
+    program_name = pair[0].name if pair else "Program"
+    plan_name = pair[1].name if pair else "Plan"
+    return templates.TemplateResponse(
+        request,
+        "session/live.html",
+        {
+            "session": session,
+            "program_name": program_name,
+            "plan_name": plan_name,
+        },
+    )
+
+
+@router.get("/session/{session_id}/report")
+async def session_report_page(request: Request, session_id: str) -> object:
+    session = load_session(session_id)
+    if not session:
+        return RedirectResponse(url="/", status_code=302)
+    templates = get_templates()
+    root = programs_repo.load_programs_file()
+    pair = programs_repo.get_plan(root, session.plan_id)
+    program_name = pair[0].name if pair else "Program"
+    plan_name = pair[1].name if pair else "Plan"
+    pct = miss_type_percentages(session.miss_type_counts)
+    return templates.TemplateResponse(
+        request,
+        "session/report.html",
+        {
+            "session": session,
+            "program_name": program_name,
+            "plan_name": plan_name,
+            "miss_type_pct": pct,
+        },
+    )
+
+
+@router.get("/history")
+async def history_page(request: Request) -> object:
+    templates = get_templates()
+    root = programs_repo.load_programs_file()
+    sessions = list_sessions(limit=200)
+    plan_labels: dict[str, str] = {}
+    for p in root.programs:
+        for pl in p.plans:
+            plan_labels[pl.id] = f"{p.name} — {pl.name}"
+    return templates.TemplateResponse(
+        request,
+        "history/index.html",
+        {"sessions": sessions, "plan_labels": plan_labels},
+    )

@@ -1,0 +1,47 @@
+from __future__ import annotations
+
+
+def test_program_session_flow(client) -> None:
+    r = client.post("/api/programs", json={"name": "P1", "durationDays": 30})
+    assert r.status_code == 200
+    pid = r.json()["program"]["id"]
+
+    r2 = client.post(
+        f"/api/programs/{pid}/plans",
+        json={"name": "Plan A", "focusType": "mixed"},
+    )
+    assert r2.status_code == 200
+    plan_id = r2.json()["plan"]["id"]
+
+    r3 = client.post(
+        "/api/sessions",
+        json={"planId": plan_id, "tableType": "nine_ft", "mode": "rack"},
+    )
+    assert r3.status_code == 200
+    session = r3.json()["session"]
+    sid = session["id"]
+    assert session["racks"]
+    rack_id = session["racks"][0]["id"]
+
+    r4 = client.post(
+        f"/api/sessions/{sid}/racks/{rack_id}/misses",
+        json={
+            "ballNumber": 4,
+            "types": ["position", "alignment"],
+            "outcome": "pot_miss",
+            "confidence": "high",
+        },
+    )
+    assert r4.status_code == 200
+    assert r4.json()["session"]["totalMisses"] == 1
+
+    r5 = client.post(f"/api/sessions/{sid}/racks/{rack_id}/end", json={})
+    assert r5.status_code == 200
+
+    r6 = client.post(f"/api/sessions/{sid}/end")
+    assert r6.status_code == 200
+    assert r6.json()["session"]["status"] == "completed"
+
+    r7 = client.get(f"/api/sessions/{sid}")
+    assert r7.status_code == 200
+    assert r7.json()["session"]["status"] == "completed"

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}History · Elite Training{% endblock %}
+{% block content %}
+<section class="page animate-in">
+  <header class="page__header">
+    <div>
+      <p class="eyebrow">Sessions</p>
+      <h1>History</h1>
+      <p class="lede">Newest first. Open a report or delete a session.</p>
+    </div>
+    <a class="btn" href="/">Dashboard</a>
+  </header>
+
+  {% if sessions %}
+  <div class="table-wrap card">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Started</th>
+          <th>Plan</th>
+          <th>Status</th>
+          <th>Racks</th>
+          <th>Misses</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in sessions %}
+        <tr data-session-id="{{ s.id }}">
+          <td class="mono">{{ s.started_at[:19] }}</td>
+          <td>{{ plan_labels.get(s.plan_id, s.plan_id) }}</td>
+          <td>{{ s.status.value }}</td>
+          <td>{{ s.total_racks }}</td>
+          <td>{{ s.total_misses }}</td>
+          <td class="table-actions">
+            {% if s.status.value == 'in_progress' %}
+            <a class="btn btn--ghost btn--sm" href="/session/{{ s.id }}">Open</a>
+            {% else %}
+            <a class="btn btn--ghost btn--sm" href="/session/{{ s.id }}/report">Report</a>
+            {% endif %}
+            <button type="button" class="btn btn--ghost btn--sm js-delete-session">Delete</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="muted card">No sessions yet.</p>
+  {% endif %}
+</section>
+<script src="{{ url_for('static', path='js/history/history.js') }}" defer></script>
+{% endblock %}
