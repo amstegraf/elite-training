@@ -7,8 +7,8 @@
   "startedAt": "2026-04-11T19:40:21.570013+00:00",
   "endedAt": null,
   "durationSeconds": 234,
-  "isPaused": true,
-  "lastUnpausedAt": "2026-04-11T19:40:21.570013+00:00",
+  "isPaused": false,
+  "lastUnpausedAt": "2026-04-11T19:56:34.247173+00:00",
   "tableType": "eight_ft",
   "mode": "rack",
   "ruleOverrides": null,
@@ -33,8 +33,7 @@
     "position": 0,
     "alignment": 0,
     "delivery": 0,
-    "speed": 0,
-    "combined": 0
+    "speed": 0
   },
   "racks": [
     {

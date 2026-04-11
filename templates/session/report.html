@@ -17,94 +17,111 @@
     </div>
   </header>
 
-  <div class="reports__kpi-grid">
-    <article class="stat-card stat-card--pr">
-      <div class="stat-card__label">Avg balls / rack</div>
-      <div class="stat-card__value">{% if session.avg_balls_cleared_per_rack is not none %}{{ "%.2f"|format(session.avg_balls_cleared_per_rack) }}{% else %}—{% endif %}</div>
-    </article>
-    <article class="stat-card" style="border: 2px solid var(--pr-dim);">
-      <div class="stat-card__label" style="color: var(--pr-dim);">Avg before TRUE miss</div>
-      <div class="stat-card__value">{% if session.avg_balls_before_true_miss is not none %}{{ "%.2f"|format(session.avg_balls_before_true_miss) }}{% else %}—{% endif %}</div>
-    </article>
-    <article class="stat-card">
-      <div class="stat-card__label">Best run</div>
-      <div class="stat-card__value">{{ session.best_run_balls }} <span style="font-size: 1rem; color: var(--muted); font-weight: normal;">balls</span></div>
-    </article>
-    <article class="stat-card" style="border: 2px solid rgba(56, 189, 248, 0.45);">
-      <div class="stat-card__label" style="color: #0284c7;">Flow efficiency</div>
-      <div class="stat-card__value">
-        {% if session.conversion_efficiency is not none %}
-        {{ "%.1f"|format(session.conversion_efficiency * 100) }}<span style="font-size: 1rem; color: var(--muted); font-weight: normal;">%</span>
-        {% else %}—{% endif %}
+  <div class="grid grid--2" style="margin-bottom: 1.5rem;">
+    <!-- Performance Layer -->
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+      <div class="reports__kpi-grid">
+        <article class="stat-card stat-card--pr">
+          <div class="stat-card__label">Avg balls / rack</div>
+          <div class="stat-card__value">{% if session.avg_balls_cleared_per_rack is not none %}{{ "%.2f"|format(session.avg_balls_cleared_per_rack) }}{% else %}—{% endif %}</div>
+        </article>
+        
+        <article class="stat-card stat-card--pr">
+          <div class="stat-card__label">Avg before TRUE miss</div>
+          <div class="stat-card__value">{% if session.avg_balls_before_true_miss is not none %}{{ "%.2f"|format(session.avg_balls_before_true_miss) }}{% else %}—{% endif %}</div>
+        </article>
+        
+        <article class="stat-card">
+          <div class="stat-card__label">Best run</div>
+          <div class="stat-card__value">{{ session.best_run_balls }} <span style="font-size: 1rem; color: var(--muted); font-weight: normal;">balls</span></div>
+        </article>
       </div>
-      <p class="muted" style="margin: 0.5rem 0 0; font-size: 0.8rem; line-height: 1.35;">Balls cleared ÷ (balls cleared + training misses). Continuity: how often table progress continues despite soft logs.</p>
-    </article>
-    <article class="stat-card" style="border: 2px solid rgba(15, 23, 42, 0.12);">
-      <div class="stat-card__label">True miss rate</div>
-      <div class="stat-card__value">
-        {% if session.true_miss_rate is not none %}
-        {{ "%.2f"|format(session.true_miss_rate) }}<span style="font-size: 1rem; color: var(--muted); font-weight: normal;"> / rack</span>
-        {% else %}—{% endif %}
+      
+      <div class="reports__kpi-grid">
+        <article class="stat-card">
+          <div class="stat-card__label">Flow efficiency</div>
+          <div class="stat-card__value">
+            {% if session.conversion_efficiency is not none %}
+            {{ "%.1f"|format(session.conversion_efficiency * 100) }}<span style="font-size: 1rem; color: var(--muted); font-weight: normal;">%</span>
+            {% else %}—{% endif %}
+          </div>
+          <p class="muted" style="margin: 0.5rem 0 0; font-size: 0.8rem; line-height: 1.35;">Continuity despite soft logs.</p>
+        </article>
+        
+        <article class="stat-card">
+          <div class="stat-card__label">True miss rate</div>
+          <div class="stat-card__value">
+            {% if session.true_miss_rate is not none %}
+            {{ "%.2f"|format(session.true_miss_rate) }}<span style="font-size: 1rem; color: var(--muted); font-weight: normal;"> / rack</span>
+            {% else %}—{% endif %}
+          </div>
+          <p class="muted" style="margin: 0.5rem 0 0; font-size: 0.8rem; line-height: 1.35;">Hard run-ending failures per rack.</p>
+        </article>
       </div>
-      <p class="muted" style="margin: 0.5rem 0 0; font-size: 0.8rem; line-height: 1.35;">True misses ÷ ended racks. A <strong>true miss</strong> is a run-ending outcome: <strong>pot miss</strong> (or legacy <strong>both</strong>). No-shot / playable count as training misses for streaks and recovery.</p>
+    </div>
+    
+    <!-- Rack Consistency -->
+    <article class="card card--wide">
+      <h2>Rack Consistency <span style="font-size: 1rem; color: var(--muted); font-weight: normal;">(balls cleared)</span></h2>
+      <p class="muted" style="margin-top: 0;">Gap between worst and best rack shows volatility vs your baseline average.</p>
+      
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: auto; padding-top: 1rem;">
+        <div style="text-align: center; padding: 1.5rem; background: var(--surface2); border-radius: 16px;">
+          <div class="muted" style="font-size: 0.85rem; margin-bottom: 0.25rem;">Worst</div>
+          <div style="font-size: 2rem; font-weight: 700; color: #dc2626;">{% if session.worst_rack_balls_cleared is not none %}{{ session.worst_rack_balls_cleared }}{% else %}—{% endif %}</div>
+        </div>
+        <div style="text-align: center; padding: 1.5rem; background: var(--surface); box-shadow: var(--shadow); border-radius: 16px;">
+          <div class="muted" style="font-size: 0.85rem; margin-bottom: 0.25rem;">Average</div>
+          <div style="font-size: 2rem; font-weight: 700;">{% if session.avg_balls_cleared_per_rack is not none %}{{ "%.2f"|format(session.avg_balls_cleared_per_rack) }}{% else %}—{% endif %}</div>
+        </div>
+        <div style="text-align: center; padding: 1.5rem; background: var(--pr); border-radius: 16px;">
+          <div class="muted" style="font-size: 0.85rem; margin-bottom: 0.25rem;">Best</div>
+          <div style="font-size: 2rem; font-weight: 700;">{% if session.best_rack_balls_cleared is not none %}{{ session.best_rack_balls_cleared }}{% else %}—{% endif %}</div>
+        </div>
+      </div>
     </article>
   </div>
 
-  <div class="reports__kpi-grid" style="margin-top: 1rem; grid-template-columns: 1fr;">
-    <article class="stat-card" style="text-align: left;">
-      <div class="stat-card__label">Rack consistency (balls cleared)</div>
-      <p class="muted" style="margin: 0 0 0.75rem; font-size: 0.9rem;">Gap between worst and best rack shows volatility; compare to average.</p>
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; max-width: 720px;">
-        <div>
-          <div class="muted" style="font-size: 0.8rem;">Worst rack</div>
-          <div style="font-size: 1.75rem; font-weight: 700;">{% if session.worst_rack_balls_cleared is not none %}{{ session.worst_rack_balls_cleared }}{% else %}—{% endif %}</div>
-        </div>
-        <div>
-          <div class="muted" style="font-size: 0.8rem;">Average</div>
-          <div style="font-size: 1.75rem; font-weight: 700;">{% if session.avg_balls_cleared_per_rack is not none %}{{ "%.2f"|format(session.avg_balls_cleared_per_rack) }}{% else %}—{% endif %}</div>
-        </div>
-        <div>
-          <div class="muted" style="font-size: 0.8rem;">Best rack</div>
-          <div style="font-size: 1.75rem; font-weight: 700;">{% if session.best_rack_balls_cleared is not none %}{{ session.best_rack_balls_cleared }}{% else %}—{% endif %}</div>
-        </div>
-      </div>
+  <div class="reports__kpi-grid" style="margin-bottom: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));">
+    <!-- Row: Misses & Recoveries -->
+    <article class="stat-card stat-card--fr">
+      <div class="stat-card__label">True misses (Break)</div>
+      <div class="stat-card__value">{{ session.true_miss_count }}</div>
     </article>
-  </div>
+    
+    <article class="stat-card" style="background: var(--surface2);">
+      <div class="stat-card__label">Training misses (Soft)</div>
+      <div class="stat-card__value" style="color: var(--text);">{{ session.training_miss_count }}</div>
+    </article>
+    
+    <article class="stat-card" style="background: var(--surface2);">
+      <div class="stat-card__label">Total physical misses</div>
+      <div class="stat-card__value" style="color: var(--muted);">{{ session.total_misses }}</div>
+    </article>
 
-  <div class="reports__kpi-grid" style="margin-top: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
-    <article class="stat-card" style="border: 2px solid rgba(167, 139, 250, 0.5);">
+    <article class="stat-card" style="background: var(--surface);">
       <div class="stat-card__label" style="color: #6d28d9;">Recovery rate</div>
       <div class="stat-card__value">
         {% if session.recovery_rate is not none %}
         {{ "%.1f"|format(session.recovery_rate * 100) }}<span style="font-size: 1rem; color: var(--muted); font-weight: normal;">%</span>
         {% else %}—{% endif %}
       </div>
-      <p class="muted" style="margin: 0.5rem 0 0; font-size: 0.8rem; line-height: 1.35;">Training miss, then next log is not a true miss—or rack ended without a true miss after (recovery spec in docs/recovery-metric.md).</p>
     </article>
-    <article class="stat-card" style="border: 2px solid rgba(248, 113, 113, 0.45);">
+
+    <article class="stat-card" style="background: var(--surface);">
       <div class="stat-card__label" style="color: #b91c1c;">Failed recovery rate</div>
       <div class="stat-card__value">
         {% if session.failed_recovery_rate is not none %}
         {{ "%.1f"|format(session.failed_recovery_rate * 100) }}<span style="font-size: 1rem; color: var(--muted); font-weight: normal;">%</span>
         {% else %}—{% endif %}
       </div>
-      <p class="muted" style="margin: 0.5rem 0; font-size: 0.8rem; line-height: 1.35;">Next logged event was a true miss.</p>
     </article>
+
     <article class="stat-card" style="background: var(--surface2);">
-      <div class="stat-card__label">Recovered / failed</div>
-      <div class="stat-card__value" style="font-size: 1.35rem;">{{ session.recovery_count }} / {{ session.failed_recovery_count }}</div>
-    </article>
-    <article class="stat-card stat-card--fr">
-      <div class="stat-card__label">True misses (Run break)</div>
-      <div class="stat-card__value">{{ session.true_miss_count }}</div>
-    </article>
-    <article class="stat-card" style="background: var(--surface2);">
-      <div class="stat-card__label">Training misses (Soft)</div>
-      <div class="stat-card__value" style="color: var(--text);">{{ session.training_miss_count }}</div>
-    </article>
-    <article class="stat-card" style="background: var(--surface2);">
-      <div class="stat-card__label">Total misses</div>
-      <div class="stat-card__value" style="color: var(--muted);">{{ session.total_misses }}</div>
+      <div class="stat-card__label">Recovered / Failed</div>
+      <div class="stat-card__value" style="color: var(--muted);">
+        <span style="color: #6d28d9;">{{ session.recovery_count }}</span> / <span style="color: #dc2626;">{{ session.failed_recovery_count }}</span>
+      </div>
     </article>
   </div>
 
