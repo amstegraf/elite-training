@@ -1,15 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Programs · Elite Training{% endblock %}
+{% block title %}Dashboard · Elite Training{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', path='css/dashboard/dashboard.css') }}">
+{% endblock %}
 {% block content %}
-<section class="page animate-in">
-  <header class="page__header">
+<section class="page dashboard animate-in">
+  <header class="page__header dashboard__hero">
     <div>
-      <p class="eyebrow">Pool precision · v1</p>
-      <h1>Programs & sessions</h1>
-      <p class="lede">Miss-only training: programs, plans, then start a session from an active plan.</p>
+      <h1>Ready to train?</h1>
+      <p class="dashboard__lede">Select an active program and focus on logging your misses to track progression.</p>
     </div>
     {% if continue_session_id %}
-    <a class="btn btn--primary" href="/session/{{ continue_session_id }}">Continue session</a>
+    <a class="btn btn--pr btn--xl" href="/session/{{ continue_session_id }}">Continue session</a>
     {% endif %}
   </header>
 
@@ -17,17 +19,83 @@
   <p class="banner banner--warn">Could not start session. Pick a valid plan.</p>
   {% endif %}
 
-  <div class="grid grid--2">
-    <article class="card">
-      <h2>Programs</h2>
+  <div class="dashboard__grid">
+    <!-- Primary CTA: Start Session Flow -->
+    <article class="stat-card stat-card--pr start-session-card">
+      <div class="stat-card__label">Active Program & Session</div>
+      
+      {% set ns = namespace(has_plan=false, active_program=none) %}
+      {% for p in programs_root.programs %}
+        {% if p.active %}{% set ns.active_program = p %}{% endif %}
+        {% if p.plans %}{% set ns.has_plan = true %}{% endif %}
+      {% endfor %}
+
+      {% if ns.active_program %}
+        <h2 class="stat-card__value">{{ ns.active_program.name }}</h2>
+        <p style="opacity:0.8; margin-bottom:1.5rem">Duration: {{ ns.active_program.duration_days }} days</p>
+      {% else %}
+        <h2 class="stat-card__value">No active program</h2>
+        <p style="opacity:0.8; margin-bottom:1.5rem">Select or create to begin.</p>
+      {% endif %}
+
+      {% if ns.has_plan %}
+      <form method="post" action="/actions/session/start" class="form-grid start-session-form">
+        <label>Plan
+          <select name="plan_id" required>
+            {% for p in programs_root.programs %}
+              {% if p.active %}
+                {% for pl in p.plans %}
+                <option value="{{ pl.id }}">{{ pl.name }} ({{ pl.focus_type.value }})</option>
+                {% endfor %}
+              {% endif %}
+            {% endfor %}
+            {% for p in programs_root.programs %}
+              {% if not p.active %}
+                {% for pl in p.plans %}
+                <option value="{{ pl.id }}">{{ p.name }} — {{ pl.name }}</option>
+                {% endfor %}
+              {% endif %}
+            {% endfor %}
+          </select>
+        </label>
+        <div class="row row--spread">
+          <label style="flex:1">Table
+            <select name="table_type">
+              <option value="eight_ft" selected>8 ft</option>
+              <option value="nine_ft">9 ft</option>
+            </select>
+          </label>
+          <label style="flex:1">Mode
+            <select name="mode">
+              <option value="rack">Rack</option>
+              <option value="position">Position</option>
+              <option value="potting">Potting</option>
+              <option value="pressure">Pressure</option>
+            </select>
+          </label>
+        </div>
+        <button type="submit" class="btn btn--xl start-btn">Start session</button>
+      </form>
+      {% else %}
+      <button type="button" class="btn btn--xl start-btn" id="btn-add-plan" {% if not programs_root.programs %}disabled{% endif %}>Add a plan to start</button>
+      {% endif %}
+    </article>
+
+    <!-- Secondary: Program Management -->
+    <article class="card settings-card">
+      <div class="row row--spread" style="margin-bottom:1.5rem">
+        <h2 style="margin:0">Programs</h2>
+        <button type="button" class="btn btn--ghost btn--sm" id="btn-create-program">New program</button>
+      </div>
+
       {% if programs_root.programs %}
       <ul class="list list--programs">
         {% for p in programs_root.programs %}
-        <li>
+        <li style="padding:1rem 0">
           <div class="row row--spread">
             <div>
-              <strong>{{ p.name }}</strong>
-              <span class="muted">{{ p.duration_days }} days</span>
+              <strong style="color:var(--text)">{{ p.name }}</strong>
+              <span class="muted" style="margin-left:0.5rem">{{ p.duration_days }} days</span>
               {% if p.active %}<span class="pill pill--active">Active</span>{% endif %}
             </div>
             <div class="row-actions">
@@ -36,102 +104,26 @@
                 <button type="submit" class="btn btn--ghost btn--sm">Set active</button>
               </form>
               {% endif %}
-              <form method="post" action="/actions/program/{{ p.id }}/delete" onsubmit="return confirm('Delete this program and its plans?');">
-                <button type="submit" class="btn btn--ghost btn--sm">Delete</button>
-              </form>
             </div>
           </div>
           {% if p.plans %}
           <ul class="list list--nested">
             {% for pl in p.plans %}
-            <li class="row row--spread">
-              <span>{{ pl.name }} · {{ pl.focus_type.value }}</span>
-              <form method="post" action="/actions/plan/{{ p.id }}/{{ pl.id }}/delete" onsubmit="return confirm('Delete this plan?');">
-                <button type="submit" class="btn btn--ghost btn--sm">Delete plan</button>
-              </form>
+            <li class="row row--spread" style="padding:0.35rem 0">
+              <span class="small">{{ pl.name }} · {{ pl.focus_type.value }}</span>
             </li>
             {% endfor %}
           </ul>
-          {% else %}
-          <p class="muted">No plans yet.</p>
           {% endif %}
+          <button type="button" class="btn btn--ghost btn--icon" style="margin-top:0.5rem" onclick="document.getElementById('plan-modal').showModal(); document.querySelector('#plan-modal select[name=\'program_id\']').value = '{{ p.id }}'">+ Add Plan</button>
         </li>
         {% endfor %}
       </ul>
       {% else %}
-      <p class="muted">No programs yet. Create one below.</p>
-      {% endif %}
-
-      <h3 class="h3">New program</h3>
-      <form method="post" action="/actions/program" class="form-grid">
-        <label>Name<input name="name" required placeholder="Precision"></label>
-        <label>Duration (days)<input name="duration_days" type="number" min="1" value="90"></label>
-        <button type="submit" class="btn">Create program</button>
-      </form>
-    </article>
-
-    <article class="card">
-      <h2>Add plan</h2>
-      {% if programs_root.programs %}
-      <form method="post" action="/actions/plan" class="form-grid">
-        <label>Program
-          <select name="program_id" required>
-            {% for p in programs_root.programs %}
-            <option value="{{ p.id }}">{{ p.name }}</option>
-            {% endfor %}
-          </select>
-        </label>
-        <label>Name<input name="name" required placeholder="Phase 1"></label>
-        <label>Focus
-          <select name="focus_type">
-            <option value="position">Position</option>
-            <option value="alignment">Alignment</option>
-            <option value="mixed" selected>Mixed</option>
-          </select>
-        </label>
-        <label>Target diameter (cm, optional)<input name="target_diameter_cm" type="number" step="0.1" placeholder="20"></label>
-        <label>Sessions / week (optional)<input name="sessions_per_week" type="number" min="1" placeholder="4"></label>
-        <label>Duration weeks (optional)<input name="duration_weeks" type="number" min="1" placeholder="12"></label>
-        <button type="submit" class="btn">Add plan</button>
-      </form>
-      {% else %}
-      <p class="muted">Create a program first, then add plans here.</p>
-      {% endif %}
-
-      <h2 class="h2-spaced">Start session</h2>
-      {% set ns = namespace(has_plan=false) %}
-      {% for p in programs_root.programs %}
-        {% if p.plans %}{% set ns.has_plan = true %}{% endif %}
-      {% endfor %}
-      {% if ns.has_plan %}
-      <form method="post" action="/actions/session/start" class="form-grid">
-        <label>Plan
-          <select name="plan_id" required>
-            {% for p in programs_root.programs %}
-              {% for pl in p.plans %}
-              <option value="{{ pl.id }}">{{ p.name }} — {{ pl.name }}</option>
-              {% endfor %}
-            {% endfor %}
-          </select>
-        </label>
-        <label>Table
-          <select name="table_type">
-            <option value="eight_ft" selected>8 ft</option>
-            <option value="nine_ft">9 ft</option>
-          </select>
-        </label>
-        <label>Mode
-          <select name="mode">
-            <option value="rack">Rack</option>
-            <option value="position">Position</option>
-            <option value="potting">Potting</option>
-            <option value="pressure">Pressure</option>
-          </select>
-        </label>
-        <button type="submit" class="btn btn--primary">Start session</button>
-      </form>
-      {% else %}
-      <p class="muted">Add at least one plan to start a session.</p>
+      <div class="dashboard__new" style="margin-top:1rem">
+        <span class="muted">Let's set up your first training journey.</span>
+        <button type="button" class="btn" onclick="document.getElementById('program-modal').showModal()">Create program</button>
+      </div>
       {% endif %}
     </article>
   </div>
@@ -143,7 +135,7 @@
     </div>
     {% if recent_sessions %}
     <div class="table-wrap">
-      <table class="table">
+      <table class="data-table">
         <thead>
           <tr>
             <th>Started</th>
@@ -156,15 +148,21 @@
         <tbody>
           {% for s in recent_sessions %}
           <tr>
-            <td class="mono">{{ s.started_at[:19] }}</td>
-            <td>{{ s.status.value }}</td>
+            <td class="mono font-normal">{{ s.started_at[:10] }} <span class="muted">{{ s.started_at[11:16] }}</span></td>
+            <td>
+              {% if s.status.value == 'in_progress' %}
+              <span class="badge badge--active">Live</span>
+              {% else %}
+              <span class="badge badge--completed">Completed</span>
+              {% endif %}
+            </td>
             <td>{{ s.total_racks }}</td>
             <td>{{ s.total_misses }}</td>
-            <td class="table-actions">
+            <td class="actions" style="justify-content:flex-end">
               {% if s.status.value == 'in_progress' %}
-              <a class="btn btn--ghost btn--sm" href="/session/{{ s.id }}">Open</a>
+              <a class="btn btn--pr btn--small" href="/session/{{ s.id }}">Open</a>
               {% else %}
-              <a class="btn btn--ghost btn--sm" href="/session/{{ s.id }}/report">Report</a>
+              <a class="btn btn--ghost btn--small" href="/session/{{ s.id }}/report">Report</a>
               {% endif %}
             </td>
           </tr>
@@ -173,8 +171,80 @@
       </table>
     </div>
     {% else %}
-    <p class="muted">No sessions yet.</p>
+    <div style="padding: 2rem; text-align:center; background: var(--surface2); border-radius: var(--radius)">
+      <p class="muted">No sessions yet. Start one above.</p>
+    </div>
     {% endif %}
   </article>
 </section>
+
+<!-- Modals -->
+<dialog id="program-modal" class="modal">
+  <form method="post" action="/actions/program" class="modal__body">
+    <div class="row row--spread" style="margin-bottom:1rem">
+      <h2 style="margin:0">New program</h2>
+      <button type="button" class="btn btn--icon" onclick="this.closest('dialog').close()">&times;</button>
+    </div>
+    <div class="form-grid">
+      <label>Name<input name="name" required placeholder="e.g. Precision"></label>
+      <label>Duration (days)<input name="duration_days" type="number" min="1" value="90"></label>
+    </div>
+    <menu class="modal__actions miss-modal__actions">
+      <button type="button" class="btn btn--ghost" onclick="this.closest('dialog').close()">Cancel</button>
+      <button type="submit" class="btn btn--primary">Create program</button>
+    </menu>
+  </form>
+</dialog>
+
+<dialog id="plan-modal" class="modal">
+  <form method="post" action="/actions/plan" class="modal__body" style="max-height:85vh; overflow-y:auto;">
+    <div class="row row--spread" style="margin-bottom:1rem">
+      <h2 style="margin:0">Add plan</h2>
+      <button type="button" class="btn btn--icon" onclick="this.closest('dialog').close()">&times;</button>
+    </div>
+    <div class="form-grid">
+      <label>Program
+        <select name="program_id" required>
+          {% for p in programs_root.programs %}
+          <option value="{{ p.id }}">{{ p.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Name<input name="name" required placeholder="e.g. Phase 1"></label>
+      <label>Focus
+        <select name="focus_type">
+          <option value="position">Position</option>
+          <option value="alignment">Alignment</option>
+          <option value="mixed" selected>Mixed</option>
+        </select>
+      </label>
+      <div class="row row--spread">
+        <label style="flex:1">Target diameter (cm)<input name="target_diameter_cm" type="number" step="0.1" placeholder="20"></label>
+        <label style="flex:1">Sessions / week<input name="sessions_per_week" type="number" min="1" placeholder="4"></label>
+      </div>
+    </div>
+    <menu class="modal__actions miss-modal__actions">
+      <button type="button" class="btn btn--ghost" onclick="this.closest('dialog').close()">Cancel</button>
+      <button type="submit" class="btn btn--primary">Save plan</button>
+    </menu>
+  </form>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const btnCreateProgram = document.getElementById('btn-create-program');
+    const programModal = document.getElementById('program-modal');
+    if (btnCreateProgram && programModal) {
+      btnCreateProgram.addEventListener('click', () => programModal.showModal());
+    }
+
+    const btnAddPlan = document.getElementById('btn-add-plan');
+    const planModal = document.getElementById('plan-modal');
+    if (btnAddPlan && planModal) {
+      btnAddPlan.addEventListener('click', () => planModal.showModal());
+    }
+  });
+</script>
 {% endblock %}

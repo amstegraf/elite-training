@@ -139,3 +139,72 @@
   padding: 0.3rem 0.8rem;
   border-radius: 9px;
 }
+
+/* KPI Grid */
+.reports__kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+/* CSS Bar Chart */
+.css-bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 0.5rem 0;
+}
+
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.bar-label {
+  width: 100px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text);
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.bar-track {
+  flex-grow: 1;
+  background: var(--surface2);
+  height: 18px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: inset 0 2px 4px rgba(255,255,255,0.2);
+}
+
+.bar-val {
+  width: 45px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.kv--spread {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+.kv--spread dt {
+  margin-bottom: 0.25rem;
+}
+.kv--spread dd {
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+}

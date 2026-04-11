@@ -1,5 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Live session · Elite Training{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', path='css/session/session.css') }}">
+{% endblock %}
 {% block content %}
 <section class="page session-live animate-in" data-session-id="{{ session.id }}">
   <header class="page__header">
@@ -15,25 +18,34 @@
   </header>
 
   <div class="session-live__grid">
-    <article class="card card--live">
-      <div class="row row--spread">
-        <div>
-          <p class="muted">Current rack</p>
-          <p class="stat-lg" id="rack-label">—</p>
-        </div>
-        <div>
-          <p class="muted">Misses (session)</p>
-          <p class="stat-lg" id="miss-total">0</p>
-        </div>
-      </div>
+    <div class="hud-stats-row">
+      <article class="stat-card stat-card--pr">
+        <div class="stat-card__label">Current rack</div>
+        <div class="stat-card__value" id="rack-label">—</div>
+      </article>
+      <article class="stat-card stat-card--fr">
+        <div class="stat-card__label">Misses session</div>
+        <div class="stat-card__value" id="miss-total">0</div>
+      </article>
+    </div>
+
+    <article class="card card--live hud-actions-card">
       <div id="rules-banner" class="rules-banner" hidden></div>
-      <button type="button" class="btn btn--xl btn--primary" id="btn-log-miss">Log miss</button>
-      <div class="row row--actions">
-        <button type="button" class="btn" id="btn-end-rack">End rack</button>
-        <button type="button" class="btn" id="btn-new-rack" disabled>Start next rack</button>
+      
+      <div class="hud-cta-container">
+        <button type="button" class="btn-log-massive" id="btn-log-miss">
+          Log Miss
+        </button>
+      </div>
+      
+      <div class="row row--spread" style="margin-top:1.5rem">
+        <div class="row-actions">
+          <button type="button" class="btn" id="btn-end-rack">End rack</button>
+          <button type="button" class="btn" id="btn-new-rack" disabled>Start next rack</button>
+        </div>
         <button type="button" class="btn btn--ghost" id="btn-end-session">End session</button>
       </div>
-      <p class="muted small" id="rack-state-hint"></p>
+      <p class="muted small" id="rack-state-hint" style="margin-top: 1rem;"></p>
     </article>
 
     <article class="card">
@@ -44,37 +56,63 @@
 </section>
 
 <dialog id="miss-dialog" class="modal">
-  <form method="dialog" id="miss-form" class="modal__body">
-    <h2>Log miss</h2>
+  <form method="dialog" id="miss-form" class="modal__body miss-modal">
+    <div class="miss-modal__header">
+      <h2>Log miss</h2>
+      <p class="muted small">Record an error to track your progression.</p>
+    </div>
+    
     <label>Ball number
-      <input name="ball_number" id="miss-ball" type="number" min="1" max="15" required>
+      <input name="ball_number" id="miss-ball" type="number" min="1" max="15" required class="input-large">
     </label>
-    <fieldset>
-      <legend>Miss types</legend>
-      <label class="check"><input type="checkbox" name="types" value="position"> Position</label>
-      <label class="check"><input type="checkbox" name="types" value="alignment"> Alignment</label>
-      <label class="check"><input type="checkbox" name="types" value="delivery"> Delivery</label>
-      <label class="check"><input type="checkbox" name="types" value="speed"> Speed</label>
-      <label class="check"><input type="checkbox" name="types" value="combined"> Combined</label>
-    </fieldset>
-    <label>Outcome
-      <select name="outcome" id="miss-outcome" required>
-        <option value="pot_miss">Pot miss</option>
-        <option value="no_shot_position">No shot (position)</option>
-        <option value="both">Both</option>
-      </select>
-    </label>
-    <label>Confidence (optional)
-      <select name="confidence" id="miss-confidence">
-        <option value="">—</option>
-        <option value="high">High</option>
-        <option value="medium">Medium</option>
-        <option value="low">Low</option>
-      </select>
-    </label>
-    <menu class="modal__actions">
+    
+    <div class="miss-modal__group">
+      <span class="label-text">Miss types</span>
+      <div class="chip-grid">
+        <label class="check-chip">
+          <input type="checkbox" name="types" value="position"> 
+          <span>Position</span>
+        </label>
+        <label class="check-chip">
+          <input type="checkbox" name="types" value="alignment"> 
+          <span>Alignment</span>
+        </label>
+        <label class="check-chip">
+          <input type="checkbox" name="types" value="delivery"> 
+          <span>Delivery</span>
+        </label>
+        <label class="check-chip">
+          <input type="checkbox" name="types" value="speed"> 
+          <span>Speed</span>
+        </label>
+        <label class="check-chip">
+          <input type="checkbox" name="types" value="combined"> 
+          <span>Combined</span>
+        </label>
+      </div>
+    </div>
+    
+    <div class="miss-modal__row">
+      <label>Outcome
+        <select name="outcome" id="miss-outcome" required>
+          <option value="pot_miss">Pot miss</option>
+          <option value="no_shot_position">No shot (position)</option>
+          <option value="both">Both</option>
+        </select>
+      </label>
+      <label>Confidence <span class="muted font-normal">(optional)</span>
+        <select name="confidence" id="miss-confidence">
+          <option value="">—</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+      </label>
+    </div>
+    
+    <menu class="modal__actions miss-modal__actions">
       <button type="button" class="btn btn--ghost" id="miss-cancel">Cancel</button>
-      <button type="submit" class="btn btn--primary">Save miss</button>
+      <button type="submit" class="btn btn--primary btn--xl">Save miss</button>
     </menu>
   </form>
 </dialog>
