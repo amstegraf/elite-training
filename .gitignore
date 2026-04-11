@@ -11,3 +11,4 @@ sessions/*.json
 dist/
 build/
 node_modules/
+dist-desktop/

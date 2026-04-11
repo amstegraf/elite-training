@@ -71,6 +71,24 @@ The shell prefers **`.venv`** (`Scripts\\python.exe` on Windows, `bin/python` on
 - Override port: set environment variable **`ELITE_TRAINING_PORT`** (e.g. `8766`) before `npm run electron`.
 - Close the window to stop the app (the server process is torn down).
 
+### Windows installer (shortcut + 9-ball icon)
+
+The desktop icon matches **`static/favicon.svg`** (rasterized to **`electron/icon.png`**).
+
+1. Complete the Python venv and `pip install -e .` (or `pip install -r requirements.txt`) as above.
+2. From the project root:
+
+   ```bash
+   npm install
+   npm run build:desktop
+   ```
+
+3. **Windows:** open **`%LOCALAPPDATA%\EliteTraining\desktop-dist\`** in File Explorer (paste into the address bar). Run the **NSIS** setup (`.exe`) from there. That folder is **outside the git repo** on purpose so **Cursor** (and similar tools) do not keep handles on **`dist-desktop`** under the project and block **electron-builder** from replacing **`app.asar`**. **macOS / Linux:** output stays in **`dist-desktop/`** at the repo root.
+
+If a build still fails with **“cannot access … app.asar”**, quit **Elite Training.exe** if it is running, then try again. **`npm run build:desktop`** attempts to stop that process first on Windows.
+
+The packaged app still runs **your machine’s Python**. It uses the folder **`resources\elite-training\`** under the install directory as the project root (same layout as this repo: `app/`, `static/`, etc.). It prefers **`.venv`** there (`resources\elite-training\.venv\Scripts\python.exe`), then **`python`** on your `PATH`. After installing, create that venv inside `resources\elite-training\` and `pip install -e .`, or install the same dependencies into a Python that is on `PATH`.
+
 You can also run Uvicorn directly:
 
 ```bash

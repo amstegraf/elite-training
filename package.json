@@ -6,9 +6,60 @@
   "main": "electron/main.cjs",
   "scripts": {
     "electron": "electron .",
-    "desktop": "electron ."
+    "desktop": "electron .",
+    "build:icon": "node scripts/rasterize-icon.cjs",
+    "build:desktop": "node scripts/electron-build-prep.cjs && npm run build:icon && node scripts/electron-build-run.cjs"
+  },
+  "build": {
+    "appId": "com.elite-training.desktop",
+    "productName": "Elite Training",
+    "files": [
+      "electron/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "app",
+        "to": "elite-training/app"
+      },
+      {
+        "from": "static",
+        "to": "elite-training/static"
+      },
+      {
+        "from": "templates",
+        "to": "elite-training/templates"
+      },
+      {
+        "from": "main.py",
+        "to": "elite-training/main.py"
+      },
+      {
+        "from": "pyproject.toml",
+        "to": "elite-training/pyproject.toml"
+      },
+      {
+        "from": "requirements.txt",
+        "to": "elite-training/requirements.txt"
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "electron/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Elite Training"
+    }
   },
   "devDependencies": {
-    "electron": "^33.2.0"
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "sharp": "^0.33.5"
   }
 }

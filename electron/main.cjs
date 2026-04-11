@@ -7,7 +7,11 @@ const path = require('path');
 const fs = require('fs');
 const http = require('http');
 
-const PROJECT_ROOT = path.join(__dirname, '..');
+const PROJECT_ROOT = app.isPackaged
+  ? path.join(process.resourcesPath, 'elite-training')
+  : path.join(__dirname, '..');
+
+const WINDOW_ICON = path.join(__dirname, 'icon.png');
 const DEFAULT_PORT = process.env.ELITE_TRAINING_PORT
   ? parseInt(process.env.ELITE_TRAINING_PORT, 10)
   : 8765;
@@ -99,6 +103,7 @@ function createWindow(port) {
     minWidth: 900,
     minHeight: 600,
     title: 'Elite Training',
+    icon: fs.existsSync(WINDOW_ICON) ? WINDOW_ICON : undefined,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
