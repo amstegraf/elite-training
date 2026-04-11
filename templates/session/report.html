@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Session report · Elite Training{% endblock %}
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', path='css/reports/reports.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', path='css/reports/reports.css') }}?v=1.2">
 {% endblock %}
 {% block content %}
 <section class="page animate-in">
@@ -58,19 +58,19 @@
           <p class="muted" style="margin: 0.5rem 0 0; font-size: 0.8rem; line-height: 1.35;">Hard run-ending failures per rack.</p>
         </article>
 
-        <article class="stat-card stat-card--pr">
-          <div class="stat-card__label">Rack conversion rate</div>
+        <article class="stat-card">
+          <div class="stat-card__label">Rack conversion</div>
           <div class="stat-card__value">
             {% if session.rack_conversion_rate is not none %}
             {{ "%.1f"|format(session.rack_conversion_rate * 100) }}<span style="font-size: 1rem; color: var(--muted); font-weight: normal;">%</span>
             {% else %}—{% endif %}
           </div>
           {% if rack_conversion_tier %}
-          <p style="margin: 0.65rem 0 0;">
-            <span class="pill pill--active" style="font-weight: 600;">{{ rack_conversion_tier }}</span>
-          </p>
+          <div style="margin-top: 0.75rem;">
+            {% set tier = rack_conversion_tier %}
+            {% include 'partials/tier_badge.html' %}
+          </div>
           {% endif %}
-          <p class="muted" style="margin: 0.5rem 0 0; font-size: 0.8rem; line-height: 1.35;">Racks cleared (9) ÷ ended racks — run-outs vs attempts. Tier uses the same bands as your dashboard profile.</p>
         </article>
       </div>
     </div>
