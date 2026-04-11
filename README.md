@@ -71,7 +71,7 @@ The shell prefers **`.venv`** (`Scripts\\python.exe` on Windows, `bin/python` on
 - Override port: set environment variable **`ELITE_TRAINING_PORT`** (e.g. `8766`) before `npm run electron`.
 - Close the window to stop the app (the server process is torn down).
 
-In the desktop app, use **File → Import sessions…** to send **v1** session **`.json`** (from **`data/sessions/`** or another machine’s `data/sessions/`) to the **running server** (`POST /api/sessions/import`). Files under the legacy **`sessions/`** folder use a **different format** and are not valid for this import. Use **Help → About Elite Training** (Windows/Linux) or the **application menu → About** (macOS) to see the **desktop shell version** from `package.json`. If a session id already exists, you can overwrite or skip.
+In the desktop app, use **File → Import sessions…** to send **v1** session **`.json`**, or **File → Open session data folder** to reveal **`programs.json`** and **`sessions/`** in Explorer / Finder. (from **`data/sessions/`** or another machine’s `data/sessions/`) to the **running server** (`POST /api/sessions/import`). Files under the legacy **`sessions/`** folder use a **different format** and are not valid for this import. Use **Help → About Elite Training** (Windows/Linux) or the **application menu → About** (macOS) to see the **desktop shell version** from `package.json`. If a session id already exists, you can overwrite or skip.
 
 ### Windows installer (shortcut + 9-ball icon)
 
@@ -90,6 +90,8 @@ The desktop icon matches **`static/favicon.svg`** (rasterized to **`electron/ico
 If a build still fails with **“cannot access … app.asar”**, quit **Elite Training.exe** if it is running, then try again. **`npm run build:desktop`** attempts to stop that process first on Windows.
 
 The packaged app still runs **your machine’s Python**. It uses the folder **`resources\elite-training\`** under the install directory as the project root (same layout as this repo: `app/`, `static/`, etc.). It prefers **`.venv`** there (`resources\elite-training\.venv\Scripts\python.exe`), then **`python`** on your `PATH`. After installing, create that venv inside `resources\elite-training\` and `pip install -e .`, or install the same dependencies into a Python that is on `PATH`.
+
+**Where saves live (desktop install):** **`programs.json`** and **`data/sessions/*.json`** are stored under Electron’s **user data** folder, not under `Program Files`, so they **survive reinstall** and are **not** removed by the default uninstaller (NSIS is configured with **`deleteAppDataOnUninstall: false`**). On Windows this is typically **`%APPDATA%\elite-training-desktop\precision-data\`** (under **Roaming**). Delete that folder yourself if you want a full wipe. **`npm run electron`** from the repo still uses **`./data/`** in the project (no `AppData` override). Advanced: set **`ELITE_TRAINING_DATA_DIR`** before starting Python to force any directory.
 
 **Installer / shortcut version:** The Windows setup file name comes from **`version`** in root **`package.json`** (e.g. `Elite Training Setup 0.1.1.exe`). Bump that string when you ship a new desktop build; keep **`pyproject.toml`** `version` in sync if you like, so Python and Electron stay aligned. You do **not** have to bump the version for import fixes to apply, but a higher version makes it obvious you installed a new build.
 

@@ -1,7 +1,7 @@
 /**
  * Elite Training desktop shell: starts the local FastAPI server, then opens it in a window.
  */
-const { app, BrowserWindow, Menu, dialog } = require('electron');
+const { app, BrowserWindow, Menu, dialog, shell } = require('electron');
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
@@ -26,11 +26,16 @@ function pythonProcessEnv() {
   };
   const tail = process.env.PYTHONPATH ? sep + process.env.PYTHONPATH : '';
   env.PYTHONPATH = PROJECT_ROOT + tail;
+  if (userPrecisionDataDir) {
+    env.ELITE_TRAINING_DATA_DIR = userPrecisionDataDir;
+  }
   return env;
 }
 
 let serverProcess = null;
 let mainWindow = null;
+/** Packaged installs: sessions + programs.json live here (survives reinstall). */
+let userPrecisionDataDir = null;
 
 function readDesktopPackageJson() {
   try {
@@ -243,6 +248,25 @@ async function importSessionsFromFiles() {
   }
 }
 
+function sessionDataDirectory() {
+  if (userPrecisionDataDir) return userPrecisionDataDir;
+  return path.join(PROJECT_ROOT, 'data');
+}
+
+async function openSessionDataDirectory() {
+  const dir = sessionDataDirectory();
+  fs.mkdirSync(path.join(dir, 'sessions'), { recursive: true });
+  const err = await shell.openPath(dir);
+  if (err) {
+    await dialog.showMessageBox(dialogParent() || undefined, {
+      type: 'error',
+      title: 'Elite Training',
+      message: 'Could not open the session data folder.',
+      detail: `${dir}\n\n${err}`,
+    });
+  }
+}
+
 function showAboutDialog() {
   const pkg = readDesktopPackageJson();
   const ver = pkg.version || 'unknown';
@@ -254,7 +278,10 @@ function showAboutDialog() {
     detail:
       `Version ${ver}\n` +
       (app.isPackaged ? 'Desktop install (packaged)\n' : 'Development (npm run electron)\n') +
-      `Python app root:\n${PROJECT_ROOT}`,
+      `Python app root:\n${PROJECT_ROOT}` +
+      (userPrecisionDataDir
+        ? `\n\nPrograms & sessions (persists across reinstall):\n${userPrecisionDataDir}`
+        : '\n\nPrograms & sessions: ./data/ (repo folder in dev)'),
   });
 }
 
@@ -265,6 +292,12 @@ function setupApplicationMenu() {
       label: 'Import sessions…',
       click: () => {
         importSessionsFromFiles().catch((err) => console.error(err));
+      },
+    },
+    {
+      label: 'Open session data folder',
+      click: () => {
+        openSessionDataDirectory().catch((err) => console.error(err));
       },
     },
     { type: 'separator' },
@@ -412,6 +445,11 @@ function createWindow(port) {
 }
 
 app.whenReady().then(async () => {
+  if (app.isPackaged) {
+    userPrecisionDataDir = path.join(app.getPath('userData'), 'precision-data');
+    fs.mkdirSync(path.join(userPrecisionDataDir, 'sessions'), { recursive: true });
+  }
+
   const pkg = readDesktopPackageJson();
   app.setAboutPanelOptions({
     applicationName: 'Elite Training',
