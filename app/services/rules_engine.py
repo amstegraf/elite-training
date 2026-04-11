@@ -18,7 +18,7 @@ def effective_rules(plan_rules: PlanRules, overrides: SessionRuleOverrides | Non
 
 
 def consecutive_misses_on_rack(rack: RackRecord) -> int:
-    """Run-breaking events only (outcome: pot miss or no shot position; legacy ``both`` still counts)."""
+    """Run-breaking events only (outcome: pot miss; legacy ``both``)."""
     return sum(1 for m in rack.misses if miss_breaks_run(m))
 
 

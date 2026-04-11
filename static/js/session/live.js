@@ -203,11 +203,7 @@
   rackCancel.addEventListener("click", () => rackDialog.close());
 
   function missBreaksRunClient(m) {
-    return (
-      m.outcome === "pot_miss" ||
-      m.outcome === "no_shot_position" ||
-      m.outcome === "both"
-    );
+    return m.outcome === "pot_miss" || m.outcome === "both";
   }
 
   missForm.addEventListener("submit", async (e) => {

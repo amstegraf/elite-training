@@ -46,7 +46,7 @@
         {{ "%.2f"|format(session.true_miss_rate) }}<span style="font-size: 1rem; color: var(--muted); font-weight: normal;"> / rack</span>
         {% else %}—{% endif %}
       </div>
-      <p class="muted" style="margin: 0.5rem 0 0; font-size: 0.8rem; line-height: 1.35;">True misses ÷ ended racks (hard failures per rack).</p>
+      <p class="muted" style="margin: 0.5rem 0 0; font-size: 0.8rem; line-height: 1.35;">True misses ÷ ended racks. A <strong>true miss</strong> is a run-ending outcome: <strong>pot miss</strong> (or legacy <strong>both</strong>). No-shot / playable count as training misses for streaks and recovery.</p>
     </article>
   </div>
 

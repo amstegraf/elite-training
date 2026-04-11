@@ -28,7 +28,7 @@ def test_miss_breaks_run_defaults() -> None:
         MissEvent(ball_number=1, types=[], outcome=MissOutcome.POT_MISS)
     )
     assert miss_breaks_run(MissEvent(ball_number=1, types=[], outcome=MissOutcome.BOTH))
-    assert miss_breaks_run(
+    assert not miss_breaks_run(
         MissEvent(ball_number=1, types=[], outcome=MissOutcome.NO_SHOT_POSITION)
     )
     assert not miss_breaks_run(
@@ -71,7 +71,8 @@ def test_default_balls_cleared_playable_only_returns_none() -> None:
     assert default_balls_cleared_for_rack(r) is None
 
 
-def test_default_balls_cleared_no_shot_infers_cleared() -> None:
+def test_default_balls_cleared_no_shot_only_returns_none() -> None:
+    """No-shot alone does not break the run, so balls cleared cannot be inferred from it."""
     r = RackRecord(
         rack_number=1,
         misses=[
@@ -82,7 +83,7 @@ def test_default_balls_cleared_no_shot_infers_cleared() -> None:
             )
         ],
     )
-    assert default_balls_cleared_for_rack(r) == 2
+    assert default_balls_cleared_for_rack(r) is None
 
 
 def test_default_balls_cleared_first_pot_miss_ball_5() -> None:
@@ -100,8 +101,8 @@ def test_best_run_clean_rack() -> None:
     assert best_run_balls_for_rack(r) == 9
 
 
-def test_best_run_no_shot_breaks_then_tail() -> None:
-    """No shot (position) ends the run; tail after ball 4 with bc=9 → max segment is 5."""
+def test_best_run_no_shot_only_uses_balls_cleared() -> None:
+    """Rack with soft no-shot logs only: best run follows explicit balls cleared."""
     r = RackRecord(
         rack_number=2,
         balls_cleared=9,
@@ -113,7 +114,7 @@ def test_best_run_no_shot_breaks_then_tail() -> None:
             )
         ],
     )
-    assert best_run_balls_for_rack(r) == 5
+    assert best_run_balls_for_rack(r) == 9
 
 
 def test_best_run_pot_miss_segments() -> None:
@@ -162,7 +163,7 @@ def test_recompute_session_totals() -> None:
 
 
 def test_recompute_soft_vs_true_example_session_shape() -> None:
-    """Regression: no-shot counts as true miss; one rack has playable + pot miss."""
+    """Regression: mixed soft + one pot miss → one true miss, best run from soft rack = bc."""
     from app.models import PrecisionSessionStatus, SessionMode, TableType
 
     r2 = RackRecord(
@@ -204,14 +205,14 @@ def test_recompute_soft_vs_true_example_session_shape() -> None:
         racks=[r2, r4],
     )
     recompute_session_aggregates(s)
-    assert s.best_run_balls == 6
-    assert s.true_miss_count == 2
-    assert s.training_miss_count == 1
-    assert s.avg_balls_before_true_miss == 4.5
+    assert s.best_run_balls == 9
+    assert s.true_miss_count == 1
+    assert s.training_miss_count == 2
+    assert s.avg_balls_before_true_miss == 6.0
     assert s.total_balls_cleared == 15
     assert s.conversion_efficiency is not None
-    assert s.conversion_efficiency == round(15 / 16, 4)
-    assert s.true_miss_rate == 1.0
+    assert s.conversion_efficiency == round(15 / 17, 4)
+    assert s.true_miss_rate == round(1 / 2, 4)
     assert s.worst_rack_balls_cleared == 6
     assert s.best_rack_balls_cleared == 9
 
@@ -248,7 +249,7 @@ def test_rack_recovery_training_chain_then_end() -> None:
         ],
     )
     ok, fail = rack_recovery_counts(r)
-    assert ok == 0 and fail == 1
+    assert ok == 3 and fail == 0
 
 
 def test_session_recovery_invariant() -> None:
@@ -310,6 +311,6 @@ def test_aggregate_progress_recomputes_stale_session_fields() -> None:
     )
     out = aggregate_sessions_progress([s])
     assert out["labels"]
-    assert out["best_runs"] == [5]
-    assert out["true_misses_per_rack"] == [1.0]
-    assert out["training_logs_per_rack"] == [0.0]
+    assert out["best_runs"] == [9]
+    assert out["true_misses_per_rack"] == [0.0]
+    assert out["training_logs_per_rack"] == [1.0]
