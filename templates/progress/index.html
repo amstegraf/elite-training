@@ -58,10 +58,10 @@
       </div>
     </article>
 
-    <!-- Chart 2: Misses per Rack -->
+    <!-- Chart 2: True misses vs training logs per rack -->
     <article class="chart-card">
-      <h2>Misses per Rack</h2>
-      <p class="muted">Goal: Reduce this over time. Inverse of balls cleared.</p>
+      <h2>Misses per rack</h2>
+      <p class="muted"><strong>True misses</strong> end a ball run (pot miss / both, or marked “ends run”). <strong>Training logs</strong> are shape/position notes that do not break the streak by default.</p>
       <div class="chart-container">
         <canvas id="chart-misses-rack"></canvas>
       </div>
@@ -69,8 +69,8 @@
 
     <!-- Chart 3: Best Run / Max Balls -->
     <article class="chart-card">
-      <h2>Best Run (Streaks)</h2>
-      <p class="muted">Max balls cleared in a row. Look for breakthrough jumps here.</p>
+      <h2>Best run (streaks)</h2>
+      <p class="muted">Longest ball run without a <strong>true</strong> miss (same rules as session reports). Soft no-shot / playable logs do not reset the streak unless marked.</p>
       <div class="chart-container">
         <canvas id="chart-best-run"></canvas>
       </div>
@@ -87,8 +87,8 @@
 
     <!-- Chart 5: Miss Type Distribution -->
     <article class="chart-card" style="grid-column: 1 / -1;">
-      <h2>Miss Type Distribution</h2>
-      <p class="muted">Are you failing on position or alignment? Watch alignment become dominant over time.</p>
+      <h2>Miss type (true misses only)</h2>
+      <p class="muted">Share of tag selections on <strong>run-breaking</strong> events only—aligned with pot-miss style failures, not every training log.</p>
       <div class="chart-container" style="height: 350px;">
         <canvas id="chart-miss-types"></canvas>
       </div>
@@ -96,8 +96,8 @@
 
     <!-- Chart 6: Miss Ball Histogram -->
     <article class="chart-card" style="grid-column: 1 / -1;">
-      <h2>Miss Position (Ball Index)</h2>
-      <p class="muted">Where in the rack do you typically miss? Look for this shifting later into the rack (ball 6-9).</p>
+      <h2>True miss by ball</h2>
+      <p class="muted">Ball number on <strong>true</strong> misses only (streak-breaking). Shape-only logs are excluded.</p>
       <div class="chart-container" style="height: 350px;">
         <canvas id="chart-miss-hist"></canvas>
       </div>

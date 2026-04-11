@@ -132,7 +132,8 @@ def end_rack(
     if balls_cleared is not None:
         rack.balls_cleared = balls_cleared
     elif rack.balls_cleared is None:
-        rack.balls_cleared = default_balls_cleared_for_rack(rack)
+        inferred = default_balls_cleared_for_rack(rack)
+        rack.balls_cleared = inferred if inferred is not None else 0
     session.current_rack_id = None
     recompute_session_aggregates(session)
     save_session(session)
@@ -147,6 +148,7 @@ def add_miss(
     types: list[MissType],
     outcome: MissOutcome,
     confidence: Confidence | None,
+    ends_run: bool | None = None,
 ) -> PrecisionSession:
     session = load_session(session_id)
     if not session:
@@ -165,6 +167,7 @@ def add_miss(
         types=types,
         outcome=outcome,
         confidence=confidence,
+        ends_run=ends_run,
     )
     rack.misses.append(miss)
     recompute_session_aggregates(session)

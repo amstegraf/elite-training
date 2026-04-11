@@ -1,12 +1,7 @@
 from __future__ import annotations
 
-from app.models import (
-    MissOutcome,
-    PlanRules,
-    PrecisionSession,
-    RackRecord,
-    SessionRuleOverrides,
-)
+from app.models import PlanRules, PrecisionSession, RackRecord, SessionRuleOverrides
+from app.services.derived_metrics import miss_breaks_run
 
 
 def effective_rules(plan_rules: PlanRules, overrides: SessionRuleOverrides | None) -> PlanRules:
@@ -23,8 +18,8 @@ def effective_rules(plan_rules: PlanRules, overrides: SessionRuleOverrides | Non
 
 
 def consecutive_misses_on_rack(rack: RackRecord) -> int:
-    """MVP: each logged miss counts toward consecutive streak for this rack."""
-    return len(rack.misses)
+    """Run-breaking events only (pot miss / both, or explicit endsRun)."""
+    return sum(1 for m in rack.misses if miss_breaks_run(m))
 
 
 def rack_rules_state(rack: RackRecord, rules: PlanRules) -> dict:
@@ -63,9 +58,3 @@ def session_rules_summary(session: PrecisionSession, plan_rules: PlanRules) -> d
     }
 
 
-def count_no_shot_position_for_miss(outcome: MissOutcome) -> int:
-    if outcome == MissOutcome.NO_SHOT_POSITION:
-        return 1
-    if outcome == MissOutcome.BOTH:
-        return 1
-    return 0

@@ -197,10 +197,30 @@
   }
 
   btnMiss.addEventListener("click", () => {
+    syncMissEndsRunUi();
     if (dialog) dialog.showModal();
   });
   missCancel.addEventListener("click", () => dialog.close());
   rackCancel.addEventListener("click", () => rackDialog.close());
+
+  const missOutcome = document.getElementById("miss-outcome");
+  const missEndsRunWrap = document.getElementById("miss-ends-run-wrap");
+  const missEndsRunCb = document.getElementById("miss-ends-run");
+
+  function syncMissEndsRunUi() {
+    if (!missOutcome || !missEndsRunWrap || !missEndsRunCb) return;
+    const v = missOutcome.value;
+    const soft = v === "playable" || v === "no_shot_position";
+    missEndsRunWrap.hidden = !soft;
+    if (!soft) missEndsRunCb.checked = false;
+  }
+  if (missOutcome) missOutcome.addEventListener("change", syncMissEndsRunUi);
+
+  function missBreaksRunClient(m) {
+    if (m.endsRun === true) return true;
+    if (m.endsRun === false) return false;
+    return m.outcome === "pot_miss" || m.outcome === "both";
+  }
 
   missForm.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -209,12 +229,16 @@
     const types = Array.from(missForm.querySelectorAll('input[name="types"]:checked')).map(
       (i) => i.value
     );
+    const outcome = missForm.outcome.value;
     const payload = {
       ballNumber: parseInt(missForm.elements['ball_number'].value, 10),
       types,
-      outcome: missForm.outcome.value,
+      outcome,
       confidence: missForm.confidence.value || null,
     };
+    if (outcome === "playable" || outcome === "no_shot_position") {
+      payload.endsRun = !!(missEndsRunCb && missEndsRunCb.checked);
+    }
     const res = await fetch(`/api/sessions/${sessionId}/racks/${rack.id}/misses`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -237,7 +261,9 @@
       const missedBalls = new Set();
       if (rack.misses && rack.misses.length > 0) {
         rack.misses.forEach(m => {
-          missedBalls.add(m.ballNumber);
+          if (missBreaksRunClient(m)) {
+            missedBalls.add(m.ballNumber);
+          }
           maxBall = Math.max(maxBall, m.ballNumber);
         });
       }

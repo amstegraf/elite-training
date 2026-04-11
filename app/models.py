@@ -120,6 +120,8 @@ class MissEvent(BaseModel):
     types: list[MissType] = Field(default_factory=list)
     outcome: MissOutcome
     confidence: Optional[Confidence] = None
+    # When set: overrides whether this log breaks the ball run (streak / true-miss KPIs).
+    ends_run: Optional[bool] = Field(default=None, alias="endsRun")
     created_at: str = Field(default_factory=utc_now_iso, alias="createdAt")
 
 
@@ -170,6 +172,14 @@ class PrecisionSession(BaseModel):
         default=None, alias="avgBallsClearedPerRack"
     )
     best_run_balls: int = Field(default=0, ge=0, alias="bestRunBalls")
+    
+    # New True Miss KPIs
+    true_miss_count: int = Field(default=0, ge=0, alias="trueMissCount")
+    training_miss_count: int = Field(default=0, ge=0, alias="trainingMissCount")
+    avg_balls_before_true_miss: Optional[float] = Field(
+        default=None, alias="avgBallsBeforeTrueMiss"
+    )
+    
     no_shot_position_count: int = Field(default=0, ge=0, alias="noShotPositionCount")
     miss_type_counts: MissTypeCounts = Field(
         default_factory=MissTypeCounts, alias="missTypeCounts"

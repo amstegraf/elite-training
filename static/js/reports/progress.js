@@ -83,22 +83,38 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 2. Misses per Rack
+    // 2. True misses vs training logs per rack (new run-breaking model)
     const ctxMisses = document.getElementById('chart-misses-rack');
     if (ctxMisses) {
+        const missOpt = cloneObj(commonLineOptions);
+        missOpt.plugins.legend = { display: true, position: 'top' };
+        const truePer = data.true_misses_per_rack || data.misses_per_rack;
+        const trainPer = data.training_logs_per_rack || [];
         new Chart(ctxMisses, {
             type: 'line',
             data: {
                 labels: data.labels,
-                datasets: [{
-                    label: 'Misses / Rack',
-                    data: data.misses_per_rack,
-                    borderColor: frColor,
-                    backgroundColor: frColorLight,
-                    fill: true
-                }]
+                datasets: [
+                    {
+                        label: 'True misses / rack',
+                        data: truePer,
+                        borderColor: frColor,
+                        backgroundColor: frColorLight,
+                        fill: true
+                    },
+                    ...(trainPer.length
+                        ? [{
+                            label: 'Training logs / rack',
+                            data: trainPer,
+                            borderColor: darkAcc,
+                            backgroundColor: 'rgba(26, 27, 31, 0.06)',
+                            fill: false,
+                            borderDash: [6, 4]
+                        }]
+                        : [])
+                ]
             },
-            options: commonLineOptions
+            options: missOpt
         });
     }
 
@@ -154,11 +170,11 @@ document.addEventListener('DOMContentLoaded', () => {
             data: {
                 labels: data.labels,
                 datasets: [
-                    { label: 'Position', data: data.miss_type_position, backgroundColor: '#a78bfa' },
-                    { label: 'Alignment', data: data.miss_type_alignment, backgroundColor: '#f472b6' },
-                    { label: 'Delivery', data: data.miss_type_delivery, backgroundColor: '#fcd34d' },
-                    { label: 'Speed', data: data.miss_type_speed, backgroundColor: '#38bdf8' },
-                    { label: 'Combined', data: data.miss_type_combined, backgroundColor: '#9ca3af' }
+                    { label: 'Position (true)', data: data.miss_type_position, backgroundColor: '#a78bfa' },
+                    { label: 'Alignment (true)', data: data.miss_type_alignment, backgroundColor: '#f472b6' },
+                    { label: 'Delivery (true)', data: data.miss_type_delivery, backgroundColor: '#fcd34d' },
+                    { label: 'Speed (true)', data: data.miss_type_speed, backgroundColor: '#38bdf8' },
+                    { label: 'Combined (true)', data: data.miss_type_combined, backgroundColor: '#9ca3af' }
                 ]
             },
             options: typeOpt
@@ -176,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
             data: {
                 labels: data.hist_labels,
                 datasets: [{
-                    label: 'Miss Count',
+                    label: 'True miss count',
                     data: data.hist_data,
                     backgroundColor: brandColor
                 }]

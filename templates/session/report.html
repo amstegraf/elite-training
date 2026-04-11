@@ -22,13 +22,28 @@
       <div class="stat-card__label">Avg balls / rack</div>
       <div class="stat-card__value">{% if session.avg_balls_cleared_per_rack is not none %}{{ "%.2f"|format(session.avg_balls_cleared_per_rack) }}{% else %}—{% endif %}</div>
     </article>
-    <article class="stat-card stat-card--fr">
-      <div class="stat-card__label">Total misses</div>
-      <div class="stat-card__value">{{ session.total_misses }}</div>
+    <article class="stat-card" style="border: 2px solid var(--pr-dim);">
+      <div class="stat-card__label" style="color: var(--pr-dim);">Avg before TRUE miss</div>
+      <div class="stat-card__value">{% if session.avg_balls_before_true_miss is not none %}{{ "%.2f"|format(session.avg_balls_before_true_miss) }}{% else %}—{% endif %}</div>
     </article>
     <article class="stat-card">
       <div class="stat-card__label">Best run</div>
       <div class="stat-card__value">{{ session.best_run_balls }} <span style="font-size: 1rem; color: var(--muted); font-weight: normal;">balls</span></div>
+    </article>
+  </div>
+
+  <div class="reports__kpi-grid" style="margin-top: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+    <article class="stat-card stat-card--fr">
+      <div class="stat-card__label">True misses (Run break)</div>
+      <div class="stat-card__value">{{ session.true_miss_count }}</div>
+    </article>
+    <article class="stat-card" style="background: var(--surface2);">
+      <div class="stat-card__label">Training misses (Soft)</div>
+      <div class="stat-card__value" style="color: var(--text);">{{ session.training_miss_count }}</div>
+    </article>
+    <article class="stat-card" style="background: var(--surface2);">
+      <div class="stat-card__label">Total misses</div>
+      <div class="stat-card__value" style="color: var(--muted);">{{ session.total_misses }}</div>
     </article>
   </div>
 

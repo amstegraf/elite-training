@@ -48,6 +48,7 @@ class AddMissBody(BaseModel):
     types: list[MissType]
     outcome: MissOutcome
     confidence: Confidence | None = None
+    ends_run: bool | None = Field(default=None, alias="endsRun")
 
 
 def _handle(exc: Exception) -> None:
@@ -149,6 +150,7 @@ def api_add_miss(session_id: str, rack_id: str, body: AddMissBody) -> dict:
             types=body.types,
             outcome=body.outcome,
             confidence=body.confidence,
+            ends_run=body.ends_run,
         )
         return {"session": s.model_dump(by_alias=True)}
     except (SessionNotFoundError, BadRequestError) as e:
