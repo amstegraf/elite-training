@@ -6,6 +6,7 @@ from app.services.derived_metrics import (
     best_run_balls_for_rack,
     default_balls_cleared_for_rack,
     miss_breaks_run,
+    rack_recovery_counts,
     recompute_session_aggregates,
 )
 
@@ -173,6 +174,69 @@ def test_recompute_soft_vs_true_example_session_shape() -> None:
     assert s.total_balls_cleared == 15
     assert s.conversion_efficiency is not None
     assert s.conversion_efficiency == round(15 / 17, 4)
+
+
+def test_rack_recovery_training_then_true_is_failed() -> None:
+    r = RackRecord(
+        rack_number=1,
+        misses=[
+            MissEvent(
+                ball_number=3,
+                types=[],
+                outcome=MissOutcome.PLAYABLE,
+                created_at="2026-01-01T00:00:01+00:00",
+            ),
+            MissEvent(
+                ball_number=7,
+                types=[],
+                outcome=MissOutcome.POT_MISS,
+                created_at="2026-01-01T00:00:02+00:00",
+            ),
+        ],
+    )
+    ok, fail = rack_recovery_counts(r)
+    assert ok == 0 and fail == 1
+
+
+def test_rack_recovery_training_chain_then_end() -> None:
+    r = RackRecord(
+        rack_number=1,
+        misses=[
+            MissEvent(ball_number=1, types=[], outcome=MissOutcome.NO_SHOT_POSITION, created_at="2026-01-01T00:00:01+00:00"),
+            MissEvent(ball_number=3, types=[], outcome=MissOutcome.PLAYABLE, created_at="2026-01-01T00:00:02+00:00"),
+            MissEvent(ball_number=5, types=[], outcome=MissOutcome.NO_SHOT_POSITION, created_at="2026-01-01T00:00:03+00:00"),
+        ],
+    )
+    ok, fail = rack_recovery_counts(r)
+    assert ok == 3 and fail == 0
+
+
+def test_session_recovery_invariant() -> None:
+    from app.models import PrecisionSessionStatus, SessionMode, TableType
+
+    r4 = RackRecord(
+        rack_number=4,
+        ended_at="2026-01-01T00:00:00+00:00",
+        balls_cleared=6,
+        misses=[
+            MissEvent(ball_number=3, types=[], outcome=MissOutcome.PLAYABLE, created_at="2026-01-01T00:00:01+00:00"),
+            MissEvent(ball_number=7, types=[], outcome=MissOutcome.POT_MISS, created_at="2026-01-01T00:00:02+00:00"),
+        ],
+    )
+    s = PrecisionSession(
+        id="rec",
+        program_id="p",
+        plan_id="pl",
+        table_type=TableType.EIGHT_FT,
+        mode=SessionMode.RACK,
+        status=PrecisionSessionStatus.COMPLETED,
+        racks=[r4],
+    )
+    recompute_session_aggregates(s)
+    assert s.training_miss_count == 1
+    assert s.recovery_count + s.failed_recovery_count == s.training_miss_count
+    assert s.failed_recovery_count == 1
+    assert s.recovery_rate == 0.0
 
 
 def test_aggregate_progress_recomputes_stale_session_fields() -> None:

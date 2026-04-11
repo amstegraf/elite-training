@@ -89,6 +89,28 @@ def no_shot_increment(outcome: MissOutcome) -> int:
     return 0
 
 
+def rack_recovery_counts(rack: RackRecord) -> tuple[int, int]:
+    """
+    Per docs/recovery-metric.md: for each *training* miss (chronological order in the rack),
+    recovery = next logged miss is not a true miss, OR there is no next miss (rack ended
+    without a true miss after). Failed = next miss is a true miss.
+    """
+    sorted_m = sorted(rack.misses, key=lambda m: (m.created_at, m.ball_number))
+    recovery = 0
+    failed = 0
+    for i, m in enumerate(sorted_m):
+        if miss_breaks_run(m):
+            continue
+        if i + 1 < len(sorted_m):
+            if miss_breaks_run(sorted_m[i + 1]):
+                failed += 1
+            else:
+                recovery += 1
+        else:
+            recovery += 1
+    return recovery, failed
+
+
 def _segment_lengths_before_breaking(rack: RackRecord) -> list[int]:
     """Each length = balls made before that breaking miss (9-ball order)."""
     balls = breaking_miss_ball_numbers(rack)
@@ -122,6 +144,21 @@ def recompute_session_aggregates(session: PrecisionSession) -> None:
 
     session.true_miss_count = true_count
     session.training_miss_count = training_count
+
+    rec = 0
+    fail_rec = 0
+    for r in session.racks:
+        a, b = rack_recovery_counts(r)
+        rec += a
+        fail_rec += b
+    session.recovery_count = rec
+    session.failed_recovery_count = fail_rec
+    if training_count > 0:
+        session.recovery_rate = round(rec / training_count, 4)
+        session.failed_recovery_rate = round(fail_rec / training_count, 4)
+    else:
+        session.recovery_rate = None
+        session.failed_recovery_rate = None
 
     if ended:
         cleared_vals: list[int] = []
@@ -222,6 +259,8 @@ def aggregate_sessions_progress(sessions: list[PrecisionSession]) -> dict[str, l
 
     ball_miss_hist = {str(i): 0 for i in range(1, 16)}
     conversion_eff: list[float | None] = []
+    recovery_pct: list[float | None] = []
+    failed_recovery_pct: list[float | None] = []
 
     for s in sessions_asc:
         if s.status.value != "completed":
@@ -241,6 +280,14 @@ def aggregate_sessions_progress(sessions: list[PrecisionSession]) -> dict[str, l
         no_shot_counts.append(s.no_shot_position_count)
         best_runs.append(s.best_run_balls)
         conversion_eff.append(s.conversion_efficiency)
+        recovery_pct.append(
+            round(s.recovery_rate * 100, 1) if s.recovery_rate is not None else None
+        )
+        failed_recovery_pct.append(
+            round(s.failed_recovery_rate * 100, 1)
+            if s.failed_recovery_rate is not None
+            else None
+        )
 
         pct = miss_type_percentages(breaking_miss_type_counts(s))
         pct_position.append(pct["position"])
@@ -275,6 +322,8 @@ def aggregate_sessions_progress(sessions: list[PrecisionSession]) -> dict[str, l
         "no_shot_counts": no_shot_counts,
         "best_runs": best_runs,
         "conversion_efficiency": conversion_eff,
+        "recovery_pct": recovery_pct,
+        "failed_recovery_pct": failed_recovery_pct,
         "miss_type_position": pct_position,
         "miss_type_alignment": pct_alignment,
         "miss_type_delivery": pct_delivery,

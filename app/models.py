@@ -186,6 +186,16 @@ class PrecisionSession(BaseModel):
         default=None, ge=0, le=1, alias="conversionEfficiency"
     )
 
+    # Resilience (recovery-metric.md): after a training miss, did the rack stay alive?
+    recovery_count: int = Field(default=0, ge=0, alias="recoveryCount")
+    failed_recovery_count: int = Field(default=0, ge=0, alias="failedRecoveryCount")
+    recovery_rate: Optional[float] = Field(
+        default=None, ge=0, le=1, alias="recoveryRate"
+    )
+    failed_recovery_rate: Optional[float] = Field(
+        default=None, ge=0, le=1, alias="failedRecoveryRate"
+    )
+
     no_shot_position_count: int = Field(default=0, ge=0, alias="noShotPositionCount")
     miss_type_counts: MissTypeCounts = Field(
         default_factory=MissTypeCounts, alias="missTypeCounts"

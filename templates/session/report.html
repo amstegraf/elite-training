@@ -42,6 +42,28 @@
   </div>
 
   <div class="reports__kpi-grid" style="margin-top: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+    <article class="stat-card" style="border: 2px solid rgba(167, 139, 250, 0.5);">
+      <div class="stat-card__label" style="color: #6d28d9;">Recovery rate</div>
+      <div class="stat-card__value">
+        {% if session.recovery_rate is not none %}
+        {{ "%.1f"|format(session.recovery_rate * 100) }}<span style="font-size: 1rem; color: var(--muted); font-weight: normal;">%</span>
+        {% else %}—{% endif %}
+      </div>
+      <p class="muted" style="margin: 0.5rem 0 0; font-size: 0.8rem; line-height: 1.35;">Training miss, then next log is not a true miss—or rack ended without a true miss after (recovery spec in docs/recovery-metric.md).</p>
+    </article>
+    <article class="stat-card" style="border: 2px solid rgba(248, 113, 113, 0.45);">
+      <div class="stat-card__label" style="color: #b91c1c;">Failed recovery rate</div>
+      <div class="stat-card__value">
+        {% if session.failed_recovery_rate is not none %}
+        {{ "%.1f"|format(session.failed_recovery_rate * 100) }}<span style="font-size: 1rem; color: var(--muted); font-weight: normal;">%</span>
+        {% else %}—{% endif %}
+      </div>
+      <p class="muted" style="margin: 0.5rem 0; font-size: 0.8rem; line-height: 1.35;">Next logged event was a true miss.</p>
+    </article>
+    <article class="stat-card" style="background: var(--surface2);">
+      <div class="stat-card__label">Recovered / failed</div>
+      <div class="stat-card__value" style="font-size: 1.35rem;">{{ session.recovery_count }} / {{ session.failed_recovery_count }}</div>
+    </article>
     <article class="stat-card stat-card--fr">
       <div class="stat-card__label">True misses (Run break)</div>
       <div class="stat-card__value">{{ session.true_miss_count }}</div>
@@ -89,6 +111,8 @@
         <dt>No shot (pos)</dt><dd>{{ session.no_shot_position_count }}</dd>
         <dt>Table</dt><dd>{{ session.table_type.value }}</dd>
         <dt>Mode</dt><dd>{{ session.mode.value }}</dd>
+        <dt>Recoveries</dt><dd>{{ session.recovery_count }}</dd>
+        <dt>Failed recoveries</dt><dd>{{ session.failed_recovery_count }}</dd>
       </dl>
     </article>
   </div>

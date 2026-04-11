@@ -159,6 +159,46 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // 3c. Recovery % and failed recovery % (of training misses per session)
+    const ctxRec = document.getElementById('chart-recovery');
+    if (
+        ctxRec &&
+        data.recovery_pct &&
+        data.recovery_pct.some((v) => v != null)
+    ) {
+        const recOpt = cloneObj(commonLineOptions);
+        recOpt.plugins.legend = { display: true, position: 'top' };
+        recOpt.scales.y.max = 100;
+        new Chart(ctxRec, {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [
+                    {
+                        label: 'Recovery %',
+                        data: data.recovery_pct,
+                        borderColor: '#7c3aed',
+                        backgroundColor: 'rgba(124, 58, 237, 0.12)',
+                        fill: true,
+                        tension: 0.3,
+                        borderWidth: 3
+                    },
+                    {
+                        label: 'Failed recovery %',
+                        data: data.failed_recovery_pct || [],
+                        borderColor: '#dc2626',
+                        backgroundColor: 'rgba(220, 38, 38, 0.08)',
+                        fill: false,
+                        tension: 0.3,
+                        borderWidth: 2,
+                        borderDash: [5, 4]
+                    }
+                ]
+            },
+            options: recOpt
+        });
+    }
+
     // 4. "No Shot Due to Position"
     const ctxNoShot = document.getElementById('chart-no-shot');
     if (ctxNoShot) {

@@ -85,6 +85,15 @@
       </div>
     </article>
 
+    <!-- Chart 3c: Recovery (resilience) -->
+    <article class="chart-card">
+      <h2>Recovery vs failed recovery</h2>
+      <p class="muted">After each training miss: % where the next log was <strong>not</strong> a true miss (recovery) vs <strong>was</strong> a true miss (failed). Denominator = training misses in that session (see docs/recovery-metric.md).</p>
+      <div class="chart-container">
+        <canvas id="chart-recovery"></canvas>
+      </div>
+    </article>
+
     <!-- Chart 4: "No Shot" Focus -->
     <article class="chart-card">
       <h2>"No Shot Due to Position" Count</h2>
