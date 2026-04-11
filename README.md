@@ -71,7 +71,7 @@ The shell prefers **`.venv`** (`Scripts\\python.exe` on Windows, `bin/python` on
 - Override port: set environment variable **`ELITE_TRAINING_PORT`** (e.g. `8766`) before `npm run electron`.
 - Close the window to stop the app (the server process is torn down).
 
-In the desktop app, use **File → Import sessions…** to copy session **`.json`** files (for example from another machine or from `data/sessions/` when you ran the server another way) into this install’s **`data/sessions/`**. Files are checked with the same **PrecisionSession** model as the server; if a session id already exists, you can overwrite or skip.
+In the desktop app, use **File → Import sessions…** to send **v1** session **`.json`** (from **`data/sessions/`** or another machine’s `data/sessions/`) to the **running server** (`POST /api/sessions/import`). Files under the legacy **`sessions/`** folder use a **different format** and are not valid for this import. Use **Help → About Elite Training** (Windows/Linux) or the **application menu → About** (macOS) to see the **desktop shell version** from `package.json`. If a session id already exists, you can overwrite or skip.
 
 ### Windows installer (shortcut + 9-ball icon)
 
@@ -91,6 +91,8 @@ If a build still fails with **“cannot access … app.asar”**, quit **Elite T
 
 The packaged app still runs **your machine’s Python**. It uses the folder **`resources\elite-training\`** under the install directory as the project root (same layout as this repo: `app/`, `static/`, etc.). It prefers **`.venv`** there (`resources\elite-training\.venv\Scripts\python.exe`), then **`python`** on your `PATH`. After installing, create that venv inside `resources\elite-training\` and `pip install -e .`, or install the same dependencies into a Python that is on `PATH`.
 
+**Installer / shortcut version:** The Windows setup file name comes from **`version`** in root **`package.json`** (e.g. `Elite Training Setup 0.1.1.exe`). Bump that string when you ship a new desktop build; keep **`pyproject.toml`** `version` in sync if you like, so Python and Electron stay aligned. You do **not** have to bump the version for import fixes to apply, but a higher version makes it obvious you installed a new build.
+
 You can also run Uvicorn directly:
 
 ```bash
@@ -106,7 +108,13 @@ uvicorn app.factory:create_app --factory --host 127.0.0.1 --port 8000
 | `app/services/sessions_repo.py` | Load/save `data/sessions/{uuid}.json` |
 | `templates/` | Jinja layouts by area (`dashboard/`, `session/`, `reports/`, `partials/`) |
 | `static/css/`, `static/js/` | Scoped assets (`common/`, `dashboard/`, `session/`, `reports/`) |
-| `data/sessions/` | Runtime session JSON (created as needed) |
+| `data/sessions/` | **Current** precision-training session JSON (`PrecisionSession`; used by the app) |
+| `sessions/` (repo root) | **Obsolete** legacy MVP format (`blocks`, `pr` / `fr`, snake_case times, …). **Not** the same schema as `data/sessions/`; do not use **Import sessions** for these files—they will fail validation. Kept only as an archive; `.gitignore` ignores `sessions/*.json`. |
+
+### Two session folders (important)
+
+- **`data/sessions/`** — What the app reads and writes today. Files include **`programId`**, **`planId`**, **`tableType`**, racks/misses, etc.
+- **`sessions/`** — Older experiment; JSON describes **blocks** and **PR/FR** style metrics, not a `PrecisionSession`. There is **no** automatic import from here into the precision app; you would need a one-off migration script if you ever want that data converted.
 
 ## Usage (short)
 

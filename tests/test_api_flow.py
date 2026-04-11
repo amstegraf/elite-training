@@ -44,3 +44,34 @@ def test_program_session_flow(client) -> None:
     r7 = client.get(f"/api/sessions/{sid}")
     assert r7.status_code == 200
     assert r7.json()["session"]["status"] == "completed"
+
+
+def test_import_session_via_api(client) -> None:
+    r = client.post("/api/programs", json={"name": "ImportP", "durationDays": 30})
+    assert r.status_code == 200
+    pid = r.json()["program"]["id"]
+    r2 = client.post(
+        f"/api/programs/{pid}/plans",
+        json={"name": "Import plan", "focusType": "mixed"},
+    )
+    assert r2.status_code == 200
+    plan_id = r2.json()["plan"]["id"]
+    r3 = client.post(
+        "/api/sessions",
+        json={"planId": plan_id, "tableType": "eight_ft", "mode": "rack"},
+    )
+    assert r3.status_code == 200
+    body = r3.json()["session"]
+    sid = body["id"]
+    client.delete(f"/api/sessions/{sid}")
+
+    imp = client.post("/api/sessions/import", json=body)
+    assert imp.status_code == 200
+    assert imp.json() == {"ok": True, "id": sid}
+
+    imp2 = client.post("/api/sessions/import", json=body)
+    assert imp2.status_code == 409
+
+    imp3 = client.post("/api/sessions/import?overwrite=true", json=body)
+    assert imp3.status_code == 200
+    assert imp3.json()["id"] == sid

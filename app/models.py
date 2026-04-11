@@ -257,9 +257,37 @@ class PrecisionSession(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def _coerce_legacy_embedded_ids(cls, data: object) -> object:
+        if isinstance(data, list) and len(data) == 1 and isinstance(data[0], dict):
+            return cls._coerce_legacy_embedded_ids(data[0])
         if not isinstance(data, dict):
             return data
         out = dict(data)
+        # Some exports / APIs wrap the document (e.g. ``{"session": {...}}``); unwrap before field checks.
+        for wrap_key in ("session", "data", "payload", "record", "body"):
+            inner = out.get(wrap_key)
+            if not isinstance(inner, dict):
+                continue
+            if any(
+                k in inner
+                for k in (
+                    "programId",
+                    "program_id",
+                    "program",
+                    "planId",
+                    "plan_id",
+                    "plan",
+                    "tableType",
+                    "table_type",
+                    "table",
+                )
+            ):
+                merged = dict(inner)
+                for k, v in out.items():
+                    if k == wrap_key:
+                        continue
+                    merged.setdefault(k, v)
+                out = merged
+                break
         # Older exports used nested ``program`` / ``plan`` objects instead of programId/planId strings.
         if "programId" not in out and "program_id" not in out and "program" in out:
             out["programId"] = out.pop("program")

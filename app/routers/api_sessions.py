@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from app.models import (
     MissOutcome,
     MissType,
+    PrecisionSession,
     SessionMode,
     SessionRuleOverrides,
     TableType,
@@ -20,7 +21,7 @@ from app.services.session_service import (
     start_rack,
     start_session,
 )
-from app.services.sessions_repo import delete_session, list_sessions, load_session
+from app.services.sessions_repo import delete_session, list_sessions, load_session, save_session
 
 router = APIRouter(prefix="/api/sessions", tags=["sessions"])
 
@@ -74,6 +75,22 @@ def api_list_sessions() -> dict:
             for s in sessions
         ]
     }
+
+
+@router.post("/import")
+def api_import_session(payload: dict, *, overwrite: bool = False) -> dict:
+    """Import a full session JSON document (same schema as on disk). Used by the Electron shell."""
+    try:
+        s = PrecisionSession.model_validate(payload)
+    except ValidationError as e:
+        raise HTTPException(status_code=422, detail=e.errors()) from e
+    if load_session(s.id) is not None and not overwrite:
+        raise HTTPException(
+            status_code=409,
+            detail={"message": "Session already exists", "id": s.id},
+        )
+    save_session(s)
+    return {"ok": True, "id": s.id}
 
 
 @router.get("/{session_id}")

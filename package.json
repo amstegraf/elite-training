@@ -1,6 +1,7 @@
 {
   "name": "elite-training-desktop",
-  "version": "0.1.0",
+  "productName": "Elite Training",
+  "version": "0.1.2",
   "private": true,
   "description": "Desktop shell for Elite Training (Electron + local FastAPI)",
   "main": "electron/main.cjs",
@@ -20,7 +21,13 @@
     "extraResources": [
       {
         "from": "app",
-        "to": "elite-training/app"
+        "to": "elite-training/app",
+        "filter": [
+          "**/*",
+          "!**/__pycache__/**",
+          "!**/*.pyc",
+          "!**/*.pyo"
+        ]
       },
       {
         "from": "static",

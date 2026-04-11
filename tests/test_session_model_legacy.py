@@ -3,6 +3,33 @@
 from app.models import PrecisionSession, PrecisionSessionStatus, TableType
 
 
+def test_wrapped_session_envelope() -> None:
+    """Exports sometimes nest the payload under ``session`` (or similar)."""
+    inner = {
+        "id": "550e8400-e29b-41d4-a716-446655440010",
+        "programId": "3c9bbe08-5084-4da2-9738-3ab30c3096d2",
+        "planId": "6c6a3746-9733-469a-9e4e-5ba8e203c085",
+        "tableType": "eight_ft",
+    }
+    s = PrecisionSession.model_validate({"session": inner, "exported": True})
+    assert s.id == "550e8400-e29b-41d4-a716-446655440010"
+    assert s.program_id == "3c9bbe08-5084-4da2-9738-3ab30c3096d2"
+
+
+def test_session_json_single_element_array() -> None:
+    s = PrecisionSession.model_validate(
+        [
+            {
+                "id": "550e8400-e29b-41d4-a716-446655440011",
+                "programId": "3c9bbe08-5084-4da2-9738-3ab30c3096d2",
+                "planId": "6c6a3746-9733-469a-9e4e-5ba8e203c085",
+                "tableType": "eight_ft",
+            }
+        ]
+    )
+    assert s.id == "550e8400-e29b-41d4-a716-446655440011"
+
+
 def test_legacy_nested_program_plan_table_ids() -> None:
     s = PrecisionSession.model_validate(
         {

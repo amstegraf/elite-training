@@ -2,7 +2,7 @@
  * Elite Training desktop shell: starts the local FastAPI server, then opens it in a window.
  */
 const { app, BrowserWindow, Menu, dialog } = require('electron');
-const { spawn, spawnSync } = require('child_process');
+const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -16,44 +16,107 @@ const DEFAULT_PORT = process.env.ELITE_TRAINING_PORT
   ? parseInt(process.env.ELITE_TRAINING_PORT, 10)
   : 8765;
 
+/** Prefer the bundled tree (packaged) over any other ``app`` on PYTHONPATH / site-packages. */
+function pythonProcessEnv() {
+  const sep = path.delimiter;
+  const env = {
+    ...process.env,
+    PYTHONUNBUFFERED: '1',
+    PYTHONNOUSERSITE: '1',
+  };
+  const tail = process.env.PYTHONPATH ? sep + process.env.PYTHONPATH : '';
+  env.PYTHONPATH = PROJECT_ROOT + tail;
+  return env;
+}
+
 let serverProcess = null;
 let mainWindow = null;
+
+function readDesktopPackageJson() {
+  try {
+    const p = path.join(__dirname, '..', 'package.json');
+    return JSON.parse(fs.readFileSync(p, 'utf8'));
+  } catch (_) {
+    return { version: 'unknown', name: 'elite-training-desktop', description: 'Elite Training' };
+  }
+}
 
 function dialogParent() {
   return BrowserWindow.getFocusedWindow() ?? mainWindow;
 }
 
-function sessionsDir() {
-  return path.join(PROJECT_ROOT, 'data', 'sessions');
+function httpJsonRequest(method, port, pathUrl, bodyObj) {
+  const body =
+    bodyObj !== undefined && bodyObj !== null ? JSON.stringify(bodyObj) : '';
+  return new Promise((resolve, reject) => {
+    const req = http.request(
+      {
+        hostname: '127.0.0.1',
+        port,
+        path: pathUrl,
+        method,
+        headers:
+          body.length > 0
+            ? {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(body, 'utf8'),
+              }
+            : {},
+      },
+      (res) => {
+        let chunks = '';
+        res.setEncoding('utf8');
+        res.on('data', (c) => {
+          chunks += c;
+        });
+        res.on('end', () => {
+          let json = null;
+          if (chunks) {
+            try {
+              json = JSON.parse(chunks);
+            } catch (_) {
+              /* ignore */
+            }
+          }
+          resolve({ status: res.statusCode || 0, text: chunks, json });
+        });
+      },
+    );
+    req.on('error', reject);
+    if (body) req.write(body, 'utf8');
+    req.end();
+  });
 }
 
-/** Validate session JSON with the same Pydantic model as the server; returns session id on success. */
-function validateSessionAndGetId(absFilePath) {
-  const python = resolvePythonExecutable();
-  const script =
-    'import os,sys;sys.path.insert(0,os.getcwd());' +
-    'import json;' +
-    'from app.models import PrecisionSession;' +
-    'd=json.load(open(sys.argv[1],encoding="utf-8"));' +
-    's=PrecisionSession.model_validate(d);' +
-    'print(s.id)';
-  const r = spawnSync(python, ['-c', script, absFilePath], {
-    cwd: PROJECT_ROOT,
-    encoding: 'utf-8',
-    windowsHide: true,
+function httpSessionExists(port, sessionId) {
+  return new Promise((resolve, reject) => {
+    const enc = encodeURIComponent(sessionId);
+    http
+      .get(`http://127.0.0.1:${port}/api/sessions/${enc}`, (res) => {
+        res.resume();
+        resolve(res.statusCode === 200);
+      })
+      .on('error', () => resolve(false));
   });
-  if (r.status !== 0) {
-    const err = ((r.stderr || '') + (r.stdout || '')).trim() || 'Validation failed';
-    return { ok: false, err };
-  }
-  const id = (r.stdout || '').trim();
-  if (!id) return { ok: false, err: 'No session id returned' };
-  return { ok: true, id };
+}
+
+function format422Detail(detail) {
+  if (!Array.isArray(detail)) return JSON.stringify(detail);
+  return detail.map((d) => `${(d.loc || []).join('.')}: ${d.msg || d.type || ''}`).join('\n');
+}
+
+function guessSessionIdFromPayload(payload) {
+  if (!payload || typeof payload !== 'object') return null;
+  if (typeof payload.id === 'string') return payload.id;
+  if (payload.session && typeof payload.session.id === 'string') return payload.session.id;
+  return null;
 }
 
 async function importSessionsFromFiles() {
   const parent = dialogParent();
   if (!parent) return;
+
+  const port = DEFAULT_PORT;
 
   const { canceled, filePaths } = await dialog.showOpenDialog(parent, {
     title: 'Import session files',
@@ -62,32 +125,42 @@ async function importSessionsFromFiles() {
   });
   if (canceled || !filePaths.length) return;
 
-  const destDir = sessionsDir();
-  fs.mkdirSync(destDir, { recursive: true });
-
-  /** @type {{ src: string, id: string, base: string }[]} */
-  const valid = [];
+  /** @type {{ base: string, payload: object }[]} */
+  const parsed = [];
   /** @type {{ base: string, err: string }[]} */
   const invalid = [];
 
   for (const src of filePaths) {
-    const v = validateSessionAndGetId(src);
     const base = path.basename(src);
-    if (!v.ok) {
-      invalid.push({ base, err: v.err });
+    let payload;
+    try {
+      payload = JSON.parse(fs.readFileSync(src, 'utf8'));
+    } catch (e) {
+      invalid.push({ base, err: e instanceof Error ? e.message : String(e) });
       continue;
     }
-    valid.push({ src, id: v.id, base });
+    const sid = guessSessionIdFromPayload(payload);
+    if (!sid) {
+      invalid.push({ base, err: 'Missing top-level id (or session.id) in JSON' });
+      continue;
+    }
+    parsed.push({ base, payload });
   }
 
   const byId = new Map();
-  for (const row of valid) {
-    byId.set(row.id, row);
+  for (const row of parsed) {
+    const sid = guessSessionIdFromPayload(row.payload);
+    byId.set(sid, row);
   }
   const unique = [...byId.values()];
-  const dupCount = valid.length - unique.length;
+  const dupCount = parsed.length - unique.length;
 
-  const existing = unique.filter((row) => fs.existsSync(path.join(destDir, `${row.id}.json`)));
+  const existing = [];
+  for (const row of unique) {
+    const sid = guessSessionIdFromPayload(row.payload);
+    if (await httpSessionExists(port, sid)) existing.push(row);
+  }
+
   let overwriteExisting = false;
   let skipExisting = false;
 
@@ -98,10 +171,10 @@ async function importSessionsFromFiles() {
       defaultId: 1,
       cancelId: 2,
       title: 'Import sessions',
-      message: `${existing.length} file(s) match session ids that already exist in this data folder.`,
+      message: `${existing.length} session(s) already exist on this server.`,
       detail:
-        existing.map((e) => e.id).join('\n') +
-        '\n\nOverwrite replaces files on disk. Skip leaves existing files unchanged.',
+        existing.map((e) => guessSessionIdFromPayload(e.payload)).join('\n') +
+        '\n\nOverwrite replaces files on disk. Skip leaves existing sessions unchanged.',
     });
     if (res.response === 2) return;
     overwriteExisting = res.response === 0;
@@ -110,9 +183,11 @@ async function importSessionsFromFiles() {
 
   let imported = 0;
   let skipped = 0;
+
   for (const row of unique) {
-    const dest = path.join(destDir, `${row.id}.json`);
-    if (fs.existsSync(dest)) {
+    const sid = guessSessionIdFromPayload(row.payload);
+    const exists = await httpSessionExists(port, sid);
+    if (exists) {
       if (skipExisting) {
         skipped += 1;
         continue;
@@ -122,14 +197,36 @@ async function importSessionsFromFiles() {
         continue;
       }
     }
-    fs.copyFileSync(row.src, dest);
-    imported += 1;
+    const q = exists && overwriteExisting ? '?overwrite=true' : '?overwrite=false';
+    try {
+      const r = await httpJsonRequest('POST', port, `/api/sessions/import${q}`, row.payload);
+      if (r.status === 200 && r.json && r.json.ok) {
+        imported += 1;
+      } else if (r.status === 422) {
+        invalid.push({
+          base: row.base,
+          err: format422Detail(r.json ? r.json.detail : r.text),
+        });
+      } else if (r.status === 409) {
+        skipped += 1;
+      } else {
+        invalid.push({
+          base: row.base,
+          err: r.json ? JSON.stringify(r.json) : r.text || `HTTP ${r.status}`,
+        });
+      }
+    } catch (e) {
+      invalid.push({
+        base: row.base,
+        err: e instanceof Error ? e.message : String(e),
+      });
+    }
   }
 
   const parts = [`Imported ${imported} session(s).`];
   if (skipped) parts.push(`Skipped ${skipped}.`);
   if (dupCount > 0) parts.push(`${dupCount} duplicate id in selection (last file kept per id).`);
-  if (invalid.length) parts.push(`${invalid.length} file(s) could not be read as sessions.`);
+  if (invalid.length) parts.push(`${invalid.length} file(s) could not be imported.`);
 
   await dialog.showMessageBox(parent, {
     type: invalid.length ? 'warning' : 'info',
@@ -144,6 +241,21 @@ async function importSessionsFromFiles() {
   if (imported > 0 && parent) {
     parent.webContents.reloadIgnoringCache();
   }
+}
+
+function showAboutDialog() {
+  const pkg = readDesktopPackageJson();
+  const ver = pkg.version || 'unknown';
+  const name = pkg.productName || pkg.description || 'Elite Training';
+  dialog.showMessageBox(dialogParent() || undefined, {
+    type: 'info',
+    title: `About ${name}`,
+    message: name,
+    detail:
+      `Version ${ver}\n` +
+      (app.isPackaged ? 'Desktop install (packaged)\n' : 'Development (npm run electron)\n') +
+      `Python app root:\n${PROJECT_ROOT}`,
+  });
 }
 
 function setupApplicationMenu() {
@@ -166,7 +278,10 @@ function setupApplicationMenu() {
           {
             label: app.name,
             submenu: [
-              { role: 'about' },
+              {
+                label: `About ${app.name}`,
+                click: () => showAboutDialog(),
+              },
               { type: 'separator' },
               { role: 'services' },
               { type: 'separator' },
@@ -180,6 +295,19 @@ function setupApplicationMenu() {
         ]
       : []),
     { label: 'File', submenu: fileSubmenu },
+    ...(!isMac
+      ? [
+          {
+            label: 'Help',
+            submenu: [
+              {
+                label: 'About Elite Training',
+                click: () => showAboutDialog(),
+              },
+            ],
+          },
+        ]
+      : []),
   ];
 
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
@@ -208,7 +336,7 @@ function startServer(port) {
   ];
   serverProcess = spawn(python, args, {
     cwd: PROJECT_ROOT,
-    env: { ...process.env, PYTHONUNBUFFERED: '1' },
+    env: pythonProcessEnv(),
     stdio: ['ignore', 'pipe', 'pipe'],
     windowsHide: true,
   });
@@ -284,6 +412,13 @@ function createWindow(port) {
 }
 
 app.whenReady().then(async () => {
+  const pkg = readDesktopPackageJson();
+  app.setAboutPanelOptions({
+    applicationName: 'Elite Training',
+    applicationVersion: pkg.version || 'unknown',
+    copyright: 'Elite Training',
+  });
+
   const port = DEFAULT_PORT;
   startServer(port);
   try {
