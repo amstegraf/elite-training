@@ -54,6 +54,23 @@ python main.py --host 0.0.0.0 --port 8000
 
 Open **http://127.0.0.1:8000** in your browser.
 
+## Desktop (Electron)
+
+Run Elite Training in its own window (starts the same Python server on **127.0.0.1:8765** by default):
+
+1. Install [Node.js](https://nodejs.org/) (LTS is fine).
+2. From the project root, with Python dependencies already installed in a venv (recommended):
+
+   ```bash
+   npm install
+   npm run electron
+   ```
+
+The shell prefers **`.venv`** (`Scripts\\python.exe` on Windows, `bin/python` on macOS/Linux), then falls back to `python` / `python3` on your `PATH`.
+
+- Override port: set environment variable **`ELITE_TRAINING_PORT`** (e.g. `8766`) before `npm run electron`.
+- Close the window to stop the app (the server process is torn down).
+
 You can also run Uvicorn directly:
 
 ```bash
