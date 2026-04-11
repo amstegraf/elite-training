@@ -7,7 +7,12 @@ from fastapi.responses import RedirectResponse
 from app.deps import get_templates
 from app.models import PrecisionSessionStatus
 from app.services import programs_repo
-from app.services.derived_metrics import miss_type_percentages, aggregate_sessions_progress, best_run_balls_for_rack
+from app.services.derived_metrics import (
+    aggregate_sessions_progress,
+    best_run_balls_for_rack,
+    miss_type_percentages,
+    recompute_session_aggregates,
+)
 from app.services.sessions_repo import list_sessions, load_session
 
 router = APIRouter()
@@ -41,6 +46,9 @@ async def session_report_page(request: Request, session_id: str) -> object:
     session = load_session(session_id)
     if not session:
         return RedirectResponse(url="/", status_code=302)
+    # Derive totals (e.g. totalBallsCleared, conversionEfficiency) from racks — not only from
+    # stored session fields, so older JSON without those keys still reports correctly.
+    recompute_session_aggregates(session)
     templates = get_templates()
     root = programs_repo.load_programs_file()
     pair = programs_repo.get_plan(root, session.plan_id)

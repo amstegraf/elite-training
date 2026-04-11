@@ -150,10 +150,20 @@ def recompute_session_aggregates(session: PrecisionSession) -> None:
             )
         else:
             session.avg_balls_before_true_miss = None
+
+        total_bc = sum((r.balls_cleared or 0) for r in ended)
+        session.total_balls_cleared = total_bc
+        denom = total_bc + session.training_miss_count
+        if denom > 0:
+            session.conversion_efficiency = round(total_bc / denom, 4)
+        else:
+            session.conversion_efficiency = None
     else:
         session.avg_balls_cleared_per_rack = None
         session.best_run_balls = 0
         session.avg_balls_before_true_miss = None
+        session.total_balls_cleared = 0
+        session.conversion_efficiency = None
 
     session.total_racks = len(ended)
 
@@ -211,6 +221,7 @@ def aggregate_sessions_progress(sessions: list[PrecisionSession]) -> dict[str, l
     pct_combined = []
 
     ball_miss_hist = {str(i): 0 for i in range(1, 16)}
+    conversion_eff: list[float | None] = []
 
     for s in sessions_asc:
         if s.status.value != "completed":
@@ -229,6 +240,7 @@ def aggregate_sessions_progress(sessions: list[PrecisionSession]) -> dict[str, l
         )
         no_shot_counts.append(s.no_shot_position_count)
         best_runs.append(s.best_run_balls)
+        conversion_eff.append(s.conversion_efficiency)
 
         pct = miss_type_percentages(breaking_miss_type_counts(s))
         pct_position.append(pct["position"])
@@ -262,6 +274,7 @@ def aggregate_sessions_progress(sessions: list[PrecisionSession]) -> dict[str, l
         "misses_per_rack": true_misses_per_rack,
         "no_shot_counts": no_shot_counts,
         "best_runs": best_runs,
+        "conversion_efficiency": conversion_eff,
         "miss_type_position": pct_position,
         "miss_type_alignment": pct_alignment,
         "miss_type_delivery": pct_delivery,

@@ -40,3 +40,5 @@ python scripts/migrate_sessions.py --id <session-uuid>
 Each session file is reloaded, `recompute_session_aggregates` runs, and KPIs are written back (unless `--dry-run`).
 
 The **`/progress`** page does **not** rely on stored session totals: `aggregate_sessions_progress` calls `recompute_session_aggregates` on each completed session in memory so charts match the current rules even if JSON was never migrated.
+
+**Conversion efficiency** (session report + progress): `total_balls_cleared / (total_balls_cleared + training_miss_count)` over ended racks, where *training misses* are non-run-breaking logs (playable / no-shot by default, etc.).

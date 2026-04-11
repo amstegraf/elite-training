@@ -137,6 +137,28 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // 3b. Conversion efficiency (0–1 stored → display %)
+    const ctxConv = document.getElementById('chart-conversion');
+    if (ctxConv && data.conversion_efficiency && data.conversion_efficiency.some((v) => v != null)) {
+        const convPct = data.conversion_efficiency.map((v) => (v == null ? null : Math.round(v * 1000) / 10));
+        const convOpt = cloneObj(commonLineOptions);
+        convOpt.scales.y.max = 100;
+        new Chart(ctxConv, {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Conversion %',
+                    data: convPct,
+                    borderColor: '#0284c7',
+                    backgroundColor: 'rgba(2, 132, 199, 0.15)',
+                    fill: true
+                }]
+            },
+            options: convOpt
+        });
+    }
+
     // 4. "No Shot Due to Position"
     const ctxNoShot = document.getElementById('chart-no-shot');
     if (ctxNoShot) {

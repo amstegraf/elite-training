@@ -117,6 +117,8 @@ def test_recompute_session_totals() -> None:
     assert s.total_misses == 1
     assert s.true_miss_count == 1
     assert s.training_miss_count == 0
+    assert s.total_balls_cleared == 1
+    assert s.conversion_efficiency == 1.0
     assert s.miss_type_counts.position == 1
     assert s.no_shot_position_count == 0
 
@@ -168,6 +170,9 @@ def test_recompute_soft_vs_true_example_session_shape() -> None:
     assert s.true_miss_count == 1
     assert s.training_miss_count == 2
     assert s.avg_balls_before_true_miss == 6.0
+    assert s.total_balls_cleared == 15
+    assert s.conversion_efficiency is not None
+    assert s.conversion_efficiency == round(15 / 17, 4)
 
 
 def test_aggregate_progress_recomputes_stale_session_fields() -> None:

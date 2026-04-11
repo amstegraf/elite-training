@@ -30,6 +30,15 @@
       <div class="stat-card__label">Best run</div>
       <div class="stat-card__value">{{ session.best_run_balls }} <span style="font-size: 1rem; color: var(--muted); font-weight: normal;">balls</span></div>
     </article>
+    <article class="stat-card" style="border: 2px solid rgba(56, 189, 248, 0.45);">
+      <div class="stat-card__label" style="color: #0284c7;">Conversion efficiency</div>
+      <div class="stat-card__value">
+        {% if session.conversion_efficiency is not none %}
+        {{ "%.1f"|format(session.conversion_efficiency * 100) }}<span style="font-size: 1rem; color: var(--muted); font-weight: normal;">%</span>
+        {% else %}—{% endif %}
+      </div>
+      <p class="muted" style="margin: 0.5rem 0 0; font-size: 0.8rem; line-height: 1.35;">Balls cleared ÷ (balls cleared + training misses). How often logged shape/position work still turns into balls made.</p>
+    </article>
   </div>
 
   <div class="reports__kpi-grid" style="margin-top: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
@@ -75,6 +84,7 @@
       <h2>Session Details</h2>
       <dl class="kv kv--spread">
         <dt>Total racks</dt><dd>{{ session.total_racks }}</dd>
+        <dt>Balls cleared (session)</dt><dd>{{ session.total_balls_cleared }}</dd>
         <dt>Duration</dt><dd>{{ session.duration_seconds // 3600 }}:{{ "%02d" | format((session.duration_seconds % 3600) // 60) }}:{{ "%02d" | format(session.duration_seconds % 60) }}</dd>
         <dt>No shot (pos)</dt><dd>{{ session.no_shot_position_count }}</dd>
         <dt>Table</dt><dd>{{ session.table_type.value }}</dd>

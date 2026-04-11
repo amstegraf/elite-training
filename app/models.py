@@ -179,7 +179,13 @@ class PrecisionSession(BaseModel):
     avg_balls_before_true_miss: Optional[float] = Field(
         default=None, alias="avgBallsBeforeTrueMiss"
     )
-    
+    # Sum of ballsCleared over ended racks; used with training_miss_count for conversion.
+    total_balls_cleared: int = Field(default=0, ge=0, alias="totalBallsCleared")
+    # Balls cleared / (balls cleared + training misses); position work → table progress.
+    conversion_efficiency: Optional[float] = Field(
+        default=None, ge=0, le=1, alias="conversionEfficiency"
+    )
+
     no_shot_position_count: int = Field(default=0, ge=0, alias="noShotPositionCount")
     miss_type_counts: MissTypeCounts = Field(
         default_factory=MissTypeCounts, alias="missTypeCounts"
