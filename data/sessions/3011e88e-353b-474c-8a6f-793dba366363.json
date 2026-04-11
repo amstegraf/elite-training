@@ -19,6 +19,12 @@
   "trueMissCount": 1,
   "trainingMissCount": 8,
   "avgBallsBeforeTrueMiss": 6.0,
+  "totalBallsCleared": 23,
+  "conversionEfficiency": 0.7419,
+  "recoveryCount": 7,
+  "failedRecoveryCount": 1,
+  "recoveryRate": 0.875,
+  "failedRecoveryRate": 0.125,
   "noShotPositionCount": 5,
   "missTypeCounts": {
     "position": 8,
