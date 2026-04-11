@@ -78,7 +78,7 @@
     <!-- Rack Consistency -->
     <article class="card card--wide">
       <h2>Rack Consistency <span style="font-size: 1rem; color: var(--muted); font-weight: normal;">(balls cleared)</span></h2>
-      <p class="muted" style="margin-top: 0;">Gap between worst and best rack shows volatility vs your baseline average. Pot success is session-wide (potted ÷ pot attempts).</p>
+      <p class="muted" style="margin-top: 0;">Gap between worst and best rack shows volatility vs your baseline average. Pot and position success are session-wide (see docs/metric-position-success.md).</p>
       
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-top: auto; padding-top: 1rem;">
         <div style="text-align: center; padding: 1.5rem; background: var(--surface2); border-radius: 16px;">
@@ -102,6 +102,17 @@
           </div>
           {% if session.pot_attempts > 0 %}
           <div class="muted mono" style="font-size: 0.75rem; margin-top: 0.35rem;">{{ session.total_balls_cleared }} / {{ session.pot_attempts }}</div>
+          {% endif %}
+        </div>
+        <div style="text-align: center; padding: 1.5rem; background: var(--surface2); border: 1px solid var(--border); border-radius: 16px;">
+          <div class="muted" style="font-size: 0.85rem; margin-bottom: 0.25rem;">Position success</div>
+          <div style="font-size: 2rem; font-weight: 700; color: var(--text);">
+            {% if session.position_success_rate is not none %}
+            {{ "%.1f"|format(session.position_success_rate * 100) }}<span style="font-size: 1rem; color: var(--muted); font-weight: 600;">%</span>
+            {% else %}—{% endif %}
+          </div>
+          {% if session.total_balls_cleared > 0 %}
+          <div class="muted mono" style="font-size: 0.75rem; margin-top: 0.35rem;">1 − {{ session.position_related_miss_count }} / {{ session.total_balls_cleared }}</div>
           {% endif %}
         </div>
       </div>
@@ -183,6 +194,8 @@
         <dt>Rack tier (session)</dt><dd>{% if rack_conversion_tier %}{{ rack_conversion_tier }}{% else %}—{% endif %}</dd>
         <dt>Pot success</dt><dd>{% if session.pot_success_rate is not none %}{{ "%.1f"|format(session.pot_success_rate * 100) }}% <span class="muted">({{ session.total_balls_cleared }} / {{ session.pot_attempts }})</span>{% else %}—{% endif %}</dd>
         <dt>Logged pot miss (shots)</dt><dd>{{ session.pot_miss_shot_count }}</dd>
+        <dt>Position success</dt><dd>{% if session.position_success_rate is not none %}{{ "%.1f"|format(session.position_success_rate * 100) }}% <span class="muted">(1 − {{ session.position_related_miss_count }} / {{ session.total_balls_cleared }})</span>{% else %}—{% endif %}</dd>
+        <dt>Position-related misses</dt><dd>{{ session.position_related_miss_count }}</dd>
         <dt>Balls cleared (session)</dt><dd>{{ session.total_balls_cleared }}</dd>
         <dt>Duration</dt><dd>{{ session.duration_seconds // 3600 }}:{{ "%02d" | format((session.duration_seconds % 3600) // 60) }}:{{ "%02d" | format(session.duration_seconds % 60) }}</dd>
         <dt>No shot (pos)</dt><dd>{{ session.no_shot_position_count }}</dd>

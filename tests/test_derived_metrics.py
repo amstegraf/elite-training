@@ -161,6 +161,8 @@ def test_recompute_session_totals() -> None:
     assert s.pot_miss_shot_count == 1
     assert s.pot_attempts == 2
     assert s.pot_success_rate == 0.5
+    assert s.position_related_miss_count == 1
+    assert s.position_success_rate == 0.0
     assert s.worst_rack_balls_cleared == 1
     assert s.best_rack_balls_cleared == 1
     assert s.miss_type_counts.position == 1
@@ -223,6 +225,8 @@ def test_recompute_soft_vs_true_example_session_shape() -> None:
     assert s.pot_miss_shot_count == 1
     assert s.pot_attempts == 16
     assert s.pot_success_rate == round(15 / 16, 4)
+    assert s.position_related_miss_count == 2
+    assert s.position_success_rate == round(1 - 2 / 15, 4)
     assert s.worst_rack_balls_cleared == 6
     assert s.best_rack_balls_cleared == 9
 

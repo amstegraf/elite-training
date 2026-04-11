@@ -206,6 +206,13 @@ class PrecisionSession(BaseModel):
     pot_success_rate: Optional[float] = Field(
         default=None, ge=0, le=1, alias="potSuccessRate"
     )
+    # docs/metric-position-success.md — miss-only: 1 − (position-related misses ÷ balls cleared).
+    position_related_miss_count: int = Field(
+        default=0, ge=0, alias="positionRelatedMissCount"
+    )
+    position_success_rate: Optional[float] = Field(
+        default=None, ge=0, le=1, alias="positionSuccessRate"
+    )
     # Balls cleared per rack spread (consistency); avg matches avgBallsClearedPerRack.
     worst_rack_balls_cleared: Optional[int] = Field(
         default=None, ge=0, le=9, alias="worstRackBallsCleared"

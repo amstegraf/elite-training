@@ -160,6 +160,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // 3b0b. Position success (0–1 → %)
+    const ctxPosSucc = document.getElementById('chart-position-success');
+    const posSeries = data.position_success_rates;
+    if (ctxPosSucc && posSeries && posSeries.length && posSeries.some((v) => v != null)) {
+        const posPct = posSeries.map((v) => (v == null ? null : Math.round(v * 1000) / 10));
+        const posOpt = cloneObj(commonLineOptions);
+        posOpt.scales.y.max = 100;
+        new Chart(ctxPosSucc, {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Position success %',
+                    data: posPct,
+                    borderColor: '#7c3aed',
+                    backgroundColor: 'rgba(124, 58, 237, 0.12)',
+                    fill: true
+                }]
+            },
+            options: posOpt
+        });
+    }
+
     // 3b. Flow efficiency (0–1 stored → display %); key is flow_efficiency with legacy fallback
     const ctxConv = document.getElementById('chart-conversion');
     const flowSeries = data.flow_efficiency || data.conversion_efficiency;
