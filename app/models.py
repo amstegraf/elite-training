@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Optional
 from uuid import uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 def utc_now_iso() -> str:
@@ -153,6 +153,22 @@ class MissTypeCounts(BaseModel):
     speed: int = 0
 
 
+def _unwrap_legacy_id_object(value: object) -> object:
+    """Older session JSON sometimes stored programId/planId as ``{\"id\": \"uuid\"}``."""
+    if isinstance(value, dict) and isinstance(value.get("id"), str):
+        return value["id"]
+    return value
+
+
+def _unwrap_legacy_table_type(value: object) -> object:
+    if isinstance(value, dict):
+        if isinstance(value.get("id"), str):
+            return value["id"]
+        if isinstance(value.get("value"), str):
+            return value["value"]
+    return value
+
+
 class PrecisionSession(BaseModel):
     model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
 
@@ -237,6 +253,30 @@ class PrecisionSession(BaseModel):
     )
     racks: list[RackRecord] = Field(default_factory=list)
     current_rack_id: Optional[str] = Field(default=None, alias="currentRackId")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_legacy_embedded_ids(cls, data: object) -> object:
+        if not isinstance(data, dict):
+            return data
+        out = dict(data)
+        # Older exports used nested ``program`` / ``plan`` objects instead of programId/planId strings.
+        if "programId" not in out and "program_id" not in out and "program" in out:
+            out["programId"] = out.pop("program")
+        if "planId" not in out and "plan_id" not in out and "plan" in out:
+            out["planId"] = out.pop("plan")
+        if "tableType" not in out and "table_type" not in out and "table" in out:
+            out["tableType"] = out.pop("table")
+        for key in ("programId", "program_id"):
+            if key in out:
+                out[key] = _unwrap_legacy_id_object(out[key])
+        for key in ("planId", "plan_id"):
+            if key in out:
+                out[key] = _unwrap_legacy_id_object(out[key])
+        for key in ("tableType", "table_type"):
+            if key in out:
+                out[key] = _unwrap_legacy_table_type(out[key])
+        return out
 
     def current_rack(self) -> Optional[RackRecord]:
         if not self.current_rack_id:

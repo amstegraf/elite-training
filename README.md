@@ -1,6 +1,6 @@
 # Elite Training
 
-Web app for **No Error** pool training: sessions (UUID + JSON file under `sessions/`), blocks, PR / FR / CPR, active timers, dashboard with session modal, and weekly reports.
+Web app for **No Error** pool training: sessions (UUID + JSON file under **`data/sessions/`**), blocks, PR / FR / CPR, active timers, dashboard with session modal, and weekly reports.
 
 Full product intent is described in [docs/training-platform-description.md](docs/training-platform-description.md).
 
@@ -71,6 +71,8 @@ The shell prefers **`.venv`** (`Scripts\\python.exe` on Windows, `bin/python` on
 - Override port: set environment variable **`ELITE_TRAINING_PORT`** (e.g. `8766`) before `npm run electron`.
 - Close the window to stop the app (the server process is torn down).
 
+In the desktop app, use **File → Import sessions…** to copy session **`.json`** files (for example from another machine or from `data/sessions/` when you ran the server another way) into this install’s **`data/sessions/`**. Files are checked with the same **PrecisionSession** model as the server; if a session id already exists, you can overwrite or skip.
+
 ### Windows installer (shortcut + 9-ball icon)
 
 The desktop icon matches **`static/favicon.svg`** (rasterized to **`electron/icon.png`**).
@@ -101,10 +103,10 @@ uvicorn app.factory:create_app --factory --host 127.0.0.1 --port 8000
 |------|------|
 | `main.py` | CLI (`--port`, `--host`) and `uvicorn.run` |
 | `app/factory.py` | FastAPI app, static mount, routers |
-| `app/services/session_store.py` | Load/save `sessions/{uuid}.json` |
+| `app/services/sessions_repo.py` | Load/save `data/sessions/{uuid}.json` |
 | `templates/` | Jinja layouts by area (`dashboard/`, `session/`, `reports/`, `partials/`) |
 | `static/css/`, `static/js/` | Scoped assets (`common/`, `dashboard/`, `session/`, `reports/`) |
-| `sessions/` | Runtime JSON (ignored by git except `.gitkeep`) |
+| `data/sessions/` | Runtime session JSON (created as needed) |
 
 ## Usage (short)
 
@@ -112,4 +114,4 @@ uvicorn app.factory:create_app --factory --host 127.0.0.1 --port 8000
 2. **Session** — Begin training, add blocks, set current block, **Pause** / **Resume**, log **PR** / **FR**, end or abandon.
 3. **Reports** — Weekly charts (PR, FR, hours, best CPR) and personal bests.
 
-Session files are written atomically to `sessions/<uuid>.json`.
+Session files are written atomically to `data/sessions/<uuid>.json`.

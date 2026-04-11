@@ -1,8 +1,8 @@
 /**
  * Elite Training desktop shell: starts the local FastAPI server, then opens it in a window.
  */
-const { app, BrowserWindow } = require('electron');
-const { spawn } = require('child_process');
+const { app, BrowserWindow, Menu, dialog } = require('electron');
+const { spawn, spawnSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -18,6 +18,172 @@ const DEFAULT_PORT = process.env.ELITE_TRAINING_PORT
 
 let serverProcess = null;
 let mainWindow = null;
+
+function dialogParent() {
+  return BrowserWindow.getFocusedWindow() ?? mainWindow;
+}
+
+function sessionsDir() {
+  return path.join(PROJECT_ROOT, 'data', 'sessions');
+}
+
+/** Validate session JSON with the same Pydantic model as the server; returns session id on success. */
+function validateSessionAndGetId(absFilePath) {
+  const python = resolvePythonExecutable();
+  const script =
+    'import os,sys;sys.path.insert(0,os.getcwd());' +
+    'import json;' +
+    'from app.models import PrecisionSession;' +
+    'd=json.load(open(sys.argv[1],encoding="utf-8"));' +
+    's=PrecisionSession.model_validate(d);' +
+    'print(s.id)';
+  const r = spawnSync(python, ['-c', script, absFilePath], {
+    cwd: PROJECT_ROOT,
+    encoding: 'utf-8',
+    windowsHide: true,
+  });
+  if (r.status !== 0) {
+    const err = ((r.stderr || '') + (r.stdout || '')).trim() || 'Validation failed';
+    return { ok: false, err };
+  }
+  const id = (r.stdout || '').trim();
+  if (!id) return { ok: false, err: 'No session id returned' };
+  return { ok: true, id };
+}
+
+async function importSessionsFromFiles() {
+  const parent = dialogParent();
+  if (!parent) return;
+
+  const { canceled, filePaths } = await dialog.showOpenDialog(parent, {
+    title: 'Import session files',
+    properties: ['openFile', 'multiSelections'],
+    filters: [{ name: 'Session JSON', extensions: ['json'] }],
+  });
+  if (canceled || !filePaths.length) return;
+
+  const destDir = sessionsDir();
+  fs.mkdirSync(destDir, { recursive: true });
+
+  /** @type {{ src: string, id: string, base: string }[]} */
+  const valid = [];
+  /** @type {{ base: string, err: string }[]} */
+  const invalid = [];
+
+  for (const src of filePaths) {
+    const v = validateSessionAndGetId(src);
+    const base = path.basename(src);
+    if (!v.ok) {
+      invalid.push({ base, err: v.err });
+      continue;
+    }
+    valid.push({ src, id: v.id, base });
+  }
+
+  const byId = new Map();
+  for (const row of valid) {
+    byId.set(row.id, row);
+  }
+  const unique = [...byId.values()];
+  const dupCount = valid.length - unique.length;
+
+  const existing = unique.filter((row) => fs.existsSync(path.join(destDir, `${row.id}.json`)));
+  let overwriteExisting = false;
+  let skipExisting = false;
+
+  if (existing.length > 0) {
+    const res = await dialog.showMessageBox(parent, {
+      type: 'question',
+      buttons: ['Overwrite', 'Skip existing', 'Cancel import'],
+      defaultId: 1,
+      cancelId: 2,
+      title: 'Import sessions',
+      message: `${existing.length} file(s) match session ids that already exist in this data folder.`,
+      detail:
+        existing.map((e) => e.id).join('\n') +
+        '\n\nOverwrite replaces files on disk. Skip leaves existing files unchanged.',
+    });
+    if (res.response === 2) return;
+    overwriteExisting = res.response === 0;
+    skipExisting = res.response === 1;
+  }
+
+  let imported = 0;
+  let skipped = 0;
+  for (const row of unique) {
+    const dest = path.join(destDir, `${row.id}.json`);
+    if (fs.existsSync(dest)) {
+      if (skipExisting) {
+        skipped += 1;
+        continue;
+      }
+      if (!overwriteExisting) {
+        skipped += 1;
+        continue;
+      }
+    }
+    fs.copyFileSync(row.src, dest);
+    imported += 1;
+  }
+
+  const parts = [`Imported ${imported} session(s).`];
+  if (skipped) parts.push(`Skipped ${skipped}.`);
+  if (dupCount > 0) parts.push(`${dupCount} duplicate id in selection (last file kept per id).`);
+  if (invalid.length) parts.push(`${invalid.length} file(s) could not be read as sessions.`);
+
+  await dialog.showMessageBox(parent, {
+    type: invalid.length ? 'warning' : 'info',
+    title: 'Import sessions',
+    message: parts.join(' '),
+    detail:
+      invalid.length > 0
+        ? invalid.map((i) => `${i.base}\n${i.err}`).join('\n\n---\n\n')
+        : undefined,
+  });
+
+  if (imported > 0 && parent) {
+    parent.webContents.reloadIgnoringCache();
+  }
+}
+
+function setupApplicationMenu() {
+  const isMac = process.platform === 'darwin';
+  const fileSubmenu = [
+    {
+      label: 'Import sessions…',
+      click: () => {
+        importSessionsFromFiles().catch((err) => console.error(err));
+      },
+    },
+    { type: 'separator' },
+    isMac ? { role: 'close' } : { role: 'quit' },
+  ];
+
+  /** @type {Electron.MenuItemConstructorOptions[]} */
+  const template = [
+    ...(isMac
+      ? [
+          {
+            label: app.name,
+            submenu: [
+              { role: 'about' },
+              { type: 'separator' },
+              { role: 'services' },
+              { type: 'separator' },
+              { role: 'hide' },
+              { role: 'hideOthers' },
+              { role: 'unhide' },
+              { type: 'separator' },
+              { role: 'quit' },
+            ],
+          },
+        ]
+      : []),
+    { label: 'File', submenu: fileSubmenu },
+  ];
+
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
 
 function resolvePythonExecutable() {
   const winVenv = path.join(PROJECT_ROOT, '.venv', 'Scripts', 'python.exe');
@@ -125,7 +291,6 @@ app.whenReady().then(async () => {
   } catch (e) {
     console.error(e.message);
     const python = resolvePythonExecutable();
-    const { dialog } = require('electron');
     await dialog.showMessageBox({
       type: 'error',
       title: 'Elite Training',
@@ -138,6 +303,7 @@ app.whenReady().then(async () => {
     return;
   }
   createWindow(port);
+  setupApplicationMenu();
 });
 
 app.on('window-all-closed', () => {
