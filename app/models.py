@@ -22,6 +22,7 @@ class MissType(str, Enum):
 
 class MissOutcome(str, Enum):
     POT_MISS = "pot_miss"
+    PLAYABLE = "playable"
     NO_SHOT_POSITION = "no_shot_position"
     BOTH = "both"
 

@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "id": "3011e88e-353b-474c-8a6f-793dba366363",
+  "programId": "3c9bbe08-5084-4da2-9738-3ab30c3096d2",
+  "planId": "6c6a3746-9733-469a-9e4e-5ba8e203c085",
+  "status": "in_progress",
+  "startedAt": "2026-04-11T17:21:11.047410+00:00",
+  "endedAt": null,
+  "durationSeconds": 786,
+  "isPaused": true,
+  "lastUnpausedAt": "2026-04-11T17:21:11.047410+00:00",
+  "tableType": "eight_ft",
+  "mode": "rack",
+  "ruleOverrides": null,
+  "totalRacks": 1,
+  "totalMisses": 3,
+  "avgBallsClearedPerRack": 2.0,
+  "bestRunBalls": 4,
+  "noShotPositionCount": 2,
+  "missTypeCounts": {
+    "position": 3,
+    "alignment": 0,
+    "delivery": 0,
+    "speed": 3,
+    "combined": 0
+  },
+  "racks": [
+    {
+      "id": "4f88df37-293f-4a3a-82b0-1c3682c6d4b2",
+      "rackNumber": 1,
+      "startedAt": "2026-04-11T17:21:11.047410+00:00",
+      "endedAt": "2026-04-11T17:34:09.468470+00:00",
+      "ballsCleared": 2,
+      "misses": [
+        {
+          "id": "d68cea43-995b-48ac-a50e-94efaa209f57",
+          "ballNumber": 1,
+          "types": [
+            "position",
+            "speed"
+          ],
+          "outcome": "no_shot_position",
+          "confidence": null,
+          "createdAt": "2026-04-11T17:22:48.294262+00:00"
+        },
+        {
+          "id": "1804e913-2f32-43d8-a00a-1fe007f1553c",
+          "ballNumber": 3,
+          "types": [
+            "position",
+            "speed"
+          ],
+          "outcome": "playable",
+          "confidence": null,
+          "createdAt": "2026-04-11T17:26:37.085581+00:00"
+        },
+        {
+          "id": "cb029579-81eb-4f03-915d-418638a64eef",
+          "ballNumber": 5,
+          "types": [
+            "position",
+            "speed"
+          ],
+          "outcome": "no_shot_position",
+          "confidence": null,
+          "createdAt": "2026-04-11T17:26:48.185766+00:00"
+        }
+      ]
+    }
+  ],
+  "currentRackId": null
+}

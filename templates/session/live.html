@@ -118,6 +118,8 @@
       <label>
         <div style="font-weight: 600; font-size: 0.9rem;">Outcome</div>
         <select name="outcome" id="miss-outcome" required>
+          <option value="" disabled selected>— Select outcome —</option>
+          <option value="playable">Playable (poor shape)</option>
           <option value="pot_miss">Pot miss</option>
           <option value="no_shot_position">No shot (position)</option>
           <option value="both">Both</option>
@@ -142,15 +144,34 @@
 </dialog>
 
 <dialog id="rack-end-dialog" class="modal">
-  <form method="dialog" id="rack-end-form" class="modal__body">
-    <h2>End rack</h2>
-    <p class="muted">Adjust balls cleared if the default is wrong.</p>
-    <label>Balls cleared (0–9)
-      <input name="balls_cleared" id="rack-balls" type="number" min="0" max="9">
-    </label>
-    <menu class="modal__actions">
+  <form method="dialog" id="rack-end-form" class="modal__body miss-modal">
+    <div class="miss-modal__header">
+      <h2>End rack</h2>
+      <p class="muted small">Select the balls you successfully potted this rack.</p>
+    </div>
+    
+    <div class="miss-modal__group">
+      <span class="label-text" style="text-align: center;">Balls potted</span>
+      <div class="ball-grid">
+        <label class="ball-chip end-ball-chip ball-1"><input type="checkbox" name="end_ball" class="end-ball-checkbox" value="1"><span>1</span></label>
+        <label class="ball-chip end-ball-chip ball-2"><input type="checkbox" name="end_ball" class="end-ball-checkbox" value="2"><span>2</span></label>
+        <label class="ball-chip end-ball-chip ball-3"><input type="checkbox" name="end_ball" class="end-ball-checkbox" value="3"><span>3</span></label>
+        <label class="ball-chip end-ball-chip ball-4"><input type="checkbox" name="end_ball" class="end-ball-checkbox" value="4"><span>4</span></label>
+        <label class="ball-chip end-ball-chip ball-5"><input type="checkbox" name="end_ball" class="end-ball-checkbox" value="5"><span>5</span></label>
+        <label class="ball-chip end-ball-chip ball-6"><input type="checkbox" name="end_ball" class="end-ball-checkbox" value="6"><span>6</span></label>
+        <label class="ball-chip end-ball-chip ball-7"><input type="checkbox" name="end_ball" class="end-ball-checkbox" value="7"><span>7</span></label>
+        <label class="ball-chip end-ball-chip ball-8"><input type="checkbox" name="end_ball" class="end-ball-checkbox" value="8"><span>8</span></label>
+        <label class="ball-chip end-ball-chip ball-9"><input type="checkbox" name="end_ball" class="end-ball-checkbox" value="9"><span>9</span></label>
+      </div>
+    </div>
+    
+    <div class="muted small" style="text-align: center; margin-top: 0.5rem; font-size: 0.95rem;">
+      <strong id="end-rack-count" style="color: var(--text); font-size: 1.1rem;">0</strong> balls cleared
+    </div>
+
+    <menu class="modal__actions miss-modal__actions">
       <button type="button" class="btn btn--ghost" id="rack-cancel">Cancel</button>
-      <button type="submit" class="btn btn--primary">Confirm</button>
+      <button type="submit" class="btn btn--primary btn--xl">Confirm</button>
     </menu>
   </form>
 </dialog>

@@ -3,7 +3,7 @@
   "programs": [
     {
       "id": "3c9bbe08-5084-4da2-9738-3ab30c3096d2",
-      "name": "Precision (sample)",
+      "name": "Precision",
       "durationDays": 90,
       "active": true,
       "plans": [
@@ -24,11 +24,11 @@
         {
           "id": "310ed38c-eafa-4546-94a5-0951e83c6474",
           "programId": "3c9bbe08-5084-4da2-9738-3ab30c3096d2",
-          "name": "Phase 2",
+          "name": "Phase 2 - 10cm",
           "focusType": "mixed",
           "targetDiameterCm": 10.0,
           "sessionsPerWeek": 4,
-          "durationWeeks": null,
+          "durationWeeks": 12,
           "rules": {
             "resetAfterConsecutiveMisses": 3,
             "warnAtConsecutiveMisses": 2,

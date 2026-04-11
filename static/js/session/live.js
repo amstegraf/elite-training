@@ -13,7 +13,8 @@
   const rackForm = document.getElementById("rack-end-form");
   const missCancel = document.getElementById("miss-cancel");
   const rackCancel = document.getElementById("rack-cancel");
-  const rackBalls = document.getElementById("rack-balls");
+  const endRackCheckboxes = document.querySelectorAll('.end-ball-checkbox');
+  const endRackCount = document.getElementById("end-rack-count");
   const rackLabel = document.getElementById("rack-label");
   const missTotal = document.getElementById("miss-total");
   const rulesBanner = document.getElementById("rules-banner");
@@ -25,6 +26,16 @@
   const iconPlay = document.getElementById("icon-play");
   const btnPauseText = document.getElementById("btn-pause-text");
   const durationLabel = document.getElementById("session-duration");
+
+  function updateEndRackCount() {
+    let count = 0;
+    endRackCheckboxes.forEach(cb => { if (cb.checked) count++; });
+    if (endRackCount) endRackCount.textContent = count;
+  }
+
+  endRackCheckboxes.forEach(cb => {
+    cb.addEventListener("change", updateEndRackCount);
+  });
 
   let live = null;
   let currentDurationSeconds = 0;
@@ -209,12 +220,28 @@
     dialog.close();
   });
 
-  btnEndRack.addEventListener("click", async () => {
+  btnEndRack.addEventListener("click", () => {
     const rack = currentRack();
-    if (!rack) return;
-    await refresh();
-    const suggestion = live.rackEndSuggestion;
-    rackBalls.value = suggestion != null ? String(suggestion) : "";
+    if (rack) {
+      let maxBall = live.suggestedNextBall ? live.suggestedNextBall - 1 : 0;
+      const missedBalls = new Set();
+      if (rack.misses && rack.misses.length > 0) {
+        rack.misses.forEach(m => {
+          missedBalls.add(m.ballNumber);
+          maxBall = Math.max(maxBall, m.ballNumber);
+        });
+      }
+      
+      endRackCheckboxes.forEach(cb => {
+        const num = parseInt(cb.value, 10);
+        if (num <= maxBall && !missedBalls.has(num)) {
+          cb.checked = true;
+        } else {
+          cb.checked = false;
+        }
+      });
+      updateEndRackCount();
+    }
     rackDialog.showModal();
   });
 
@@ -222,12 +249,14 @@
     e.preventDefault();
     const rack = currentRack();
     if (!rack) return;
-    const raw = rackBalls.value.trim();
-    const body = raw === "" ? {} : { ballsCleared: parseInt(raw, 10) };
+    
+    let count = 0;
+    endRackCheckboxes.forEach(cb => { if (cb.checked) count++; });
+
     const res = await fetch(`/api/sessions/${sessionId}/racks/${rack.id}/end`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ ballsCleared: count }),
     });
     if (!res.ok) {
       const msg = (await res.json().catch(() => ({}))).detail || "Could not end rack";
