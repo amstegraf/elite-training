@@ -46,7 +46,7 @@ async def session_report_page(request: Request, session_id: str) -> object:
     session = load_session(session_id)
     if not session:
         return RedirectResponse(url="/", status_code=302)
-    # Derive totals (e.g. totalBallsCleared, conversionEfficiency) from racks — not only from
+    # Derive totals (e.g. totalBallsCleared, flow efficiency, true miss rate, rack spread) from racks
     # stored session fields, so older JSON without those keys still reports correctly.
     recompute_session_aggregates(session)
     templates = get_templates()

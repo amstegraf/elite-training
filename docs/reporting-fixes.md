@@ -41,4 +41,6 @@ Each session file is reloaded, `recompute_session_aggregates` runs, and KPIs are
 
 The **`/progress`** page does **not** rely on stored session totals: `aggregate_sessions_progress` calls `recompute_session_aggregates` on each completed session in memory so charts match the current rules even if JSON was never migrated.
 
-**Conversion efficiency** (session report + progress): `total_balls_cleared / (total_balls_cleared + training_miss_count)` over ended racks, where *training misses* are non-run-breaking logs (playable / no-shot by default, etc.).
+**Flow efficiency** (UI name; stored as `conversionEfficiency` in JSON): `total_balls_cleared / (total_balls_cleared + training_miss_count)` over ended racks, where *training misses* are non-run-breaking logs (playable / no-shot by default, etc.)—continuity, not raw success only.
+
+**True miss rate**: `trueMissCount / totalRacks` (ended racks). **Rack consistency**: `worstRackBallsCleared` / `avgBallsClearedPerRack` / `bestRackBallsCleared` from balls cleared per ended rack.

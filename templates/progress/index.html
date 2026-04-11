@@ -76,12 +76,30 @@
       </div>
     </article>
 
-    <!-- Chart 3b: Conversion efficiency -->
+    <!-- Chart 3b: Flow efficiency -->
     <article class="chart-card">
-      <h2>Conversion efficiency</h2>
-      <p class="muted">Balls cleared ÷ (balls cleared + training misses) per session. Higher means shape/position notes more often still lead to balls made.</p>
+      <h2>Flow efficiency</h2>
+      <p class="muted">Balls cleared ÷ (balls cleared + training misses) per session — continuity, not raw success only.</p>
       <div class="chart-container">
         <canvas id="chart-conversion"></canvas>
+      </div>
+    </article>
+
+    <!-- Chart 3b2: True miss rate -->
+    <article class="chart-card">
+      <h2>True miss rate</h2>
+      <p class="muted">True misses ÷ ended racks per session (hard failures per rack). Lower is stricter run discipline.</p>
+      <div class="chart-container">
+        <canvas id="chart-true-miss-rate"></canvas>
+      </div>
+    </article>
+
+    <!-- Chart 3b3: Rack consistency -->
+    <article class="chart-card">
+      <h2>Rack consistency</h2>
+      <p class="muted">Balls cleared per rack: worst vs average vs best. A wide gap flags volatility.</p>
+      <div class="chart-container">
+        <canvas id="chart-rack-spread"></canvas>
       </div>
     </article>
 

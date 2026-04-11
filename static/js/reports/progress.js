@@ -137,10 +137,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 3b. Conversion efficiency (0–1 stored → display %)
+    // 3b. Flow efficiency (0–1 stored → display %); key is flow_efficiency with legacy fallback
     const ctxConv = document.getElementById('chart-conversion');
-    if (ctxConv && data.conversion_efficiency && data.conversion_efficiency.some((v) => v != null)) {
-        const convPct = data.conversion_efficiency.map((v) => (v == null ? null : Math.round(v * 1000) / 10));
+    const flowSeries = data.flow_efficiency || data.conversion_efficiency;
+    if (ctxConv && flowSeries && flowSeries.some((v) => v != null)) {
+        const convPct = flowSeries.map((v) => (v == null ? null : Math.round(v * 1000) / 10));
         const convOpt = cloneObj(commonLineOptions);
         convOpt.scales.y.max = 100;
         new Chart(ctxConv, {
@@ -148,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
             data: {
                 labels: data.labels,
                 datasets: [{
-                    label: 'Conversion %',
+                    label: 'Flow efficiency %',
                     data: convPct,
                     borderColor: '#0284c7',
                     backgroundColor: 'rgba(2, 132, 199, 0.15)',
@@ -156,6 +157,77 @@ document.addEventListener('DOMContentLoaded', () => {
                 }]
             },
             options: convOpt
+        });
+    }
+
+    // 3b2. True miss rate (per ended rack)
+    const ctxTmr = document.getElementById('chart-true-miss-rate');
+    if (ctxTmr && data.true_miss_rates && data.true_miss_rates.some((v) => v != null)) {
+        const tmrOpt = cloneObj(commonLineOptions);
+        new Chart(ctxTmr, {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'True misses / rack',
+                    data: data.true_miss_rates,
+                    borderColor: darkAcc,
+                    backgroundColor: 'rgba(26, 27, 31, 0.08)',
+                    fill: true
+                }]
+            },
+            options: tmrOpt
+        });
+    }
+
+    // 3b3. Worst / avg / best balls cleared per rack
+    const ctxSpread = document.getElementById('chart-rack-spread');
+    if (
+        ctxSpread &&
+        data.labels &&
+        data.labels.length &&
+        data.avg_rack_balls &&
+        data.avg_rack_balls.length
+    ) {
+        const spreadOpt = cloneObj(commonLineOptions);
+        spreadOpt.plugins.legend = { display: true, position: 'top' };
+        new Chart(ctxSpread, {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [
+                    {
+                        label: 'Worst rack',
+                        data: data.worst_rack_balls,
+                        borderColor: '#dc2626',
+                        backgroundColor: 'rgba(220, 38, 38, 0.06)',
+                        fill: false,
+                        tension: 0.25,
+                        borderWidth: 2,
+                        spanGaps: true
+                    },
+                    {
+                        label: 'Average / rack',
+                        data: data.avg_rack_balls,
+                        borderColor: '#64748b',
+                        backgroundColor: 'rgba(100, 116, 139, 0.1)',
+                        fill: false,
+                        tension: 0.25,
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Best rack',
+                        data: data.best_rack_balls,
+                        borderColor: prColor,
+                        backgroundColor: prColorLight,
+                        fill: false,
+                        tension: 0.25,
+                        borderWidth: 2,
+                        spanGaps: true
+                    }
+                ]
+            },
+            options: spreadOpt
         });
     }
 

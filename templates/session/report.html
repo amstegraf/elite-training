@@ -31,13 +31,43 @@
       <div class="stat-card__value">{{ session.best_run_balls }} <span style="font-size: 1rem; color: var(--muted); font-weight: normal;">balls</span></div>
     </article>
     <article class="stat-card" style="border: 2px solid rgba(56, 189, 248, 0.45);">
-      <div class="stat-card__label" style="color: #0284c7;">Conversion efficiency</div>
+      <div class="stat-card__label" style="color: #0284c7;">Flow efficiency</div>
       <div class="stat-card__value">
         {% if session.conversion_efficiency is not none %}
         {{ "%.1f"|format(session.conversion_efficiency * 100) }}<span style="font-size: 1rem; color: var(--muted); font-weight: normal;">%</span>
         {% else %}—{% endif %}
       </div>
-      <p class="muted" style="margin: 0.5rem 0 0; font-size: 0.8rem; line-height: 1.35;">Balls cleared ÷ (balls cleared + training misses). How often logged shape/position work still turns into balls made.</p>
+      <p class="muted" style="margin: 0.5rem 0 0; font-size: 0.8rem; line-height: 1.35;">Balls cleared ÷ (balls cleared + training misses). Continuity: how often table progress continues despite soft logs.</p>
+    </article>
+    <article class="stat-card" style="border: 2px solid rgba(15, 23, 42, 0.12);">
+      <div class="stat-card__label">True miss rate</div>
+      <div class="stat-card__value">
+        {% if session.true_miss_rate is not none %}
+        {{ "%.2f"|format(session.true_miss_rate) }}<span style="font-size: 1rem; color: var(--muted); font-weight: normal;"> / rack</span>
+        {% else %}—{% endif %}
+      </div>
+      <p class="muted" style="margin: 0.5rem 0 0; font-size: 0.8rem; line-height: 1.35;">True misses ÷ ended racks (hard failures per rack).</p>
+    </article>
+  </div>
+
+  <div class="reports__kpi-grid" style="margin-top: 1rem; grid-template-columns: 1fr;">
+    <article class="stat-card" style="text-align: left;">
+      <div class="stat-card__label">Rack consistency (balls cleared)</div>
+      <p class="muted" style="margin: 0 0 0.75rem; font-size: 0.9rem;">Gap between worst and best rack shows volatility; compare to average.</p>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; max-width: 720px;">
+        <div>
+          <div class="muted" style="font-size: 0.8rem;">Worst rack</div>
+          <div style="font-size: 1.75rem; font-weight: 700;">{% if session.worst_rack_balls_cleared is not none %}{{ session.worst_rack_balls_cleared }}{% else %}—{% endif %}</div>
+        </div>
+        <div>
+          <div class="muted" style="font-size: 0.8rem;">Average</div>
+          <div style="font-size: 1.75rem; font-weight: 700;">{% if session.avg_balls_cleared_per_rack is not none %}{{ "%.2f"|format(session.avg_balls_cleared_per_rack) }}{% else %}—{% endif %}</div>
+        </div>
+        <div>
+          <div class="muted" style="font-size: 0.8rem;">Best rack</div>
+          <div style="font-size: 1.75rem; font-weight: 700;">{% if session.best_rack_balls_cleared is not none %}{{ session.best_rack_balls_cleared }}{% else %}—{% endif %}</div>
+        </div>
+      </div>
     </article>
   </div>
 

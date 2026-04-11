@@ -120,6 +120,9 @@ def test_recompute_session_totals() -> None:
     assert s.training_miss_count == 0
     assert s.total_balls_cleared == 1
     assert s.conversion_efficiency == 1.0
+    assert s.true_miss_rate == 1.0
+    assert s.worst_rack_balls_cleared == 1
+    assert s.best_rack_balls_cleared == 1
     assert s.miss_type_counts.position == 1
     assert s.no_shot_position_count == 0
 
@@ -174,6 +177,9 @@ def test_recompute_soft_vs_true_example_session_shape() -> None:
     assert s.total_balls_cleared == 15
     assert s.conversion_efficiency is not None
     assert s.conversion_efficiency == round(15 / 17, 4)
+    assert s.true_miss_rate == round(1 / 2, 4)
+    assert s.worst_rack_balls_cleared == 6
+    assert s.best_rack_balls_cleared == 9
 
 
 def test_rack_recovery_training_then_true_is_failed() -> None:

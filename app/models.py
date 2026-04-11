@@ -179,11 +179,20 @@ class PrecisionSession(BaseModel):
     avg_balls_before_true_miss: Optional[float] = Field(
         default=None, alias="avgBallsBeforeTrueMiss"
     )
-    # Sum of ballsCleared over ended racks; used with training_miss_count for conversion.
+    # Sum of ballsCleared over ended racks; used with training_miss_count for flow efficiency.
     total_balls_cleared: int = Field(default=0, ge=0, alias="totalBallsCleared")
-    # Balls cleared / (balls cleared + training misses); position work → table progress.
+    # Flow efficiency (UI name): balls cleared / (balls cleared + training misses).
     conversion_efficiency: Optional[float] = Field(
         default=None, ge=0, le=1, alias="conversionEfficiency"
+    )
+    # True misses ÷ ended racks (hard failure rate).
+    true_miss_rate: Optional[float] = Field(default=None, ge=0, alias="trueMissRate")
+    # Balls cleared per rack spread (consistency); avg matches avgBallsClearedPerRack.
+    worst_rack_balls_cleared: Optional[int] = Field(
+        default=None, ge=0, le=9, alias="worstRackBallsCleared"
+    )
+    best_rack_balls_cleared: Optional[int] = Field(
+        default=None, ge=0, le=9, alias="bestRackBallsCleared"
     )
 
     # Resilience (recovery-metric.md): after a training miss, did the rack stay alive?

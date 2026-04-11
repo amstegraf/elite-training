@@ -180,6 +180,12 @@ def recompute_session_aggregates(session: PrecisionSession) -> None:
         session.avg_balls_cleared_per_rack = (
             sum(cleared_vals) / len(cleared_vals) if cleared_vals else None
         )
+        if cleared_vals:
+            session.worst_rack_balls_cleared = min(cleared_vals)
+            session.best_rack_balls_cleared = max(cleared_vals)
+        else:
+            session.worst_rack_balls_cleared = None
+            session.best_rack_balls_cleared = None
         session.best_run_balls = best
         if all_streaks_before_breaking:
             session.avg_balls_before_true_miss = sum(all_streaks_before_breaking) / len(
@@ -201,8 +207,15 @@ def recompute_session_aggregates(session: PrecisionSession) -> None:
         session.avg_balls_before_true_miss = None
         session.total_balls_cleared = 0
         session.conversion_efficiency = None
+        session.worst_rack_balls_cleared = None
+        session.best_rack_balls_cleared = None
 
     session.total_racks = len(ended)
+    tr = session.total_racks
+    if tr > 0:
+        session.true_miss_rate = round(session.true_miss_count / tr, 4)
+    else:
+        session.true_miss_rate = None
 
 
 def breaking_miss_type_counts(session: PrecisionSession) -> MissTypeCounts:
@@ -259,6 +272,10 @@ def aggregate_sessions_progress(sessions: list[PrecisionSession]) -> dict[str, l
 
     ball_miss_hist = {str(i): 0 for i in range(1, 16)}
     conversion_eff: list[float | None] = []
+    true_miss_rates: list[float | None] = []
+    worst_rack_balls: list[int | None] = []
+    best_rack_balls: list[int | None] = []
+    avg_rack_balls: list[float] = []
     recovery_pct: list[float | None] = []
     failed_recovery_pct: list[float | None] = []
 
@@ -280,6 +297,12 @@ def aggregate_sessions_progress(sessions: list[PrecisionSession]) -> dict[str, l
         no_shot_counts.append(s.no_shot_position_count)
         best_runs.append(s.best_run_balls)
         conversion_eff.append(s.conversion_efficiency)
+        true_miss_rates.append(
+            round(s.true_miss_rate, 3) if s.true_miss_rate is not None else None
+        )
+        worst_rack_balls.append(s.worst_rack_balls_cleared)
+        best_rack_balls.append(s.best_rack_balls_cleared)
+        avg_rack_balls.append(round(s.avg_balls_cleared_per_rack or 0, 2))
         recovery_pct.append(
             round(s.recovery_rate * 100, 1) if s.recovery_rate is not None else None
         )
@@ -321,7 +344,12 @@ def aggregate_sessions_progress(sessions: list[PrecisionSession]) -> dict[str, l
         "misses_per_rack": true_misses_per_rack,
         "no_shot_counts": no_shot_counts,
         "best_runs": best_runs,
+        "flow_efficiency": conversion_eff,
         "conversion_efficiency": conversion_eff,
+        "true_miss_rates": true_miss_rates,
+        "worst_rack_balls": worst_rack_balls,
+        "best_rack_balls": best_rack_balls,
+        "avg_rack_balls": avg_rack_balls,
         "recovery_pct": recovery_pct,
         "failed_recovery_pct": failed_recovery_pct,
         "miss_type_position": pct_position,
