@@ -118,6 +118,7 @@ def training_tier_dashboard_meta(
             "composite": round(comp, 4),
             "tier_points": tier_pts,
             "points_to_next": None,
+            "next_tier_label": None,
             "progress_pct": round(pct, 1),
             "band_lo_pts": int(round(lo_pt)),
             "band_hi_pts": int(ceiling),
@@ -127,11 +128,13 @@ def training_tier_dashboard_meta(
     span = hi_pt - lo_pt
     pct = max(0.0, min(100.0, ((tp - lo_pt) / span) * 100.0)) if span > 0 else 100.0
     gap_pts = max(0, int(round(hi_pt - tp)))
+    next_label = TIER_LABELS[idx + 1]
 
     return {
         "composite": round(comp, 4),
         "tier_points": tier_pts,
         "points_to_next": gap_pts,
+        "next_tier_label": next_label,
         "progress_pct": round(pct, 1),
         "band_lo_pts": int(round(lo_pt)),
         "band_hi_pts": int(round(hi_pt)),

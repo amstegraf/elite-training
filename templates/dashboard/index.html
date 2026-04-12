@@ -21,7 +21,7 @@
               <span style="font-weight: 700; color: var(--text); font-size: 0.9rem;" class="mono">{{ global_training_tier_meta.tier_points }} <span style="font-size: 0.75rem; color: var(--muted); font-weight: normal; font-family: var(--font-main);">pts</span></span>
               {% if global_training_tier_meta.points_to_next is not none %}
               <span style="color: var(--muted); opacity: 0.6; font-size: 0.75rem;">|</span>
-              <span class="mono" style="font-size: 0.8rem; font-weight: 600;">{{ global_training_tier_meta.points_to_next }} <span style="font-family: var(--font-main); font-weight: normal; font-size: 0.75rem;">to next</span></span>
+              <span class="mono" style="font-size: 0.8rem; font-weight: 600;">{{ global_training_tier_meta.points_to_next }} <span style="font-family: var(--font-main); font-weight: normal; font-size: 0.75rem;">to {{ global_training_tier_meta.next_tier_label }}</span></span>
               {% else %}
               <span style="color: var(--muted); opacity: 0.6; font-size: 0.75rem;">|</span>
               <span style="font-size: 0.75rem;">Max tier attained</span>

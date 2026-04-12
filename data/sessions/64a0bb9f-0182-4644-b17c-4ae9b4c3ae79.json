@@ -22,6 +22,13 @@
   "totalBallsCleared": 23,
   "conversionEfficiency": 0.697,
   "trueMissRate": 0.4,
+  "racksCompleted": 0,
+  "rackConversionRate": null,
+  "potMissShotCount": 0,
+  "potAttempts": 0,
+  "potSuccessRate": null,
+  "positionRelatedMissCount": 0,
+  "positionSuccessRate": null,
   "worstRackBallsCleared": 2,
   "bestRackBallsCleared": 9,
   "recoveryCount": 8,
@@ -203,5 +210,6 @@
       ]
     }
   ],
-  "currentRackId": null
+  "currentRackId": null,
+  "profileId": "a0639535-b363-4e03-a696-4611aceb53c0"
 }

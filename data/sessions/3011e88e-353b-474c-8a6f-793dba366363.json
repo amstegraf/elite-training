@@ -21,6 +21,16 @@
   "avgBallsBeforeTrueMiss": 6.0,
   "totalBallsCleared": 23,
   "conversionEfficiency": 0.7419,
+  "trueMissRate": null,
+  "racksCompleted": 0,
+  "rackConversionRate": null,
+  "potMissShotCount": 0,
+  "potAttempts": 0,
+  "potSuccessRate": null,
+  "positionRelatedMissCount": 0,
+  "positionSuccessRate": null,
+  "worstRackBallsCleared": null,
+  "bestRackBallsCleared": null,
   "recoveryCount": 7,
   "failedRecoveryCount": 1,
   "recoveryRate": 0.875,
@@ -30,8 +40,7 @@
     "position": 8,
     "alignment": 2,
     "delivery": 1,
-    "speed": 7,
-    "combined": 0
+    "speed": 7
   },
   "racks": [
     {
@@ -48,7 +57,6 @@
             "speed"
           ],
           "outcome": "no_shot_position",
-          "confidence": null,
           "endsRun": null,
           "createdAt": "2026-04-11T17:22:48.294262+00:00"
         },
@@ -59,7 +67,6 @@
             "speed"
           ],
           "outcome": "playable",
-          "confidence": null,
           "endsRun": null,
           "createdAt": "2026-04-11T17:26:37.085581+00:00"
         },
@@ -70,7 +77,6 @@
             "speed"
           ],
           "outcome": "no_shot_position",
-          "confidence": null,
           "endsRun": null,
           "createdAt": "2026-04-11T17:26:48.185766+00:00"
         }
@@ -90,7 +96,6 @@
             "speed"
           ],
           "outcome": "no_shot_position",
-          "confidence": null,
           "endsRun": null,
           "createdAt": "2026-04-11T18:38:54.214226+00:00"
         }
@@ -111,7 +116,6 @@
             "alignment"
           ],
           "outcome": "playable",
-          "confidence": null,
           "endsRun": null,
           "createdAt": "2026-04-11T18:44:29.197319+00:00"
         },
@@ -122,7 +126,6 @@
             "speed"
           ],
           "outcome": "no_shot_position",
-          "confidence": null,
           "endsRun": null,
           "createdAt": "2026-04-11T18:45:44.877297+00:00"
         },
@@ -133,7 +136,6 @@
             "speed"
           ],
           "outcome": "no_shot_position",
-          "confidence": null,
           "endsRun": null,
           "createdAt": "2026-04-11T18:46:52.135645+00:00"
         }
@@ -153,7 +155,6 @@
             "speed"
           ],
           "outcome": "playable",
-          "confidence": null,
           "endsRun": null,
           "createdAt": "2026-04-11T18:50:31.291907+00:00"
         },
@@ -165,12 +166,12 @@
             "delivery"
           ],
           "outcome": "pot_miss",
-          "confidence": null,
           "endsRun": null,
           "createdAt": "2026-04-11T18:51:37.733586+00:00"
         }
       ]
     }
   ],
-  "currentRackId": null
+  "currentRackId": null,
+  "profileId": "a0639535-b363-4e03-a696-4611aceb53c0"
 }
