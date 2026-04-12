@@ -1,0 +1,120 @@
+{% extends "settings/_layout.html" %}
+{% block settings_title %}Training tiers{% endblock %}
+{% block settings_body %}
+<section>
+  <header class="page__header" style="margin-bottom: 0;">
+    <div>
+      <h1 style="margin: 0 0 0.35rem;">Training tiers</h1>
+      <p class="lede" style="margin: 0;">Weighted composite of potting, position outcome, and rack conversion scores. See <span class="mono">docs/matrix-calculation-of-tier.md</span>. Values are saved to <span class="mono">data/tier_settings.json</span> and drive the dashboard badge and session report.</p>
+    </div>
+    <a class="btn btn--ghost" href="/">Dashboard</a>
+  </header>
+
+  {% if request.query_params.get('saved') == '1' %}
+  <p class="banner" style="margin-top: 1rem;">Settings saved.</p>
+  {% endif %}
+  {% if save_error %}
+  <p class="banner banner--warn" style="margin-top: 1rem;">Could not save: {{ save_error }}</p>
+  {% endif %}
+
+  {% set ts = tier_settings %}
+
+  <article class="card card--wide" style="margin-top: 1.5rem;">
+    <h2 style="margin: 0 0 0.75rem; font-size: 1.15rem;">How it works</h2>
+    <ol class="muted" style="margin: 0; padding-left: 1.25rem; line-height: 1.6;">
+      <li>Each KPI (as a percentage) maps to a score 0–4 using the four lower bounds in each row below.</li>
+      <li><code>composite = POS×{{ ts.weight_pos }} + CONV×{{ ts.weight_conv }} + POT×{{ ts.weight_pot }}</code> (scores are integers; result is 0–4).</li>
+      <li>The composite maps to a tier using the four cut values (exclusive upper bounds for lower tiers).</li>
+    </ol>
+  </article>
+
+  <div class="grid grid--2" style="margin-top: 1.5rem; gap: 1.5rem; align-items: start;">
+    <article class="card card--wide">
+      <h2 style="margin: 0 0 1rem; font-size: 1.1rem;">KPI → score (0–4)</h2>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>KPI</th><th>Score</th><th>Band (%)</th></tr></thead>
+          <tbody>
+            {% for row in kpi_band_rows %}
+            <tr>
+              <td>{{ row.kpi }}</td>
+              <td class="mono">{{ row.score }}</td>
+              <td>{{ row.band }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </article>
+    <article class="card card--wide">
+      <h2 style="margin: 0 0 1rem; font-size: 1.1rem;">Composite → tier</h2>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Tier</th><th>Composite range</th></tr></thead>
+          <tbody>
+            {% for band in composite_bands %}
+            <tr>
+              <td><strong>{{ band.label }}</strong></td>
+              <td class="mono">{{ band.range_summary }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </article>
+  </div>
+
+  <article class="card card--wide" style="margin-top: 1.5rem;">
+    <h2 style="margin: 0 0 1rem; font-size: 1.15rem;">Edit thresholds</h2>
+    <form method="post" action="/settings/tiers" class="form-grid" style="max-width: 52rem;">
+      <fieldset style="border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; margin: 0;">
+        <legend class="muted" style="font-size: 0.85rem;">Potting % lower bounds (b0 &lt; b1 &lt; b2 &lt; b3)</legend>
+        <div class="row" style="gap: 0.75rem; flex-wrap: wrap;">
+          <label>b0 <input name="pot_b0" type="number" step="0.1" required value="{{ ts.pot_pct_lower_bounds[0] }}"></label>
+          <label>b1 <input name="pot_b1" type="number" step="0.1" required value="{{ ts.pot_pct_lower_bounds[1] }}"></label>
+          <label>b2 <input name="pot_b2" type="number" step="0.1" required value="{{ ts.pot_pct_lower_bounds[2] }}"></label>
+          <label>b3 <input name="pot_b3" type="number" step="0.1" required value="{{ ts.pot_pct_lower_bounds[3] }}"></label>
+        </div>
+      </fieldset>
+      <fieldset style="border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; margin: 0;">
+        <legend class="muted" style="font-size: 0.85rem;">Position outcome % lower bounds</legend>
+        <div class="row" style="gap: 0.75rem; flex-wrap: wrap;">
+          <label>b0 <input name="pos_b0" type="number" step="0.1" required value="{{ ts.pos_pct_lower_bounds[0] }}"></label>
+          <label>b1 <input name="pos_b1" type="number" step="0.1" required value="{{ ts.pos_pct_lower_bounds[1] }}"></label>
+          <label>b2 <input name="pos_b2" type="number" step="0.1" required value="{{ ts.pos_pct_lower_bounds[2] }}"></label>
+          <label>b3 <input name="pos_b3" type="number" step="0.1" required value="{{ ts.pos_pct_lower_bounds[3] }}"></label>
+        </div>
+      </fieldset>
+      <fieldset style="border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; margin: 0;">
+        <legend class="muted" style="font-size: 0.85rem;">Rack conversion % lower bounds</legend>
+        <div class="row" style="gap: 0.75rem; flex-wrap: wrap;">
+          <label>b0 <input name="conv_b0" type="number" step="0.1" required value="{{ ts.conv_pct_lower_bounds[0] }}"></label>
+          <label>b1 <input name="conv_b1" type="number" step="0.1" required value="{{ ts.conv_pct_lower_bounds[1] }}"></label>
+          <label>b2 <input name="conv_b2" type="number" step="0.1" required value="{{ ts.conv_pct_lower_bounds[2] }}"></label>
+          <label>b3 <input name="conv_b3" type="number" step="0.1" required value="{{ ts.conv_pct_lower_bounds[3] }}"></label>
+        </div>
+      </fieldset>
+      <fieldset style="border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; margin: 0;">
+        <legend class="muted" style="font-size: 0.85rem;">Weights (must sum to 1)</legend>
+        <div class="row" style="gap: 0.75rem; flex-wrap: wrap;">
+          <label>POS <input name="w_pos" type="number" step="0.01" required value="{{ ts.weight_pos }}"></label>
+          <label>CONV <input name="w_conv" type="number" step="0.01" required value="{{ ts.weight_conv }}"></label>
+          <label>POT <input name="w_pot" type="number" step="0.01" required value="{{ ts.weight_pot }}"></label>
+        </div>
+      </fieldset>
+      <fieldset style="border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; margin: 0;">
+        <legend class="muted" style="font-size: 0.85rem;">Composite tier cuts (strictly increasing, last &lt; 4)</legend>
+        <div class="row" style="gap: 0.75rem; flex-wrap: wrap;">
+          <label>c0 <input name="comp_c0" type="number" step="0.1" required value="{{ ts.composite_upper_bounds[0] }}"></label>
+          <label>c1 <input name="comp_c1" type="number" step="0.1" required value="{{ ts.composite_upper_bounds[1] }}"></label>
+          <label>c2 <input name="comp_c2" type="number" step="0.1" required value="{{ ts.composite_upper_bounds[2] }}"></label>
+          <label>c3 <input name="comp_c3" type="number" step="0.1" required value="{{ ts.composite_upper_bounds[3] }}"></label>
+        </div>
+      </fieldset>
+      <div class="row" style="margin-top: 0.5rem;">
+        <button type="submit" class="btn btn--pr">Save tier settings</button>
+      </div>
+    </form>
+  </article>
+</section>
+{% endblock %}
