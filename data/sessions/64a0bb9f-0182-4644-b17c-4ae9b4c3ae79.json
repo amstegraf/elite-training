@@ -96,7 +96,6 @@
           "id": "e7aa8b21-0e9e-4fd8-b62e-a4640f08daab",
           "ballNumber": 1,
           "types": [
-            "position",
             "speed"
           ],
           "outcome": "playable",
@@ -126,7 +125,6 @@
           "id": "08fed2eb-e360-44cd-bdab-afd6bede9a2c",
           "ballNumber": 2,
           "types": [
-            "position",
             "speed"
           ],
           "outcome": "playable",
@@ -137,7 +135,6 @@
           "id": "5c0ca897-8c0e-419a-894d-3a2ff7258064",
           "ballNumber": 3,
           "types": [
-            "position",
             "speed"
           ],
           "outcome": "playable",
@@ -167,7 +164,6 @@
           "id": "5081fbb0-45ba-4313-bcf1-6ed0e6193618",
           "ballNumber": 1,
           "types": [
-            "position",
             "speed"
           ],
           "outcome": "playable",
@@ -178,7 +174,6 @@
           "id": "fb5d0769-bfd3-4b3c-93e1-58694c74acb4",
           "ballNumber": 3,
           "types": [
-            "position",
             "speed"
           ],
           "outcome": "playable",
@@ -189,7 +184,6 @@
           "id": "862d1ea7-e7dc-4a1f-b852-7d9086e6bf65",
           "ballNumber": 4,
           "types": [
-            "position",
             "speed"
           ],
           "outcome": "playable",

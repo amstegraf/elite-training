@@ -1,0 +1,38 @@
+{% extends "settings/_layout.html" %}
+{% block settings_title %}About{% endblock %}
+{% block settings_body %}
+<section>
+  <header class="page__header" style="margin-bottom: 0;">
+    <div>
+      <h1 style="margin: 0 0 0.35rem;">About Elite Training</h1>
+      <p class="lede" style="margin: 0;">{{ app_description }}</p>
+    </div>
+    <a class="btn btn--ghost" href="/">Dashboard</a>
+  </header>
+
+  <article class="card card--wide" style="margin-top: 1.5rem;">
+    <h2 style="margin: 0 0 1rem; font-size: 1.1rem;">Application</h2>
+    <dl class="kv kv--spread" style="max-width: 36rem;">
+      <dt>Name</dt><dd><strong>Elite Training</strong></dd>
+      <dt>Version</dt><dd class="mono">{{ app_version }}</dd>
+      <dt>Runtime</dt><dd class="mono">Python {{ python_version }}</dd>
+      <dt>Project folder</dt><dd class="mono">{{ project_root_name }}</dd>
+    </dl>
+  </article>
+
+  <article class="card card--wide" style="margin-top: 1.5rem;">
+    <h2 style="margin: 0 0 1rem; font-size: 1.1rem;">What it does</h2>
+    <p class="muted" style="margin: 0 0 1rem;">Precision pool training: programs and plans, live sessions with rack-by-rack logging (misses, outcomes, tags), session reports, progress charts, and optional <strong>Electron</strong> desktop packaging that runs the same FastAPI app locally.</p>
+    <ul class="muted" style="margin: 0; padding-left: 1.25rem; line-height: 1.7;">
+      <li>Session data as JSON under <span class="mono">data/sessions/</span> (override with <span class="mono">ELITE_TRAINING_DATA_DIR</span>).</li>
+      <li>Programs and plans in <span class="mono">data/programs.json</span>.</li>
+      <li>Tier matrix and thresholds configurable under <a href="/settings/tiers">Settings → Training tiers</a>.</li>
+    </ul>
+  </article>
+
+  <article class="card card--wide" style="margin-top: 1.5rem;">
+    <h2 style="margin: 0 0 1rem; font-size: 1.1rem;">Documentation</h2>
+    <p class="muted" style="margin: 0;">Product direction and metrics are described in the repo under <span class="mono">docs/</span> (for example <span class="mono">docs/training-platform-description.md</span>, <span class="mono">docs/metric-position-success.md</span>, <span class="mono">docs/matrix-calculation-of-tier.md</span>).</p>
+  </article>
+</section>
+{% endblock %}

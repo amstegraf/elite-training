@@ -1,0 +1,76 @@
+/* Settings area: subnav + content (nested under main app shell) */
+.settings-shell {
+  display: flex;
+  align-items: flex-start;
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  min-height: calc(100vh - 5rem);
+}
+
+.settings-shell__aside {
+  flex: 0 0 200px;
+  position: sticky;
+  top: 0.5rem;
+  padding: 0.25rem 0;
+}
+
+.settings-shell__aside .eyebrow {
+  margin: 0 0 0.75rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.settings-nav a {
+  display: block;
+  padding: 0.55rem 0.85rem;
+  border-radius: 10px;
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.95rem;
+  border: 1px solid transparent;
+}
+
+.settings-nav a:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.settings-nav a.is-active {
+  background: var(--surface);
+  border-color: var(--border);
+  box-shadow: var(--shadow);
+  color: var(--accent-brand);
+}
+
+.settings-shell__content {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 720px) {
+  .settings-shell {
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .settings-shell__aside {
+    flex: none;
+    width: 100%;
+    position: static;
+  }
+
+  .settings-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}

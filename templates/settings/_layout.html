@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}{% block settings_title %}Settings{% endblock %} · Elite Training{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', path='css/common/settings.css') }}?v=1">
+{% block settings_styles %}{% endblock %}
+{% endblock %}
+{% block content %}
+<div class="settings-shell page">
+  <aside class="settings-shell__aside">
+    {% include "settings/_nav.html" %}
+  </aside>
+  <div class="settings-shell__content animate-in">
+    {% block settings_body %}{% endblock %}
+  </div>
+</div>
+{% endblock %}
