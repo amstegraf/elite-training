@@ -18,14 +18,14 @@ from app.services.training_tier import (
 
 
 def test_matrix_doc_example_tier() -> None:
-    """docs/matrix-calculation-of-tier.md §6: POT 94→2, POS 58→1, CONV 22→1 → composite 1.2 → Strong amateur."""
+    """docs/matrix-calculation-of-tier.md §6: POT 94→2, POS 58→1, CONV 22→1 → composite 1.2 → Strong Amateur tier points band."""
     cfg = TierSettings()
     assert kpi_score_from_pct(94.0, cfg.pot_pct_lower_bounds) == 2
     assert kpi_score_from_pct(58.0, cfg.pos_pct_lower_bounds) == 1
     assert kpi_score_from_pct(22.0, cfg.conv_pct_lower_bounds) == 1
     comp = composite_score(1, 1, 2, cfg)
     assert abs(comp - 1.2) < 1e-9
-    assert training_tier_label(0.94, 0.58, 0.22, settings=cfg) == "Strong amateur"
+    assert training_tier_label(0.94, 0.58, 0.22, settings=cfg) == "Strong Amateur"
 
 
 def test_training_tier_dashboard_meta_doc_example() -> None:
@@ -57,12 +57,20 @@ def test_tier_settings_migrates_legacy_composite_bounds() -> None:
             "composite_upper_bounds": (1.0, 2.0, 3.0, 3.5),
         }
     )
-    assert s.composite_points_upper_bounds == (1000, 2000, 3000, 3500)
+    assert s.composite_points_upper_bounds == (500, 1000, 2000, 3000, 3500)
+
+
+def test_tier_settings_expands_four_stored_int_cuts() -> None:
+    s = TierSettings.model_validate({"composite_points_upper_bounds": [1000, 2000, 3000, 3500]})
+    assert s.composite_points_upper_bounds == (500, 1000, 2000, 3000, 3500)
 
 
 def test_tier_settings_rejects_last_cut_at_ceiling() -> None:
     with pytest.raises(ValidationError):
-        TierSettings(composite_points_scale=1000, composite_points_upper_bounds=(1000, 2000, 3000, 4000))
+        TierSettings(
+            composite_points_scale=1000,
+            composite_points_upper_bounds=(1000, 2000, 3000, 3500, 4000),
+        )
 
 
 def test_training_tier_label_none_if_any_rate_missing() -> None:
@@ -80,9 +88,9 @@ def test_tier_settings_validation_weights() -> None:
         TierSettings(weight_pos=0.4, weight_conv=0.3, weight_pot=0.2)
 
 
-def test_all_minimum_rates_inconsistent_tier() -> None:
+def test_all_minimum_rates_beginner_tier() -> None:
     cfg = TierSettings()
-    assert training_tier_label(0.0, 0.0, 0.0, settings=cfg) == "Inconsistent / developing"
+    assert training_tier_label(0.0, 0.0, 0.0, settings=cfg) == "Beginner"
 
 
 def test_all_maximum_rates_elite_tier() -> None:

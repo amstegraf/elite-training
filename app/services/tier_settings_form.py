@@ -48,5 +48,6 @@ def parse_tier_settings_form(form: Mapping[str, str]) -> TierSettings:
             req_int("comp_pt_1"),
             req_int("comp_pt_2"),
             req_int("comp_pt_3"),
+            req_int("comp_pt_4"),
         ),
     )

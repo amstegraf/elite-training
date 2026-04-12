@@ -38,16 +38,11 @@ def tier_points_from_composite(composite: float, settings: TierSettings) -> floa
 
 
 def tier_index_from_tier_points(tier_points: float, settings: TierSettings) -> int:
-    b0, b1, b2, b3 = settings.composite_points_upper_bounds
-    if tier_points < b0:
-        return 0
-    if tier_points < b1:
-        return 1
-    if tier_points < b2:
-        return 2
-    if tier_points < b3:
-        return 3
-    return 4
+    bounds = settings.composite_points_upper_bounds
+    for i, hi in enumerate(bounds):
+        if tier_points < hi:
+            return i
+    return len(bounds)
 
 
 def max_tier_points(settings: TierSettings) -> int:

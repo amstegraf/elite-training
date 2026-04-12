@@ -332,8 +332,8 @@ class TierSettings(BaseModel):
 
     Internal composite is still 0–4 (weighted KPI scores). **Tier points** = composite ×
     ``composite_points_scale`` (default 1000 → whole-number UI, e.g. 0–4000).
-    ``composite_points_upper_bounds`` are exclusive upper limits on tier points (same
-    roles as legacy 1,2,3,3.5 composite cuts when scale=1000).
+    ``composite_points_upper_bounds`` are five strictly ascending **exclusive** upper
+    limits on tier points (six tiers: below first cut → tier 0, …, at/above last cut → Elite).
     """
 
     pot_pct_lower_bounds: tuple[float, float, float, float] = (90.0, 93.0, 95.0, 97.0)
@@ -345,7 +345,13 @@ class TierSettings(BaseModel):
     weight_pot: float = Field(default=0.2, ge=0.0, le=1.0)
 
     composite_points_scale: int = Field(default=1000, ge=50, le=50_000)
-    composite_points_upper_bounds: tuple[int, int, int, int] = (1000, 2000, 3000, 3500)
+    composite_points_upper_bounds: tuple[int, int, int, int, int] = (
+        500,
+        1000,
+        2000,
+        3000,
+        3500,
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -359,6 +365,10 @@ class TierSettings(BaseModel):
             d["composite_points_upper_bounds"] = tuple(
                 int(round(float(x) * scale)) for x in legacy
             )
+        cp = d.get("composite_points_upper_bounds")
+        if isinstance(cp, (list, tuple)) and len(cp) == 4:
+            b0, b1, b2, b3 = (int(x) for x in cp)
+            d["composite_points_upper_bounds"] = (max(1, b0 // 2), b0, b1, b2, b3)
         return d
 
     @field_validator("pot_pct_lower_bounds", "pos_pct_lower_bounds", "conv_pct_lower_bounds")
@@ -371,12 +381,14 @@ class TierSettings(BaseModel):
     @field_validator("composite_points_upper_bounds")
     @classmethod
     def validate_points_bounds_tuple(
-        cls, v: tuple[int, int, int, int]
-    ) -> tuple[int, int, int, int]:
-        a, b, c, d = v
-        if not (a < b < c < d):
-            raise ValueError("Composite tier point cuts must be four strictly ascending integers")
-        if a < 1:
+        cls, v: tuple[int, int, int, int, int]
+    ) -> tuple[int, int, int, int, int]:
+        if len(v) != 5:
+            raise ValueError("Exactly five composite point cuts are required for six tiers")
+        for i in range(1, len(v)):
+            if v[i - 1] >= v[i]:
+                raise ValueError("Composite tier point cuts must be strictly ascending")
+        if v[0] < 1:
             raise ValueError("First composite point cut must be at least 1")
         return v
 
@@ -398,9 +410,10 @@ class TierSettings(BaseModel):
         return self
 
 
-TIER_LABELS: tuple[str, str, str, str, str] = (
-    "Inconsistent / developing",
-    "Strong amateur",
+TIER_LABELS: tuple[str, str, str, str, str, str] = (
+    "Beginner",
+    "Amateur",
+    "Strong Amateur",
     "Advanced",
     "Semi-pro",
     "Elite",
