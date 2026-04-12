@@ -16,16 +16,18 @@
             {% include 'partials/tier_badge.html' %}
           </div>
           {% if global_training_tier_meta %}
-          <div class="dashboard-tier-block__meta muted" title="Tier points = composite (0–4) × your settings scale. Progress within current band: {{ global_training_tier_meta.band_lo_pts }}–{{ global_training_tier_meta.band_hi_pts }} pts.">
-            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.2rem; font-size: 0.85rem;">
-              <span style="font-weight: 600; color: var(--text);"><span class="mono">{{ global_training_tier_meta.tier_points }}</span> <span style="font-size: 0.75rem; color: var(--muted); font-weight: normal;">tier pts</span></span>
+          <div class="dashboard-tier-block__meta muted" title="Tier points = composite (0–4) × your settings scale. Progress within current band: {{ global_training_tier_meta.band_lo_pts }}–{{ global_training_tier_meta.band_hi_pts }} pts." style="width: 100%; min-width: 180px;">
+            <div style="display: flex; align-items: baseline; gap: 0.4rem; margin-bottom: 0.35rem; font-size: 0.85rem;">
+              <span style="font-weight: 700; color: var(--text); font-size: 0.9rem;" class="mono">{{ global_training_tier_meta.tier_points }} <span style="font-size: 0.75rem; color: var(--muted); font-weight: normal; font-family: var(--font-main);">pts</span></span>
               {% if global_training_tier_meta.points_to_next is not none %}
-              <span class="mono" style="font-size: 0.75rem;">{{ global_training_tier_meta.points_to_next }} to next</span>
+              <span style="color: var(--muted); opacity: 0.6; font-size: 0.75rem;">|</span>
+              <span class="mono" style="font-size: 0.8rem; font-weight: 600;">{{ global_training_tier_meta.points_to_next }} <span style="font-family: var(--font-main); font-weight: normal; font-size: 0.75rem;">to next</span></span>
               {% else %}
-              <span class="mono" style="font-size: 0.75rem;">max tier</span>
+              <span style="color: var(--muted); opacity: 0.6; font-size: 0.75rem;">|</span>
+              <span style="font-size: 0.75rem;">Max tier attained</span>
               {% endif %}
             </div>
-            <div style="width: 140px; height: 6px; background: rgba(0,0,0,0.06); border-radius: 4px; overflow: hidden;">
+            <div style="width: 100%; height: 6px; background: rgba(0,0,0,0.06); border-radius: 4px; overflow: hidden;">
                <div style="height: 100%; width: {{ global_training_tier_meta.progress_pct }}%; background: var(--accent-brand); border-radius: 4px; transition: width 0.8s ease-out;"></div>
             </div>
           </div>
