@@ -2,14 +2,16 @@
 .dashboard-tier-block {
   margin-top: -0.25rem;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.2rem;
+  flex-direction: row;
+  align-items: center;
+  gap: 1.5rem;
 }
 
 .dashboard-tier-block__badge {
   transform: scale(1.1);
   transform-origin: left center;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .dashboard-tier-block__meta {
