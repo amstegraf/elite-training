@@ -134,10 +134,12 @@
     });
   </script>
 
-  <article class="card card--wide" style="margin-top: 1.5rem;">
-    <h2 style="margin: 0 0 1rem; font-size: 1.15rem;">Edit thresholds</h2>
-    <form method="post" action="/settings/tiers" class="form-grid" style="max-width: 52rem; display: flex; flex-direction: column; gap: 1.5rem;">
-      <fieldset style="border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin: 0; background: var(--surface);">
+  <form method="post" action="/settings/tiers" class="form-grid" style="max-width: 52rem; display: flex; flex-direction: column; gap: 1.5rem;">
+    
+    <article class="card card--wide" style="margin-top: 1.5rem;">
+      <h2 style="margin: 0 0 1rem; font-size: 1.15rem;">Tier Baselines</h2>
+      <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <fieldset style="border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin: 0; background: var(--surface);">
         <legend class="muted" style="font-size: 0.9rem; font-weight: 600; padding: 0 0.5rem;">Tier Strong Amateur Baselines</legend>
         <p class="muted" style="font-size: 0.85rem; margin-top: 0; margin-bottom: 1rem;">Minimum % required across KPIs to fall into the Strong Amateur tier baseline.</p>
         <div style="display: flex; flex-direction: column; gap: 1rem;">
@@ -224,6 +226,12 @@
           </div>
         </div>
       </fieldset>
+      </div>
+    </article>
+
+    <article class="card card--wide" style="margin-top: 0.5rem;">
+      <h2 style="margin: 0 0 1rem; font-size: 1.15rem;">Calculation Rules</h2>
+      <div style="display: flex; flex-direction: column; gap: 1.5rem;">
 
       <fieldset style="border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin: 0; background: var(--surface);">
         <legend class="muted" style="font-size: 0.9rem; font-weight: 600; padding: 0 0.5rem;">Score weights</legend>
@@ -283,10 +291,12 @@
           </div>
         </div>
       </fieldset>
-      <div class="row" style="margin-top: 0.5rem;">
-        <button type="submit" class="btn btn--pr">Save tier settings</button>
       </div>
-    </form>
-  </article>
+    </article>
+
+    <div class="row" style="margin-top: 0.5rem;">
+      <button type="submit" class="btn btn--pr">Save tier settings</button>
+    </div>
+  </form>
 </section>
 {% endblock %}

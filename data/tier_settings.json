@@ -1,0 +1,30 @@
+{
+  "pot_pct_lower_bounds": [
+    90.0,
+    93.0,
+    95.0,
+    97.0
+  ],
+  "pos_pct_lower_bounds": [
+    55.0,
+    65.0,
+    75.0,
+    85.0
+  ],
+  "conv_pct_lower_bounds": [
+    20.0,
+    35.0,
+    50.0,
+    65.0
+  ],
+  "weight_pos": 0.4,
+  "weight_conv": 0.5,
+  "weight_pot": 0.1,
+  "composite_points_scale": 1000,
+  "composite_points_upper_bounds": [
+    1000,
+    2000,
+    3000,
+    3500
+  ]
+}
