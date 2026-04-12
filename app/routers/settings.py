@@ -7,14 +7,71 @@ from pydantic import ValidationError
 from app.deps import get_templates
 from app.models import TIER_LABELS
 from app.services.about_info import about_page_context
+from app.services.profiles_repo import (
+    delete_profile_orphan_sessions,
+    initials_from_name,
+    list_profiles,
+    rename_profile,
+)
 from app.services.tier_settings_form import parse_tier_settings_form
 from app.services.tier_settings_store import load_tier_settings, save_tier_settings
+
 router = APIRouter()
 
 
 @router.get("/settings")
 async def settings_index() -> RedirectResponse:
     return RedirectResponse(url="/settings/tiers", status_code=303)
+
+
+@router.get("/settings/profiles")
+async def settings_profiles_page(request: Request) -> object:
+    templates = get_templates()
+    profiles = list_profiles()
+    rows = [
+        {
+            "id": p.id,
+            "name": p.name,
+            "initials": initials_from_name(p.name),
+            "session_count": len(p.session_ids),
+        }
+        for p in profiles
+    ]
+    return templates.TemplateResponse(
+        request,
+        "settings/profiles.html",
+        {
+            "settings_nav_active": "profiles",
+            "profiles_rows": rows,
+        },
+    )
+
+
+@router.post("/settings/profiles/{profile_id}/rename")
+async def settings_profiles_rename(
+    request: Request,
+    profile_id: str,
+) -> RedirectResponse:
+    raw = await request.form()
+    name = str(raw.get("name", "")).strip()
+    if not name:
+        return RedirectResponse(
+            url="/settings/profiles?err=rename_empty", status_code=303
+        )
+    if len(name) > 200:
+        return RedirectResponse(
+            url="/settings/profiles?err=rename_invalid", status_code=303
+        )
+    if rename_profile(profile_id, name) is None:
+        return RedirectResponse(url="/settings/profiles?err=rename_notfound", status_code=303)
+    return RedirectResponse(url="/settings/profiles?renamed=1", status_code=303)
+
+
+@router.post("/settings/profiles/{profile_id}/delete")
+async def settings_profiles_delete(profile_id: str) -> RedirectResponse:
+    if not delete_profile_orphan_sessions(profile_id):
+        return RedirectResponse(url="/settings/profiles?err=delete_notfound", status_code=303)
+    return RedirectResponse(url="/settings/profiles?deleted=1", status_code=303)
 
 
 @router.get("/settings/about")

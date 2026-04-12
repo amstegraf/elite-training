@@ -90,6 +90,50 @@ def remove_session(profile_id: str, session_id: str) -> None:
     save_profile(p)
 
 
+def rename_profile(profile_id: str, name: str) -> PlayerProfile | None:
+    p = load_profile(profile_id)
+    if not p:
+        return None
+    n = name.strip()
+    if not n:
+        return None
+    p.name = n
+    save_profile(p)
+    return p
+
+
+def delete_profile_orphan_sessions(profile_id: str) -> bool:
+    """
+    Remove the profile file and clear ``profileId`` on all sessions that pointed
+    at it. Session JSON files remain on disk (orphans until linked again).
+    """
+    from app.services.sessions_repo import load_session, save_session, sessions_dir
+
+    p = load_profile(profile_id)
+    if not p:
+        return False
+
+    ids_to_clear: set[str] = set(p.session_ids)
+    d = sessions_dir()
+    if d.exists():
+        for path in d.glob("*.json"):
+            sid = path.stem
+            s = load_session(sid)
+            if s and s.profile_id == profile_id:
+                ids_to_clear.add(sid)
+
+    for sid in ids_to_clear:
+        s = load_session(sid)
+        if s and s.profile_id == profile_id:
+            s.profile_id = None
+            save_session(s)
+
+    path = _profile_path(profile_id)
+    if path.exists():
+        path.unlink()
+    return True
+
+
 def associate_all_existing_sessions(profile_id: str) -> int:
     """Set ``profileId`` on every session file and rebuild this profile's ``sessionIds``."""
     from app.services.sessions_repo import load_session, save_session, sessions_dir

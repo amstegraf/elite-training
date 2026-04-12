@@ -122,6 +122,41 @@ def test_import_requires_profile(tmp_path, monkeypatch) -> None:
         assert imp.status_code == 400
 
 
+def test_delete_profile_orphans_sessions_on_disk(tmp_path, monkeypatch) -> None:
+    data = tmp_path / "data"
+    data.mkdir()
+    sessions_dir = data / "sessions"
+    sessions_dir.mkdir()
+    profiles_dir = data / "profiles"
+    profiles_dir.mkdir(parents=True)
+    monkeypatch.setattr("app.config.DATA_DIR", data)
+    monkeypatch.setattr("app.config.SESSIONS_DIR", sessions_dir)
+    monkeypatch.setattr("app.config.PROFILES_DIR", profiles_dir)
+    monkeypatch.setattr("app.config.PROGRAMS_FILE", data / "programs.json")
+    monkeypatch.setattr("app.services.programs_repo.ensure_dev_seed", lambda: None)
+
+    prof = profiles_repo.create_profile("Gone")
+    sid = str(uuid4())
+    s = PrecisionSession(
+        id=sid,
+        program_id="p",
+        plan_id="pl",
+        table_type=TableType.EIGHT_FT,
+        mode=SessionMode.RACK,
+        status=PrecisionSessionStatus.COMPLETED,
+        profile_id=prof.id,
+    )
+    save_session(s)
+    profiles_repo.append_session(prof.id, sid)
+
+    assert profiles_repo.delete_profile_orphan_sessions(prof.id) is True
+    assert profiles_repo.load_profile(prof.id) is None
+    assert (sessions_dir / f"{sid}.json").exists()
+    reloaded = load_session(sid)
+    assert reloaded is not None
+    assert reloaded.profile_id is None
+
+
 def test_add_profile_switches_active_session_owner(client) -> None:
     """POST /profiles sets cookie to the new profile so the next session uses it."""
     r_prog = client.post("/api/programs", json={"name": "PAdd", "durationDays": 30})
