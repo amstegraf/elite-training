@@ -11,6 +11,7 @@ from app.services.derived_metrics import (
     aggregate_sessions_progress,
     best_run_balls_for_rack,
     miss_type_percentages,
+    rack_granular_position_speed_series,
     recompute_session_aggregates,
 )
 from app.services.rack_conversion_tiers import rack_conversion_tier_label
@@ -59,9 +60,14 @@ async def session_report_page(request: Request, session_id: str) -> object:
     pct = miss_type_percentages(session.miss_type_counts)
     
     # Chart data
+    pos_spd = rack_granular_position_speed_series(session)
     rack_runs = [best_run_balls_for_rack(r) for r in session.racks if r.ended_at]
-    rack_labels = [f"Rack {i+1}" for i in range(len(rack_runs))]
-    chart_data = { "labels": rack_labels, "runs": rack_runs }
+    chart_data = {
+        "labels": pos_spd["labels"],
+        "runs": rack_runs,
+        "position_misses_per_rack": pos_spd["position_misses_per_rack"],
+        "speed_misses_per_rack": pos_spd["speed_misses_per_rack"],
+    }
 
     return templates.TemplateResponse(
         request,

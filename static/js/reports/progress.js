@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
             data: {
                 labels: data.labels,
                 datasets: [{
-                    label: 'Position success %',
+                    label: 'Position outcome %',
                     data: posPct,
                     borderColor: '#7c3aed',
                     backgroundColor: 'rgba(124, 58, 237, 0.12)',
@@ -180,6 +180,50 @@ document.addEventListener('DOMContentLoaded', () => {
                 }]
             },
             options: posOpt
+        });
+    }
+
+    const ctxPosSpdGran = document.getElementById('chart-position-speed-granular');
+    const labelsGran = data.labels || [];
+    let posGran = Array.isArray(data.position_granular_miss_totals)
+        ? data.position_granular_miss_totals
+        : [];
+    let spdGran = Array.isArray(data.speed_granular_miss_totals)
+        ? data.speed_granular_miss_totals
+        : [];
+    while (posGran.length < labelsGran.length) posGran.push(0);
+    while (spdGran.length < labelsGran.length) spdGran.push(0);
+    posGran = posGran.slice(0, labelsGran.length);
+    spdGran = spdGran.slice(0, labelsGran.length);
+    if (ctxPosSpdGran && labelsGran.length > 0 && posGran.length === spdGran.length) {
+        const granOpt = cloneObj(commonLineOptions);
+        granOpt.plugins.legend = { display: true, position: 'top' };
+        const peak = Math.max(1, ...posGran, ...spdGran);
+        granOpt.scales.y.max = peak;
+        new Chart(ctxPosSpdGran, {
+            type: 'line',
+            data: {
+                labels: labelsGran,
+                datasets: [
+                    {
+                        label: 'Position-tagged misses',
+                        data: posGran,
+                        borderColor: '#7c3aed',
+                        backgroundColor: 'rgba(124, 58, 237, 0.06)',
+                        fill: false,
+                        borderDash: [4, 3],
+                    },
+                    {
+                        label: 'Speed-tagged misses',
+                        data: spdGran,
+                        borderColor: '#0284c7',
+                        backgroundColor: 'rgba(2, 132, 199, 0.06)',
+                        fill: false,
+                        borderDash: [2, 2],
+                    },
+                ],
+            },
+            options: granOpt,
         });
     }
 

@@ -36,7 +36,7 @@
     {% if global_position_balls_cleared > 0 and global_position_success_rate is not none %}
     <article class="card card--wide" style="margin-bottom: 0; display: flex; align-items: center; justify-content: space-between; padding: 1.5rem 2rem;">
       <div>
-        <h2 style="margin: 0 0 0.25rem; font-size: 1.25rem;">Position success</h2>
+        <h2 style="margin: 0 0 0.25rem; font-size: 1.25rem;">Position outcome</h2>
         <p class="muted" style="margin: 0.35rem 0 0; font-size: 0.85rem; max-width: 22rem;">Overall: 1 − Σ position-related misses ÷ Σ balls cleared (docs/metric-position-success.md).</p>
         <span class="muted mono" style="font-size: 0.9rem; display: inline-block; margin-top: 0.5rem;">{{ global_position_miss_events }} misses / {{ global_position_balls_cleared }} cleared</span>
       </div>

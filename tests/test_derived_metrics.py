@@ -231,6 +231,36 @@ def test_recompute_soft_vs_true_example_session_shape() -> None:
     assert s.best_rack_balls_cleared == 9
 
 
+def test_position_outcome_includes_speed_tag() -> None:
+    """Speed tags count toward position-related misses (same as position tags after no-shot rule)."""
+    from app.models import PrecisionSessionStatus, SessionMode, TableType
+
+    rack = RackRecord(
+        rack_number=1,
+        ended_at="2026-01-01T00:00:00+00:00",
+        balls_cleared=4,
+        misses=[
+            MissEvent(
+                ball_number=2,
+                types=[MissType.SPEED],
+                outcome=MissOutcome.PLAYABLE,
+            ),
+        ],
+    )
+    s = PrecisionSession(
+        id="s-speed",
+        program_id="p1",
+        plan_id="pl1",
+        table_type=TableType.EIGHT_FT,
+        mode=SessionMode.RACK,
+        status=PrecisionSessionStatus.COMPLETED,
+        racks=[rack],
+    )
+    recompute_session_aggregates(s)
+    assert s.position_related_miss_count == 1
+    assert s.position_success_rate == round(1 - 1 / 4, 4)
+
+
 def test_rack_recovery_training_then_true_is_failed() -> None:
     r = RackRecord(
         rack_number=1,

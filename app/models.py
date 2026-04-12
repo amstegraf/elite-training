@@ -223,6 +223,7 @@ class PrecisionSession(BaseModel):
         default=None, ge=0, le=1, alias="potSuccessRate"
     )
     # docs/metric-position-success.md — miss-only: 1 − (position-related misses ÷ balls cleared).
+    # Position-related = no-shot/both outcomes, or misses tagged position **or** speed.
     position_related_miss_count: int = Field(
         default=0, ge=0, alias="positionRelatedMissCount"
     )

@@ -105,16 +105,43 @@ def count_pot_miss_outcomes(session: PrecisionSession) -> int:
 def count_position_related_miss_events(session: PrecisionSession) -> int:
     """
     One count per miss: no-shot / both outcomes (position breaks the rack), or any miss
-    with a position tag (precision errors). See docs/metric-position-success.md.
+    with a **position** or **speed** tag (treated as positional execution errors).
+    See docs/metric-position-success.md.
     """
     n = 0
     for r in session.racks:
         for m in r.misses:
             if no_shot_increment(m.outcome) > 0:
                 n += 1
-            elif MissType.POSITION in m.types:
+            elif MissType.POSITION in m.types or MissType.SPEED in m.types:
                 n += 1
     return n
+
+
+def count_misses_with_type(session: PrecisionSession, miss_type: MissType) -> int:
+    """Count miss events that include ``miss_type`` in their tag list (granular charts)."""
+    n = 0
+    for r in session.racks:
+        for m in r.misses:
+            if miss_type in m.types:
+                n += 1
+    return n
+
+
+def rack_granular_position_speed_series(session: PrecisionSession) -> dict[str, list]:
+    """Per ended rack: counts of misses tagged position vs speed (session report chart)."""
+    ended = [r for r in session.racks if r.ended_at]
+    labels = [f"Rack {r.rack_number}" for r in ended]
+    position_counts = []
+    speed_counts = []
+    for r in ended:
+        position_counts.append(sum(1 for m in r.misses if MissType.POSITION in m.types))
+        speed_counts.append(sum(1 for m in r.misses if MissType.SPEED in m.types))
+    return {
+        "labels": labels,
+        "position_misses_per_rack": position_counts,
+        "speed_misses_per_rack": speed_counts,
+    }
 
 
 def rack_recovery_counts(rack: RackRecord) -> tuple[int, int]:
@@ -361,6 +388,8 @@ def aggregate_sessions_progress(sessions: list[PrecisionSession]) -> dict[str, l
     rack_conversion_rates: list[float | None] = []
     pot_success_rates: list[float | None] = []
     position_success_rates: list[float | None] = []
+    position_granular_miss_totals: list[int] = []
+    speed_granular_miss_totals: list[int] = []
     worst_rack_balls: list[int | None] = []
     best_rack_balls: list[int | None] = []
     avg_rack_balls: list[float] = []
@@ -399,6 +428,8 @@ def aggregate_sessions_progress(sessions: list[PrecisionSession]) -> dict[str, l
             if s.position_success_rate is not None
             else None
         )
+        position_granular_miss_totals.append(count_misses_with_type(s, MissType.POSITION))
+        speed_granular_miss_totals.append(count_misses_with_type(s, MissType.SPEED))
         worst_rack_balls.append(s.worst_rack_balls_cleared)
         best_rack_balls.append(s.best_rack_balls_cleared)
         avg_rack_balls.append(round(s.avg_balls_cleared_per_rack or 0, 2))
@@ -448,6 +479,8 @@ def aggregate_sessions_progress(sessions: list[PrecisionSession]) -> dict[str, l
         "rack_conversion_rates": rack_conversion_rates,
         "pot_success_rates": pot_success_rates,
         "position_success_rates": position_success_rates,
+        "position_granular_miss_totals": position_granular_miss_totals,
+        "speed_granular_miss_totals": speed_granular_miss_totals,
         "worst_rack_balls": worst_rack_balls,
         "best_rack_balls": best_rack_balls,
         "avg_rack_balls": avg_rack_balls,
