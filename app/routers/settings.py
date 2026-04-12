@@ -8,11 +8,6 @@ from app.deps import get_templates
 from app.services.about_info import about_page_context
 from app.services.tier_settings_form import parse_tier_settings_form
 from app.services.tier_settings_store import load_tier_settings, save_tier_settings
-from app.services.training_tier import (
-    composite_tier_bands_for_display,
-    kpi_score_bands_for_display,
-)
-
 router = APIRouter()
 
 
@@ -39,15 +34,11 @@ def _tiers_page_context(
     save_error: str | None = None,
 ) -> dict:
     ts = tier_settings
+    ceiling = ts.composite_points_scale * 4
     return {
         "settings_nav_active": "tiers",
         "tier_settings": ts,
-        "kpi_band_rows": (
-            kpi_score_bands_for_display("Potting (POT)", ts.pot_pct_lower_bounds)
-            + kpi_score_bands_for_display("Position (POS)", ts.pos_pct_lower_bounds)
-            + kpi_score_bands_for_display("Rack conversion (CONV)", ts.conv_pct_lower_bounds)
-        ),
-        "composite_bands": composite_tier_bands_for_display(ts),
+        "tier_points_ceiling": ceiling,
         "save_error": save_error,
     }
 

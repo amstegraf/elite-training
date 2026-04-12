@@ -16,15 +16,18 @@
             {% include 'partials/tier_badge.html' %}
           </div>
           {% if global_training_tier_meta %}
-          <div class="dashboard-tier-block__meta muted mono" title="Weighted composite of KPI scores (0–4); gap is composite points until the next tier boundary.">
-            <span>{{ "%.2f"|format(global_training_tier_meta.composite) }} pts</span>
-            {% if global_training_tier_meta.points_to_next is not none %}
-            <span class="dashboard-tier-block__sep">·</span>
-            <span>{{ "%.2f"|format(global_training_tier_meta.points_to_next) }} to next</span>
-            {% else %}
-            <span class="dashboard-tier-block__sep">·</span>
-            <span>max tier</span>
-            {% endif %}
+          <div class="dashboard-tier-block__meta muted" title="Tier points = composite (0–4) × your settings scale. Progress within current band: {{ global_training_tier_meta.band_lo_pts }}–{{ global_training_tier_meta.band_hi_pts }} pts.">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.2rem; font-size: 0.85rem;">
+              <span style="font-weight: 600; color: var(--text);"><span class="mono">{{ global_training_tier_meta.tier_points }}</span> <span style="font-size: 0.75rem; color: var(--muted); font-weight: normal;">tier pts</span></span>
+              {% if global_training_tier_meta.points_to_next is not none %}
+              <span class="mono" style="font-size: 0.75rem;">{{ global_training_tier_meta.points_to_next }} to next</span>
+              {% else %}
+              <span class="mono" style="font-size: 0.75rem;">max tier</span>
+              {% endif %}
+            </div>
+            <div style="width: 140px; height: 6px; background: rgba(0,0,0,0.06); border-radius: 4px; overflow: hidden;">
+               <div style="height: 100%; width: {{ global_training_tier_meta.progress_pct }}%; background: var(--accent-brand); border-radius: 4px; transition: width 0.8s ease-out;"></div>
+            </div>
           </div>
           {% endif %}
         </div>

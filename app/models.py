@@ -329,6 +329,11 @@ class TierSettings(BaseModel):
 
     Each ``*_pct_lower_bounds`` tuple is (b0,b1,b2,b3): score 0 if pct < b0, score 1 if
     b0<=pct<b1, … score 4 if pct>=b3. Percent values are on the usual 0–100 display scale.
+
+    Internal composite is still 0–4 (weighted KPI scores). **Tier points** = composite ×
+    ``composite_points_scale`` (default 1000 → whole-number UI, e.g. 0–4000).
+    ``composite_points_upper_bounds`` are exclusive upper limits on tier points (same
+    roles as legacy 1,2,3,3.5 composite cuts when scale=1000).
     """
 
     pot_pct_lower_bounds: tuple[float, float, float, float] = (90.0, 93.0, 95.0, 97.0)
@@ -339,7 +344,22 @@ class TierSettings(BaseModel):
     weight_conv: float = Field(default=0.3, ge=0.0, le=1.0)
     weight_pot: float = Field(default=0.2, ge=0.0, le=1.0)
 
-    composite_upper_bounds: tuple[float, float, float, float] = (1.0, 2.0, 3.0, 3.5)
+    composite_points_scale: int = Field(default=1000, ge=50, le=50_000)
+    composite_points_upper_bounds: tuple[int, int, int, int] = (1000, 2000, 3000, 3500)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _migrate_legacy_composite(cls, data: object) -> object:
+        if not isinstance(data, dict):
+            return data
+        d = dict(data)
+        if "composite_points_upper_bounds" not in d and "composite_upper_bounds" in d:
+            scale = int(d.get("composite_points_scale", 1000))
+            legacy = d.pop("composite_upper_bounds")
+            d["composite_points_upper_bounds"] = tuple(
+                int(round(float(x) * scale)) for x in legacy
+            )
+        return d
 
     @field_validator("pot_pct_lower_bounds", "pos_pct_lower_bounds", "conv_pct_lower_bounds")
     @classmethod
@@ -348,17 +368,16 @@ class TierSettings(BaseModel):
     ) -> tuple[float, float, float, float]:
         return _strict_four_ascending_tier("KPI lower bounds", v)
 
-    @field_validator("composite_upper_bounds")
+    @field_validator("composite_points_upper_bounds")
     @classmethod
-    def validate_composite_bounds(
-        cls, v: tuple[float, float, float, float]
-    ) -> tuple[float, float, float, float]:
-        _strict_four_ascending_tier("Composite upper bounds", v)
-        if v[0] <= 0 or v[-1] >= 4.0:
-            raise ValueError(
-                "Composite upper bounds must start above 0 and end below 4 "
-                "(elite covers from the last cut up to composite 4)"
-            )
+    def validate_points_bounds_tuple(
+        cls, v: tuple[int, int, int, int]
+    ) -> tuple[int, int, int, int]:
+        a, b, c, d = v
+        if not (a < b < c < d):
+            raise ValueError("Composite tier point cuts must be four strictly ascending integers")
+        if a < 1:
+            raise ValueError("First composite point cut must be at least 1")
         return v
 
     @model_validator(mode="after")
@@ -366,6 +385,16 @@ class TierSettings(BaseModel):
         s = self.weight_pos + self.weight_conv + self.weight_pot
         if abs(s - 1.0) > 0.01:
             raise ValueError("Weights must sum to 1.0 (within 0.01)")
+        return self
+
+    @model_validator(mode="after")
+    def composite_points_within_ceiling(self) -> TierSettings:
+        cap = self.composite_points_scale * 4
+        hi = self.composite_points_upper_bounds[-1]
+        if hi >= cap:
+            raise ValueError(
+                f"Last composite point cut must be less than {cap} (4 × scale) so Elite has a band"
+            )
         return self
 
 

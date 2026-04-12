@@ -33,17 +33,25 @@ def composite_score(
     )
 
 
-def tier_index_from_composite(composite: float, settings: TierSettings) -> int:
-    c0, c1, c2, c3 = settings.composite_upper_bounds
-    if composite < c0:
+def tier_points_from_composite(composite: float, settings: TierSettings) -> float:
+    return composite * float(settings.composite_points_scale)
+
+
+def tier_index_from_tier_points(tier_points: float, settings: TierSettings) -> int:
+    b0, b1, b2, b3 = settings.composite_points_upper_bounds
+    if tier_points < b0:
         return 0
-    if composite < c1:
+    if tier_points < b1:
         return 1
-    if composite < c2:
+    if tier_points < b2:
         return 2
-    if composite < c3:
+    if tier_points < b3:
         return 3
     return 4
+
+
+def max_tier_points(settings: TierSettings) -> int:
+    return settings.composite_points_scale * 4
 
 
 def _resolve_training_tier(
@@ -63,7 +71,8 @@ def _resolve_training_tier(
     xs = kpi_score_from_pct(pos_pct, cfg.pos_pct_lower_bounds)
     cs = kpi_score_from_pct(conv_pct, cfg.conv_pct_lower_bounds)
     comp = composite_score(xs, cs, ps, cfg)
-    idx = tier_index_from_composite(comp, cfg)
+    tp = tier_points_from_composite(comp, cfg)
+    idx = tier_index_from_tier_points(tp, cfg)
     return cfg, comp, idx
 
 
@@ -91,17 +100,47 @@ def training_tier_dashboard_meta(
     *,
     settings: TierSettings | None = None,
 ) -> dict[str, Any] | None:
-    """Composite score and gap to the next tier cut (None gap when already Elite)."""
+    """Tier points (0–4×scale), progress within current band, gap to next cut (points)."""
     resolved = _resolve_training_tier(pot_rate, pos_rate, conv_rate, settings=settings)
     if resolved is None:
         return None
     cfg, comp, idx = resolved
-    comp_r = round(comp, 3)
+    scale = cfg.composite_points_scale
+    tp = tier_points_from_composite(comp, cfg)
+    tier_pts = int(round(tp))
+    ceiling = float(max_tier_points(cfg))
+
+    bounds = cfg.composite_points_upper_bounds
+    lo_pt = 0.0 if idx == 0 else float(bounds[idx - 1])
+
     if idx >= len(TIER_LABELS) - 1:
-        return {"composite": comp_r, "points_to_next": None}
-    nxt = cfg.composite_upper_bounds[idx]
-    gap = max(0.0, round(nxt - comp, 3))
-    return {"composite": comp_r, "points_to_next": gap}
+        hi_pt = ceiling
+        span = hi_pt - lo_pt
+        pct = (
+            max(0.0, min(100.0, ((tp - lo_pt) / span) * 100.0)) if span > 0 else 100.0
+        )
+        return {
+            "composite": round(comp, 4),
+            "tier_points": tier_pts,
+            "points_to_next": None,
+            "progress_pct": round(pct, 1),
+            "band_lo_pts": int(round(lo_pt)),
+            "band_hi_pts": int(ceiling),
+        }
+
+    hi_pt = float(bounds[idx])
+    span = hi_pt - lo_pt
+    pct = max(0.0, min(100.0, ((tp - lo_pt) / span) * 100.0)) if span > 0 else 100.0
+    gap_pts = max(0, int(round(hi_pt - tp)))
+
+    return {
+        "composite": round(comp, 4),
+        "tier_points": tier_pts,
+        "points_to_next": gap_pts,
+        "progress_pct": round(pct, 1),
+        "band_lo_pts": int(round(lo_pt)),
+        "band_hi_pts": int(round(hi_pt)),
+    }
 
 
 def kpi_score_bands_for_display(
@@ -119,11 +158,12 @@ def kpi_score_bands_for_display(
     ]
 
 
-def composite_tier_bands_for_display(settings: TierSettings) -> list[dict[str, str | float]]:
-    """Rows: tier label, composite score interval [lo, hi)."""
-    cuts = settings.composite_upper_bounds
-    out: list[dict[str, str | float]] = []
-    lo = 0.0
+def composite_tier_bands_for_display(settings: TierSettings) -> list[dict[str, str | float | int | None]]:
+    """Rows: tier label, tier-points interval (exclusive upper for lower tiers)."""
+    cuts = settings.composite_points_upper_bounds
+    ceiling = max_tier_points(settings)
+    out: list[dict[str, str | float | int | None]] = []
+    lo = 0
     for i, label in enumerate(TIER_LABELS):
         if i < len(cuts):
             hi = cuts[i]
@@ -132,7 +172,7 @@ def composite_tier_bands_for_display(settings: TierSettings) -> list[dict[str, s
                     "label": label,
                     "min_inclusive": lo,
                     "max_exclusive": hi,
-                    "range_summary": f"{lo:g} ≤ composite < {hi:g}",
+                    "range_summary": f"{lo} ≤ tier pts < {hi}",
                 }
             )
             lo = hi
@@ -142,7 +182,7 @@ def composite_tier_bands_for_display(settings: TierSettings) -> list[dict[str, s
                     "label": label,
                     "min_inclusive": lo,
                     "max_exclusive": None,
-                    "range_summary": f"{lo:g} ≤ composite ≤ 4",
+                    "range_summary": f"{lo} ≤ tier pts ≤ {ceiling}",
                 }
             )
     return out

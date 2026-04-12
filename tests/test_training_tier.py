@@ -32,16 +32,37 @@ def test_training_tier_dashboard_meta_doc_example() -> None:
     cfg = TierSettings()
     meta = training_tier_dashboard_meta(0.94, 0.58, 0.22, settings=cfg)
     assert meta is not None
-    assert meta["composite"] == 1.2
-    assert meta["points_to_next"] == pytest.approx(0.8)
+    assert meta["composite"] == pytest.approx(1.2)
+    assert meta["tier_points"] == 1200
+    assert meta["points_to_next"] == 800
+    assert meta["band_lo_pts"] == 1000
+    assert meta["band_hi_pts"] == 2000
 
 
 def test_training_tier_dashboard_meta_elite_no_gap() -> None:
     cfg = TierSettings()
     meta = training_tier_dashboard_meta(1.0, 1.0, 1.0, settings=cfg)
     assert meta is not None
-    assert meta["composite"] == 4.0
+    assert meta["composite"] == pytest.approx(4.0)
+    assert meta["tier_points"] == 4000
     assert meta["points_to_next"] is None
+    assert meta["band_lo_pts"] == 3500
+    assert meta["band_hi_pts"] == 4000
+
+
+def test_tier_settings_migrates_legacy_composite_bounds() -> None:
+    s = TierSettings.model_validate(
+        {
+            "composite_points_scale": 1000,
+            "composite_upper_bounds": (1.0, 2.0, 3.0, 3.5),
+        }
+    )
+    assert s.composite_points_upper_bounds == (1000, 2000, 3000, 3500)
+
+
+def test_tier_settings_rejects_last_cut_at_ceiling() -> None:
+    with pytest.raises(ValidationError):
+        TierSettings(composite_points_scale=1000, composite_points_upper_bounds=(1000, 2000, 3000, 4000))
 
 
 def test_training_tier_label_none_if_any_rate_missing() -> None:
