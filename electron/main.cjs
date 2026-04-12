@@ -50,23 +50,23 @@ function dialogParent() {
   return BrowserWindow.getFocusedWindow() ?? mainWindow;
 }
 
-function httpJsonRequest(method, port, pathUrl, bodyObj) {
+function httpJsonRequest(method, port, pathUrl, bodyObj, extraHeaders) {
+  const extra = extraHeaders && typeof extraHeaders === 'object' ? extraHeaders : {};
   const body =
     bodyObj !== undefined && bodyObj !== null ? JSON.stringify(bodyObj) : '';
   return new Promise((resolve, reject) => {
+    const headers = { ...extra };
+    if (body.length > 0) {
+      headers['Content-Type'] = 'application/json';
+      headers['Content-Length'] = String(Buffer.byteLength(body, 'utf8'));
+    }
     const req = http.request(
       {
         hostname: '127.0.0.1',
         port,
         path: pathUrl,
         method,
-        headers:
-          body.length > 0
-            ? {
-                'Content-Type': 'application/json',
-                'Content-Length': Buffer.byteLength(body, 'utf8'),
-              }
-            : {},
+        headers,
       },
       (res) => {
         let chunks = '';
@@ -117,6 +117,15 @@ function guessSessionIdFromPayload(payload) {
   return null;
 }
 
+async function resolveImportProfileId(port) {
+  const r = await httpJsonRequest('GET', port, '/api/profiles');
+  if (r.status !== 200 || !r.json || !Array.isArray(r.json.profiles) || r.json.profiles.length === 0) {
+    return null;
+  }
+  const arr = [...r.json.profiles].sort((a, b) => String(a.id).localeCompare(String(b.id)));
+  return arr[0].id;
+}
+
 async function importSessionsFromFiles() {
   const parent = dialogParent();
   if (!parent) return;
@@ -129,6 +138,16 @@ async function importSessionsFromFiles() {
     filters: [{ name: 'Session JSON', extensions: ['json'] }],
   });
   if (canceled || !filePaths.length) return;
+
+  const importProfileId = await resolveImportProfileId(port);
+  if (!importProfileId) {
+    await dialog.showMessageBox(parent, {
+      type: 'warning',
+      title: 'Import sessions',
+      message: 'Create at least one player profile in the app before importing sessions.',
+    });
+    return;
+  }
 
   /** @type {{ base: string, payload: object }[]} */
   const parsed = [];
@@ -204,7 +223,9 @@ async function importSessionsFromFiles() {
     }
     const q = exists && overwriteExisting ? '?overwrite=true' : '?overwrite=false';
     try {
-      const r = await httpJsonRequest('POST', port, `/api/sessions/import${q}`, row.payload);
+      const r = await httpJsonRequest('POST', port, `/api/sessions/import${q}`, row.payload, {
+        'X-Elite-Profile-Id': importProfileId,
+      });
       if (r.status === 200 && r.json && r.json.ok) {
         imported += 1;
       } else if (r.status === 422) {

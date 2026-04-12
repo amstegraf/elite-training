@@ -14,6 +14,8 @@ else:
 
 PROGRAMS_FILE = DATA_DIR / "programs.json"
 SESSIONS_DIR = DATA_DIR / "sessions"
+PROFILES_DIR = DATA_DIR / "profiles"
 
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
+PROFILES_DIR.mkdir(parents=True, exist_ok=True)

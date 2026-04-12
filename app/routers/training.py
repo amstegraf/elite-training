@@ -15,14 +15,23 @@ from app.services.derived_metrics import (
     recompute_session_aggregates,
 )
 from app.services.training_tier import training_tier_label
-from app.services.sessions_repo import list_sessions, load_session
+from app.services.session_service import load_session_for_profile
+from app.services.sessions_repo import list_sessions
 
 router = APIRouter()
 
 
 @router.get("/session/{session_id}")
 async def session_live_page(request: Request, session_id: str) -> object:
-    session = load_session(session_id)
+    active = getattr(request.state, "active_profile_id", None)
+    needs = getattr(request.state, "needs_first_profile", False)
+    if needs or not active:
+        return RedirectResponse(url="/", status_code=302)
+    session = load_session_for_profile(
+        session_id,
+        active_profile_id=active,
+        needs_first_profile=needs,
+    )
     if not session:
         return RedirectResponse(url="/", status_code=302)
     if session.status == PrecisionSessionStatus.COMPLETED:
@@ -45,7 +54,15 @@ async def session_live_page(request: Request, session_id: str) -> object:
 
 @router.get("/session/{session_id}/report")
 async def session_report_page(request: Request, session_id: str) -> object:
-    session = load_session(session_id)
+    active = getattr(request.state, "active_profile_id", None)
+    needs = getattr(request.state, "needs_first_profile", False)
+    if needs or not active:
+        return RedirectResponse(url="/", status_code=302)
+    session = load_session_for_profile(
+        session_id,
+        active_profile_id=active,
+        needs_first_profile=needs,
+    )
     if not session:
         return RedirectResponse(url="/", status_code=302)
     # Derive totals (e.g. totalBallsCleared, flow efficiency, true miss rate, rack conversion, rack spread) from racks
@@ -91,7 +108,13 @@ async def session_report_page(request: Request, session_id: str) -> object:
 async def history_page(request: Request) -> object:
     templates = get_templates()
     root = programs_repo.load_programs_file()
-    sessions = list_sessions(limit=200)
+    needs = getattr(request.state, "needs_first_profile", False)
+    active = getattr(request.state, "active_profile_id", None)
+    sessions = (
+        []
+        if (needs or not active)
+        else list_sessions(limit=200, profile_id=active)
+    )
     plan_labels: dict[str, str] = {}
     for p in root.programs:
         for pl in p.plans:
@@ -106,7 +129,13 @@ async def history_page(request: Request) -> object:
 @router.get("/progress")
 async def progress_page(request: Request) -> object:
     templates = get_templates()
-    sessions = list_sessions(limit=500)
+    needs = getattr(request.state, "needs_first_profile", False)
+    active = getattr(request.state, "active_profile_id", None)
+    sessions = (
+        []
+        if (needs or not active)
+        else list_sessions(limit=500, profile_id=active)
+    )
     progress_data = aggregate_sessions_progress(sessions)
     
     return templates.TemplateResponse(

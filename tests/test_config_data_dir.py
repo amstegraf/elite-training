@@ -14,9 +14,11 @@ def test_elite_training_data_dir_env(tmp_path, monkeypatch) -> None:
     try:
         assert cfg.DATA_DIR == d.resolve()
         assert cfg.SESSIONS_DIR == d.resolve() / "sessions"
+        assert cfg.PROFILES_DIR == d.resolve() / "profiles"
         assert cfg.PROGRAMS_FILE == d.resolve() / "programs.json"
         assert d.resolve().exists()
         assert (d.resolve() / "sessions").exists()
+        assert (d.resolve() / "profiles").exists()
     finally:
         monkeypatch.delenv("ELITE_TRAINING_DATA_DIR", raising=False)
         importlib.reload(cfg)

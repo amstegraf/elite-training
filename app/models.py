@@ -92,6 +92,17 @@ class ProgramsFile(BaseModel):
     programs: list[TrainingProgram] = Field(default_factory=list)
 
 
+class PlayerProfile(BaseModel):
+    """One JSON file per profile under ``data/profiles/{id}.json``."""
+
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
+
+    schema_version: int = Field(default=1, alias="schemaVersion")
+    id: str = Field(default_factory=lambda: str(uuid4()), alias="id")
+    name: str = Field(min_length=1, max_length=200)
+    session_ids: list[str] = Field(default_factory=list, alias="sessionIds")
+
+
 class SessionRuleOverrides(BaseModel):
     """Optional overrides when starting a session (MVP: mirror PlanRules)."""
 
@@ -254,6 +265,7 @@ class PrecisionSession(BaseModel):
     )
     racks: list[RackRecord] = Field(default_factory=list)
     current_rack_id: Optional[str] = Field(default=None, alias="currentRackId")
+    profile_id: Optional[str] = Field(default=None, alias="profileId")
 
     @model_validator(mode="before")
     @classmethod

@@ -19,11 +19,42 @@ from app.services.derived_metrics import (
     suggested_next_ball_number,
 )
 from app.services.rules_engine import session_rules_summary
+from app.services import profiles_repo
 from app.services.sessions_repo import create_session_id, load_session, save_session
 
 
 class SessionNotFoundError(Exception):
     pass
+
+
+def load_session_for_profile(
+    session_id: str,
+    *,
+    active_profile_id: str | None = None,
+    needs_first_profile: bool = False,
+) -> PrecisionSession | None:
+    """
+    Load a session; optionally enforce active player profile.
+
+    When ``needs_first_profile`` is True, returns None (no session access until
+    a profile exists). When ``active_profile_id`` is None and not
+    ``needs_first_profile``, returns the session without profile checks (tests,
+    scripts).
+    """
+    if needs_first_profile:
+        return None
+    s = load_session(session_id)
+    if not s:
+        return None
+    if active_profile_id is None:
+        return s
+    if s.profile_id is None:
+        s.profile_id = active_profile_id
+        save_session(s)
+        profiles_repo.append_session(active_profile_id, s.id)
+    if s.profile_id != active_profile_id:
+        return None
+    return s
 
 
 class BadRequestError(Exception):
@@ -44,6 +75,7 @@ def start_session(
     table_type: TableType,
     mode: SessionMode,
     rule_overrides: SessionRuleOverrides | None = None,
+    profile_id: str,
 ) -> PrecisionSession:
     root = programs_repo.load_programs_file()
     pair = programs_repo.get_plan(root, plan_id)
@@ -62,9 +94,11 @@ def start_session(
         racks=[rack],
         current_rack_id=rack.id,
         last_unpaused_at=utc_now_iso(),
+        profile_id=profile_id,
     )
     recompute_session_aggregates(session)
     save_session(session)
+    profiles_repo.append_session(profile_id, sid)
     return session
 
 
@@ -198,8 +232,17 @@ def toggle_session_pause(session_id: str, pause: bool) -> PrecisionSession:
     return session
 
 
-def get_live_context(session_id: str) -> dict:
-    session = load_session(session_id)
+def get_live_context(
+    session_id: str,
+    *,
+    active_profile_id: str | None = None,
+    needs_first_profile: bool = False,
+) -> dict:
+    session = load_session_for_profile(
+        session_id,
+        active_profile_id=active_profile_id,
+        needs_first_profile=needs_first_profile,
+    )
     if not session:
         raise SessionNotFoundError
     root = programs_repo.load_programs_file()

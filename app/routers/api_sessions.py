@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from app.models import (
@@ -11,6 +11,7 @@ from app.models import (
     SessionRuleOverrides,
     TableType,
 )
+from app.services import profiles_repo
 from app.services.session_service import (
     BadRequestError,
     SessionNotFoundError,
@@ -18,6 +19,7 @@ from app.services.session_service import (
     end_rack,
     end_session,
     get_live_context,
+    load_session_for_profile,
     start_rack,
     start_session,
 )
@@ -49,6 +51,32 @@ class AddMissBody(BaseModel):
     outcome: MissOutcome
 
 
+def _profile_ctx(request: Request) -> tuple[str | None, bool]:
+    return (
+        getattr(request.state, "active_profile_id", None),
+        getattr(request.state, "needs_first_profile", False),
+    )
+
+
+def _guard_session(request: Request, session_id: str) -> PrecisionSession:
+    active, needs = _profile_ctx(request)
+    s = load_session_for_profile(
+        session_id,
+        active_profile_id=active,
+        needs_first_profile=needs,
+    )
+    if not s:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return s
+
+
+def _active_profile_for_import(request: Request) -> str | None:
+    hdr = request.headers.get("x-elite-profile-id", "").strip()
+    if hdr and profiles_repo.load_profile(hdr):
+        return hdr
+    return getattr(request.state, "active_profile_id", None)
+
+
 def _handle(exc: Exception) -> None:
     if isinstance(exc, SessionNotFoundError):
         raise HTTPException(status_code=404, detail="Session not found") from exc
@@ -58,8 +86,11 @@ def _handle(exc: Exception) -> None:
 
 
 @router.get("")
-def api_list_sessions() -> dict:
-    sessions = list_sessions()
+def api_list_sessions(request: Request) -> dict:
+    active, needs = _profile_ctx(request)
+    if needs or not active:
+        return {"sessions": []}
+    sessions = list_sessions(profile_id=active)
     return {
         "sessions": [
             {
@@ -78,45 +109,83 @@ def api_list_sessions() -> dict:
 
 
 @router.post("/import")
-def api_import_session(payload: dict, *, overwrite: bool = False) -> dict:
+def api_import_session(
+    request: Request, payload: dict, *, overwrite: bool = False
+) -> dict:
     """Import a full session JSON document (same schema as on disk). Used by the Electron shell."""
+    if getattr(request.state, "needs_first_profile", False):
+        raise HTTPException(
+            status_code=400,
+            detail="Create a player profile in the app before importing sessions.",
+        )
+    profile_id = _active_profile_for_import(request)
+    if not profile_id:
+        raise HTTPException(
+            status_code=400,
+            detail="No active player profile for import (sign in via the app or send X-Elite-Profile-Id).",
+        )
     try:
         s = PrecisionSession.model_validate(payload)
     except ValidationError as e:
         raise HTTPException(status_code=422, detail=e.errors()) from e
-    if load_session(s.id) is not None and not overwrite:
+    existing = load_session(s.id)
+    if existing is not None and not overwrite:
         raise HTTPException(
             status_code=409,
             detail={"message": "Session already exists", "id": s.id},
         )
+    if existing is not None and overwrite and existing.profile_id:
+        if existing.profile_id != profile_id:
+            profiles_repo.remove_session(existing.profile_id, s.id)
+    s.profile_id = profile_id
     save_session(s)
+    profiles_repo.append_session(profile_id, s.id)
     return {"ok": True, "id": s.id}
 
 
 @router.get("/{session_id}")
-def api_get_session(session_id: str) -> dict:
-    s = load_session(session_id)
+def api_get_session(request: Request, session_id: str) -> dict:
+    active, needs = _profile_ctx(request)
+    s = load_session_for_profile(
+        session_id,
+        active_profile_id=active,
+        needs_first_profile=needs,
+    )
     if not s:
         raise HTTPException(status_code=404, detail="Session not found")
     return {"session": s.model_dump(by_alias=True)}
 
 
 @router.get("/{session_id}/live")
-def api_live(session_id: str) -> dict:
+def api_live(request: Request, session_id: str) -> dict:
+    active, needs = _profile_ctx(request)
     try:
-        return get_live_context(session_id)
+        return get_live_context(
+            session_id,
+            active_profile_id=active,
+            needs_first_profile=needs,
+        )
     except SessionNotFoundError as e:
         _handle(e)
 
 
 @router.post("")
-def api_start_session(body: StartSessionBody) -> dict:
+def api_start_session(request: Request, body: StartSessionBody) -> dict:
+    if getattr(request.state, "needs_first_profile", False):
+        raise HTTPException(
+            status_code=400,
+            detail="Create a player profile before starting a session.",
+        )
+    active = getattr(request.state, "active_profile_id", None)
+    if not active:
+        raise HTTPException(status_code=400, detail="No active player profile.")
     try:
         s = start_session(
             plan_id=body.plan_id,
             table_type=body.table_type,
             mode=body.mode,
             rule_overrides=body.rule_overrides,
+            profile_id=active,
         )
         return {"session": s.model_dump(by_alias=True)}
     except BadRequestError as e:
@@ -124,7 +193,8 @@ def api_start_session(body: StartSessionBody) -> dict:
 
 
 @router.post("/{session_id}/end")
-def api_end_session(session_id: str) -> dict:
+def api_end_session(request: Request, session_id: str) -> dict:
+    _guard_session(request, session_id)
     try:
         s = end_session(session_id)
         return {"session": s.model_dump(by_alias=True)}
@@ -133,7 +203,8 @@ def api_end_session(session_id: str) -> dict:
 
 
 @router.post("/{session_id}/racks")
-def api_start_rack(session_id: str) -> dict:
+def api_start_rack(request: Request, session_id: str) -> dict:
+    _guard_session(request, session_id)
     try:
         s = start_rack(session_id)
         return {"session": s.model_dump(by_alias=True)}
@@ -142,7 +213,10 @@ def api_start_rack(session_id: str) -> dict:
 
 
 @router.post("/{session_id}/racks/{rack_id}/end")
-def api_end_rack(session_id: str, rack_id: str, body: EndRackBody | None = None) -> dict:
+def api_end_rack(
+    request: Request, session_id: str, rack_id: str, body: EndRackBody | None = None
+) -> dict:
+    _guard_session(request, session_id)
     try:
         s = end_rack(
             session_id,
@@ -155,7 +229,10 @@ def api_end_rack(session_id: str, rack_id: str, body: EndRackBody | None = None)
 
 
 @router.post("/{session_id}/racks/{rack_id}/misses")
-def api_add_miss(session_id: str, rack_id: str, body: AddMissBody) -> dict:
+def api_add_miss(
+    request: Request, session_id: str, rack_id: str, body: AddMissBody
+) -> dict:
+    _guard_session(request, session_id)
     try:
         s = add_miss(
             session_id,
@@ -170,7 +247,8 @@ def api_add_miss(session_id: str, rack_id: str, body: AddMissBody) -> dict:
 
 
 @router.delete("/{session_id}")
-def api_delete_session(session_id: str) -> dict:
+def api_delete_session(request: Request, session_id: str) -> dict:
+    _guard_session(request, session_id)
     if not delete_session(session_id):
         raise HTTPException(status_code=404, detail="Session not found")
     return {"ok": True}
@@ -181,8 +259,12 @@ class PauseSessionBody(BaseModel):
 
 
 @router.post("/{session_id}/pause")
-def api_pause_session(session_id: str, body: PauseSessionBody) -> dict:
+def api_pause_session(
+    request: Request, session_id: str, body: PauseSessionBody
+) -> dict:
     from app.services.session_service import toggle_session_pause
+
+    _guard_session(request, session_id)
     try:
         s = toggle_session_pause(session_id, body.pause)
         return {"session": s.model_dump(by_alias=True)}

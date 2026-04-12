@@ -3,10 +3,12 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from starlette.requests import Request
 
 from app.config import STATIC_DIR
-from app.routers import api_programs, api_sessions, dashboard, settings, training
+from app.routers import api_programs, api_sessions, dashboard, profiles, settings, training
 from app.services import programs_repo
+from app.services.active_profile import attach_profile_context, set_profile_cookie
 
 
 @asynccontextmanager
@@ -17,6 +19,15 @@ async def lifespan(_app: FastAPI):
 
 def create_app() -> FastAPI:
     app = FastAPI(title="Elite Training", lifespan=lifespan)
+
+    @app.middleware("http")
+    async def profile_context_middleware(request: Request, call_next):
+        cookie_val = attach_profile_context(request)
+        response = await call_next(request)
+        if cookie_val:
+            set_profile_cookie(response, cookie_val)
+        return response
+
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
     metronic_assets_dir = Path(
@@ -30,6 +41,7 @@ def create_app() -> FastAPI:
         )
 
     app.include_router(dashboard.router)
+    app.include_router(profiles.router)
     app.include_router(settings.router)
     app.include_router(training.router)
     app.include_router(api_programs.router)

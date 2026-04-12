@@ -19,8 +19,8 @@ from app.services.sessions_repo import list_sessions
 router = APIRouter()
 
 
-def _latest_in_progress() -> str | None:
-    for s in list_sessions(limit=50):
+def _latest_in_progress(profile_id: str) -> str | None:
+    for s in list_sessions(limit=50, profile_id=profile_id):
         if s.status == PrecisionSessionStatus.IN_PROGRESS:
             return s.id
     return None
@@ -30,8 +30,14 @@ def _latest_in_progress() -> str | None:
 async def dashboard(request: Request) -> object:
     programs_root = programs_repo.load_programs_file()
     templates = get_templates()
-    cont = _latest_in_progress()
-    all_sessions = list_sessions(limit=500)
+    needs = getattr(request.state, "needs_first_profile", False)
+    active = getattr(request.state, "active_profile_id", None)
+    if needs or not active:
+        cont = None
+        all_sessions: list = []
+    else:
+        cont = _latest_in_progress(active)
+        all_sessions = list_sessions(limit=500, profile_id=active)
     g_rate, g_rc, g_tr = overall_rack_conversion_breakdown(all_sessions)
     pot_rate, pot_made, pot_att = overall_pot_success_breakdown(all_sessions)
     pos_rate, pos_miss, pos_cleared = overall_position_success_breakdown(all_sessions)
@@ -124,15 +130,21 @@ async def action_delete_plan(program_id: str, plan_id: str) -> RedirectResponse:
 
 @router.post("/actions/session/start")
 async def action_start_session(
+    request: Request,
     plan_id: str = Form(...),
     table_type: str = Form("eight_ft"),
     mode: str = Form("rack"),
 ) -> RedirectResponse:
+    if getattr(request.state, "needs_first_profile", False) or not getattr(
+        request.state, "active_profile_id", None
+    ):
+        return RedirectResponse(url="/?err=start", status_code=303)
     try:
         s = start_session(
             plan_id=plan_id,
             table_type=TableType(table_type),
             mode=SessionMode(mode),
+            profile_id=request.state.active_profile_id,
         )
     except BadRequestError:
         return RedirectResponse(url="/?err=start", status_code=303)
