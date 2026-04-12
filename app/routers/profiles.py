@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from urllib.parse import quote
+
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 
 from app.services.active_profile import set_profile_cookie
+from app.services.profile_sessions_export import build_profile_sessions_zip
 from app.services.profiles_repo import (
     associate_all_existing_sessions,
     create_profile,
@@ -21,6 +24,25 @@ async def _read_name(request: Request) -> str:
         return str(body.get("name", "")).strip()
     form = await request.form()
     return str(form.get("name", "")).strip()
+
+
+@router.get("/api/profiles/{profile_id}/export-zip")
+def export_profile_sessions_zip(profile_id: str) -> Response:
+    """Download all sessions for this profile as a zip (default filename: name + UTC date)."""
+    built = build_profile_sessions_zip(profile_id)
+    if built is None:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    body, filename = built
+    # ASCII fallback + RFC 5987 for Unicode in player names
+    ascii_name = filename.encode("ascii", "replace").decode("ascii").replace("?", "_")
+    disp = f'attachment; filename="{ascii_name}"'
+    if ascii_name != filename:
+        disp += f"; filename*=UTF-8''{quote(filename)}"
+    return Response(
+        content=body,
+        media_type="application/zip",
+        headers={"Content-Disposition": disp},
+    )
 
 
 @router.get("/api/profiles")

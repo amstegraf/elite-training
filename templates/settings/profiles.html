@@ -5,7 +5,7 @@
   <header class="page__header" style="margin-bottom: 0;">
     <div>
       <h1 style="margin: 0 0 0.35rem;">Player profiles</h1>
-      <p class="lede" style="margin: 0;">Rename or remove players. Removing a player keeps all session files; those sessions become <strong>unassigned</strong> (no <span class="mono">profileId</span>) until you create a player again or link them from the first-run flow.</p>
+      <p class="lede" style="margin: 0;">Rename or remove players. Removing a player keeps all session files; those sessions become <strong>unassigned</strong> (no <span class="mono">profileId</span>) until you create a player again or link them from the first-run flow. Use <strong>Export zip</strong> to download that player’s sessions; your browser save dialog picks the folder (default filename: player name and date).</p>
     </div>
     <a class="btn btn--ghost" href="/">Dashboard</a>
   </header>
@@ -40,6 +40,7 @@
             <th scope="col">Name</th>
             <th scope="col">Sessions listed</th>
             <th scope="col">Rename</th>
+            <th scope="col">Export</th>
             <th scope="col"></th>
           </tr>
         </thead>
@@ -54,6 +55,9 @@
                 <input type="text" name="name" value="{{ row.name }}" maxlength="200" required class="profiles-table__input" aria-label="Name for {{ row.name }}">
                 <button type="submit" class="btn btn--ghost" style="padding: 0.4rem 0.75rem; font-size: 0.85rem;">Save</button>
               </form>
+            </td>
+            <td>
+              <a class="btn btn--ghost" style="padding: 0.4rem 0.75rem; font-size: 0.85rem; white-space: nowrap;" href="/api/profiles/{{ row.id }}/export-zip">Export zip</a>
             </td>
             <td class="table-actions">
               <form method="post" action="/settings/profiles/{{ row.id }}/delete" class="profiles-table__delete" onsubmit="return confirm('Delete this player? Sessions stay on disk without a player (unassigned).');">
