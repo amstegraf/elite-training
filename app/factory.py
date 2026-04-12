@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from app.config import STATIC_DIR
-from app.routers import api_programs, api_sessions, dashboard, training
+from app.routers import api_programs, api_sessions, dashboard, settings, training
 from app.services import programs_repo
 
 
@@ -30,6 +30,7 @@ def create_app() -> FastAPI:
         )
 
     app.include_router(dashboard.router)
+    app.include_router(settings.router)
     app.include_router(training.router)
     app.include_router(api_programs.router)
     app.include_router(api_sessions.router)

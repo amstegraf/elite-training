@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Dashboard · Elite Training{% endblock %}
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', path='css/dashboard/dashboard.css') }}?v=1.3">
+<link rel="stylesheet" href="{{ url_for('static', path='css/dashboard/dashboard.css') }}?v=1.4">
 {% endblock %}
 {% block content %}
 <section class="page dashboard animate-in">
@@ -9,10 +9,24 @@
     <div>
       <div style="display: flex; align-items: center; gap: 1rem;">
         <h1>Ready to train?</h1>
-        {% if global_rack_conversion_tier %}
-        <div style="margin-top: -0.25rem; transform: scale(1.1); transform-origin: left center;">
-          {% set tier = global_rack_conversion_tier %}
-          {% include 'partials/tier_badge.html' %}
+        {% if global_training_tier %}
+        <div class="dashboard-tier-block">
+          <div class="dashboard-tier-block__badge">
+            {% set tier = global_training_tier %}
+            {% include 'partials/tier_badge.html' %}
+          </div>
+          {% if global_training_tier_meta %}
+          <div class="dashboard-tier-block__meta muted mono" title="Weighted composite of KPI scores (0–4); gap is composite points until the next tier boundary.">
+            <span>{{ "%.2f"|format(global_training_tier_meta.composite) }} pts</span>
+            {% if global_training_tier_meta.points_to_next is not none %}
+            <span class="dashboard-tier-block__sep">·</span>
+            <span>{{ "%.2f"|format(global_training_tier_meta.points_to_next) }} to next</span>
+            {% else %}
+            <span class="dashboard-tier-block__sep">·</span>
+            <span>max tier</span>
+            {% endif %}
+          </div>
+          {% endif %}
         </div>
         {% endif %}
       </div>

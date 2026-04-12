@@ -314,3 +314,65 @@ class PrecisionSession(BaseModel):
             if r.id == self.current_rack_id:
                 return r
         return None
+
+
+def _strict_four_ascending_tier(name: str, v: tuple[float, float, float, float]) -> tuple[float, float, float, float]:
+    a, b, c, d = v
+    if not (a < b < c < d):
+        raise ValueError(f"{name} must be four strictly ascending values")
+    return v
+
+
+class TierSettings(BaseModel):
+    """
+    Matrix tier model (docs/matrix-calculation-of-tier.md).
+
+    Each ``*_pct_lower_bounds`` tuple is (b0,b1,b2,b3): score 0 if pct < b0, score 1 if
+    b0<=pct<b1, … score 4 if pct>=b3. Percent values are on the usual 0–100 display scale.
+    """
+
+    pot_pct_lower_bounds: tuple[float, float, float, float] = (90.0, 93.0, 95.0, 97.0)
+    pos_pct_lower_bounds: tuple[float, float, float, float] = (55.0, 65.0, 75.0, 85.0)
+    conv_pct_lower_bounds: tuple[float, float, float, float] = (20.0, 35.0, 50.0, 65.0)
+
+    weight_pos: float = Field(default=0.5, ge=0.0, le=1.0)
+    weight_conv: float = Field(default=0.3, ge=0.0, le=1.0)
+    weight_pot: float = Field(default=0.2, ge=0.0, le=1.0)
+
+    composite_upper_bounds: tuple[float, float, float, float] = (1.0, 2.0, 3.0, 3.5)
+
+    @field_validator("pot_pct_lower_bounds", "pos_pct_lower_bounds", "conv_pct_lower_bounds")
+    @classmethod
+    def validate_kpi_bounds(
+        cls, v: tuple[float, float, float, float]
+    ) -> tuple[float, float, float, float]:
+        return _strict_four_ascending_tier("KPI lower bounds", v)
+
+    @field_validator("composite_upper_bounds")
+    @classmethod
+    def validate_composite_bounds(
+        cls, v: tuple[float, float, float, float]
+    ) -> tuple[float, float, float, float]:
+        _strict_four_ascending_tier("Composite upper bounds", v)
+        if v[0] <= 0 or v[-1] >= 4.0:
+            raise ValueError(
+                "Composite upper bounds must start above 0 and end below 4 "
+                "(elite covers from the last cut up to composite 4)"
+            )
+        return v
+
+    @model_validator(mode="after")
+    def weights_sum_to_one(self) -> TierSettings:
+        s = self.weight_pos + self.weight_conv + self.weight_pot
+        if abs(s - 1.0) > 0.01:
+            raise ValueError("Weights must sum to 1.0 (within 0.01)")
+        return self
+
+
+TIER_LABELS: tuple[str, str, str, str, str] = (
+    "Inconsistent / developing",
+    "Strong amateur",
+    "Advanced",
+    "Semi-pro",
+    "Elite",
+)

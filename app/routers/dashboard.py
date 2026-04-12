@@ -11,10 +11,8 @@ from app.services.derived_metrics import (
     overall_position_success_breakdown,
     overall_pot_success_breakdown,
 )
-from app.services.rack_conversion_tiers import (
-    overall_rack_conversion_breakdown,
-    rack_conversion_tier_label,
-)
+from app.services.rack_conversion_tiers import overall_rack_conversion_breakdown
+from app.services.training_tier import training_tier_dashboard_meta, training_tier_label
 from app.services.session_service import BadRequestError, start_session
 from app.services.sessions_repo import list_sessions
 
@@ -35,9 +33,10 @@ async def dashboard(request: Request) -> object:
     cont = _latest_in_progress()
     all_sessions = list_sessions(limit=500)
     g_rate, g_rc, g_tr = overall_rack_conversion_breakdown(all_sessions)
-    global_rack_tier = rack_conversion_tier_label(g_rate)
     pot_rate, pot_made, pot_att = overall_pot_success_breakdown(all_sessions)
     pos_rate, pos_miss, pos_cleared = overall_position_success_breakdown(all_sessions)
+    global_training_tier = training_tier_label(pot_rate, pos_rate, g_rate)
+    global_training_tier_meta = training_tier_dashboard_meta(pot_rate, pos_rate, g_rate)
     pot_trend = dashboard_metric_trend(all_sessions, metric="pot")
     position_trend = dashboard_metric_trend(all_sessions, metric="position")
     rack_trend = dashboard_metric_trend(all_sessions, metric="rack_conversion")
@@ -49,7 +48,8 @@ async def dashboard(request: Request) -> object:
             "continue_session_id": cont,
             "recent_sessions": all_sessions[:15],
             "global_rack_conversion_rate": g_rate,
-            "global_rack_conversion_tier": global_rack_tier,
+            "global_training_tier": global_training_tier,
+            "global_training_tier_meta": global_training_tier_meta,
             "global_racks_completed": g_rc,
             "global_total_racks": g_tr,
             "global_pot_success_rate": pot_rate,

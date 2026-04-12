@@ -421,6 +421,7 @@ def test_dashboard_metric_trend_pot_increasing() -> None:
             table_type=TableType.EIGHT_FT,
             mode=SessionMode.RACK,
             status=PrecisionSessionStatus.COMPLETED,
+            started_at=f"2026-01-{day:02d}T00:00:00+00:00",
             racks=[r],
         )
 
