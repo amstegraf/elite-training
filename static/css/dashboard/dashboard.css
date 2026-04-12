@@ -310,3 +310,32 @@
   gap: 0.5rem;
 }
 
+.dashboard-ref-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+}
+
+.dashboard-ref-banner__form {
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.dashboard-ref-col {
+  white-space: nowrap;
+  width: 1%;
+}
+
+.data-table tr.data-table__ref-row {
+  box-shadow: inset 3px 0 0 var(--accent-brand);
+  background: color-mix(in srgb, var(--accent-brand) 10%, var(--surface));
+}
+
+.data-table tr.data-table__ref-row:hover {
+  background: color-mix(in srgb, var(--accent-brand) 14%, var(--surface-hover));
+}
+

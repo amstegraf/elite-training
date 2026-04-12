@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Dashboard · Elite Training{% endblock %}
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', path='css/dashboard/dashboard.css') }}?v=1.4">
+<link rel="stylesheet" href="{{ url_for('static', path='css/dashboard/dashboard.css') }}?v=1.5">
 {% endblock %}
 {% block content %}
 <section class="page dashboard animate-in">
@@ -44,6 +44,16 @@
 
   {% if request.query_params.get('err') == 'start' %}
   <p class="banner banner--warn">Could not start session. Pick a valid plan.</p>
+  {% endif %}
+
+  {% if dashboard_reference_session_id and dashboard_reference_started_at %}
+  <p class="banner dashboard-ref-banner">
+    <span class="small">Tier and KPIs use sessions on or after <strong class="mono">{{ dashboard_reference_started_at[:10] }}</strong> <span class="muted mono">{{ dashboard_reference_started_at[11:16] }}</span> ({{ dashboard_metrics_session_count }} session{% if dashboard_metrics_session_count != 1 %}s{% endif %}{% if dashboard_all_sessions_count and dashboard_metrics_session_count < dashboard_all_sessions_count %}; {{ dashboard_all_sessions_count }} loaded{% endif %}).</span>
+    <form method="post" action="/actions/dashboard/reference-session" class="dashboard-ref-banner__form">
+      <input type="hidden" name="clear" value="1">
+      <button type="submit" class="btn btn--ghost btn--sm">Clear baseline</button>
+    </form>
+  </p>
   {% endif %}
 
   {% if (global_total_racks > 0 and global_rack_conversion_rate is not none) or (global_pot_attempts > 0 and global_pot_success_rate is not none) or (global_position_balls_cleared > 0 and global_position_success_rate is not none) %}
@@ -221,12 +231,13 @@
             <th>Duration</th>
             <th>Racks</th>
             <th>Misses</th>
+            <th class="dashboard-ref-col">Baseline</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
           {% for s in recent_sessions %}
-          <tr>
+          <tr{% if dashboard_reference_session_id and s.id == dashboard_reference_session_id %} class="data-table__ref-row"{% endif %}>
             <td class="mono font-normal">{{ s.started_at[:10] }} <span class="muted">{{ s.started_at[11:16] }}</span></td>
             <td>
               {% if s.status.value == 'in_progress' %}
@@ -238,6 +249,12 @@
             <td class="mono font-normal">{{ s.duration_seconds // 3600 }}:{{ "%02d" | format((s.duration_seconds % 3600) // 60) }}:{{ "%02d" | format(s.duration_seconds % 60) }}</td>
             <td>{{ s.total_racks }}</td>
             <td>{{ s.total_misses }}</td>
+            <td class="dashboard-ref-col">
+              <form method="post" action="/actions/dashboard/reference-session" style="margin:0">
+                <input type="hidden" name="session_id" value="{{ s.id }}">
+                <button type="submit" class="btn btn--ghost btn--sm" title="Recalculate tier and KPIs from this session onward">Set</button>
+              </form>
+            </td>
             <td class="actions" style="justify-content:flex-end">
               {% if s.status.value == 'in_progress' %}
               <a class="btn btn--pr btn--small" href="/session/{{ s.id }}">Open</a>
