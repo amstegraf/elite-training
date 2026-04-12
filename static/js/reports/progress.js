@@ -185,37 +185,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const ctxPosSpdGran = document.getElementById('chart-position-speed-granular');
     const labelsGran = data.labels || [];
-    let posGran = Array.isArray(data.position_granular_miss_totals)
-        ? data.position_granular_miss_totals
+    let posPctBad = Array.isArray(data.position_tag_pct_of_bad_play)
+        ? data.position_tag_pct_of_bad_play
         : [];
-    let spdGran = Array.isArray(data.speed_granular_miss_totals)
-        ? data.speed_granular_miss_totals
+    let spdPctBad = Array.isArray(data.speed_tag_pct_of_bad_play)
+        ? data.speed_tag_pct_of_bad_play
         : [];
-    while (posGran.length < labelsGran.length) posGran.push(0);
-    while (spdGran.length < labelsGran.length) spdGran.push(0);
-    posGran = posGran.slice(0, labelsGran.length);
-    spdGran = spdGran.slice(0, labelsGran.length);
-    if (ctxPosSpdGran && labelsGran.length > 0 && posGran.length === spdGran.length) {
+    while (posPctBad.length < labelsGran.length) posPctBad.push(null);
+    while (spdPctBad.length < labelsGran.length) spdPctBad.push(null);
+    posPctBad = posPctBad.slice(0, labelsGran.length);
+    spdPctBad = spdPctBad.slice(0, labelsGran.length);
+    const hasPosSpdPct =
+        labelsGran.length > 0 &&
+        (posPctBad.some((v) => v != null) || spdPctBad.some((v) => v != null));
+    if (ctxPosSpdGran && hasPosSpdPct) {
         const granOpt = cloneObj(commonLineOptions);
         granOpt.plugins.legend = { display: true, position: 'top' };
-        const peak = Math.max(1, ...posGran, ...spdGran);
-        granOpt.scales.y.max = peak;
+        granOpt.scales.y.max = 100;
         new Chart(ctxPosSpdGran, {
             type: 'line',
             data: {
                 labels: labelsGran,
                 datasets: [
                     {
-                        label: 'Position-tagged misses',
-                        data: posGran,
+                        label: 'Position tags % of bad play',
+                        data: posPctBad,
                         borderColor: '#7c3aed',
                         backgroundColor: 'rgba(124, 58, 237, 0.06)',
                         fill: false,
                         borderDash: [4, 3],
                     },
                     {
-                        label: 'Speed-tagged misses',
-                        data: spdGran,
+                        label: 'Speed tags % of bad play',
+                        data: spdPctBad,
                         borderColor: '#0284c7',
                         backgroundColor: 'rgba(2, 132, 199, 0.06)',
                         fill: false,

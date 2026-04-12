@@ -4,6 +4,7 @@ from app.models import MissEvent, MissOutcome, MissType, PrecisionSession, RackR
 from app.services.derived_metrics import (
     aggregate_sessions_progress,
     best_run_balls_for_rack,
+    dashboard_metric_trend,
     default_balls_cleared_for_rack,
     miss_breaks_run,
     rack_recovery_counts,
@@ -358,3 +359,93 @@ def test_aggregate_progress_recomputes_stale_session_fields() -> None:
     assert out["best_runs"] == [9]
     assert out["true_misses_per_rack"] == [0.0]
     assert out["training_logs_per_rack"] == [1.0]
+
+
+def test_aggregate_position_speed_pct_of_bad_play() -> None:
+    from app.models import PrecisionSessionStatus, SessionMode, TableType
+
+    r = RackRecord(
+        rack_number=1,
+        ended_at="2026-01-01T00:00:00+00:00",
+        balls_cleared=9,
+        misses=[
+            MissEvent(
+                ball_number=2,
+                types=[MissType.POSITION],
+                outcome=MissOutcome.PLAYABLE,
+            ),
+            MissEvent(
+                ball_number=3,
+                types=[MissType.SPEED],
+                outcome=MissOutcome.PLAYABLE,
+            ),
+        ],
+    )
+    s = PrecisionSession(
+        id="pct-bad",
+        program_id="p",
+        plan_id="pl",
+        table_type=TableType.EIGHT_FT,
+        mode=SessionMode.RACK,
+        status=PrecisionSessionStatus.COMPLETED,
+        racks=[r],
+    )
+    out = aggregate_sessions_progress([s])
+    assert out["position_tag_pct_of_bad_play"] == [50.0]
+    assert out["speed_tag_pct_of_bad_play"] == [50.0]
+
+
+def test_dashboard_metric_trend_pot_increasing() -> None:
+    from app.models import PrecisionSessionStatus, SessionMode, TableType
+
+    def sess(day: int, bc: int, pot_miss: bool) -> PrecisionSession:
+        misses = []
+        if pot_miss:
+            misses.append(
+                MissEvent(
+                    ball_number=bc + 1,
+                    types=[],
+                    outcome=MissOutcome.POT_MISS,
+                )
+            )
+        r = RackRecord(
+            rack_number=1,
+            ended_at=f"2026-01-{day:02d}T12:00:00+00:00",
+            balls_cleared=bc,
+            misses=misses,
+        )
+        return PrecisionSession(
+            id=f"s{day}",
+            program_id="p",
+            plan_id="pl",
+            table_type=TableType.EIGHT_FT,
+            mode=SessionMode.RACK,
+            status=PrecisionSessionStatus.COMPLETED,
+            racks=[r],
+        )
+
+    s1 = sess(1, 7, True)
+    s2 = sess(2, 8, True)
+    s3 = sess(3, 9, False)
+    assert dashboard_metric_trend([s3, s2, s1], metric="pot") == "up"
+
+
+def test_dashboard_metric_trend_single_session_is_flat() -> None:
+    from app.models import PrecisionSessionStatus, SessionMode, TableType
+
+    r = RackRecord(
+        rack_number=1,
+        ended_at="2026-01-05T12:00:00+00:00",
+        balls_cleared=9,
+        misses=[],
+    )
+    s = PrecisionSession(
+        id="one",
+        program_id="p",
+        plan_id="pl",
+        table_type=TableType.EIGHT_FT,
+        mode=SessionMode.RACK,
+        status=PrecisionSessionStatus.COMPLETED,
+        racks=[r],
+    )
+    assert dashboard_metric_trend([s], metric="pot") == "flat"

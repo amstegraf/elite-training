@@ -1,3 +1,61 @@
+/* Global KPI row (pot / position / rack) */
+.dashboard-kpi-pct {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.3rem;
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+}
+
+.dashboard-kpi-pct__suffix {
+  font-size: 1.1rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.dashboard-trend-bubble {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.dashboard-kpi-pct--up .dashboard-trend-bubble {
+  border: 2px solid #22c55e;
+  color: #22c55e;
+}
+
+.dashboard-kpi-pct--up {
+  color: #22c55e;
+}
+
+.dashboard-kpi-pct--up .dashboard-kpi-pct__suffix {
+  color: rgba(34, 197, 94, 0.7);
+}
+
+.dashboard-kpi-pct--down .dashboard-trend-bubble {
+  border: 2px solid #ef4444;
+  color: #ef4444;
+}
+
+.dashboard-kpi-pct--down {
+  color: #ef4444;
+}
+
+.dashboard-kpi-pct--down .dashboard-kpi-pct__suffix {
+  color: rgba(239, 68, 68, 0.7);
+}
+
 /* Dashboard Hero (adapted to soft light theme) */
 .dashboard__hero {
   margin-bottom: 3rem;

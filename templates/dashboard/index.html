@@ -1,17 +1,25 @@
 {% extends "base.html" %}
 {% block title %}Dashboard · Elite Training{% endblock %}
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', path='css/dashboard/dashboard.css') }}?v=1.2">
+<link rel="stylesheet" href="{{ url_for('static', path='css/dashboard/dashboard.css') }}?v=1.3">
 {% endblock %}
 {% block content %}
 <section class="page dashboard animate-in">
-  <header class="page__header dashboard__hero">
+  <header class="page__header dashboard__hero" style="display: flex; justify-content: space-between; align-items: flex-start;">
     <div>
-      <h1>Ready to train?</h1>
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <h1>Ready to train?</h1>
+        {% if global_rack_conversion_tier %}
+        <div style="margin-top: -0.25rem; transform: scale(1.1); transform-origin: left center;">
+          {% set tier = global_rack_conversion_tier %}
+          {% include 'partials/tier_badge.html' %}
+        </div>
+        {% endif %}
+      </div>
       <p class="dashboard__lede">Select an active program and focus on logging your misses to track progression.</p>
     </div>
     {% if continue_session_id %}
-    <a class="btn btn--pr btn--xl" href="/session/{{ continue_session_id }}">Continue session</a>
+    <a class="btn btn--pr btn--xl" style="height: fit-content;" href="/session/{{ continue_session_id }}">Continue session</a>
     {% endif %}
   </header>
 
@@ -22,46 +30,48 @@
   {% if (global_total_racks > 0 and global_rack_conversion_rate is not none) or (global_pot_attempts > 0 and global_pot_success_rate is not none) or (global_position_balls_cleared > 0 and global_position_success_rate is not none) %}
   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
     {% if global_pot_attempts > 0 and global_pot_success_rate is not none %}
-    <article class="card card--wide" style="margin-bottom: 0; display: flex; align-items: center; justify-content: space-between; padding: 1.5rem 2rem;">
+    <article class="card card--wide" style="position: relative; margin-bottom: 0; display: flex; align-items: center; justify-content: space-between; padding: 1.5rem 2rem;">
       <div>
-        <h2 style="margin: 0 0 0.25rem; font-size: 1.25rem;">Pot success</h2>
-        <p class="muted" style="margin: 0.35rem 0 0; font-size: 0.85rem; max-width: 22rem;">Overall: Σ balls potted ÷ Σ pot attempts (same as session reports; pot miss / both only).</p>
-        <span class="muted mono" style="font-size: 0.9rem; display: inline-block; margin-top: 0.5rem;">{{ global_pot_potted }} / {{ global_pot_attempts }}</span>
+        <h2 title="Overall: Σ balls potted ÷ Σ pot attempts (same as session reports; pot miss / both only)." style="margin: 0 0 0.25rem; font-size: 1.25rem; cursor: help; border-bottom: 1px dotted var(--muted); display: inline-block;">Pot success</h2>
+        <div class="muted mono" style="font-size: 0.9rem; margin-top: 0.5rem;">{{ global_pot_potted }} / {{ global_pot_attempts }}</div>
       </div>
       <div style="text-align: right;">
-        <div style="font-size: 2.25rem; font-weight: 700; line-height: 1;">{{ "%.1f"|format(global_pot_success_rate * 100) }}<span style="font-size: 1.1rem; color: var(--muted); font-weight: 600;">%</span></div>
+        <div class="dashboard-kpi-pct{% if dashboard_pot_trend == 'up' %} dashboard-kpi-pct--up{% elif dashboard_pot_trend == 'down' %} dashboard-kpi-pct--down{% endif %}">
+          <span class="dashboard-kpi-pct__value">{{ "%.1f"|format(global_pot_success_rate * 100) }}</span><span class="dashboard-kpi-pct__suffix">%</span>
+          {% if dashboard_pot_trend == 'up' %}<div class="dashboard-trend-bubble" title="Trending Up"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M7 17L17 7M17 7H9M17 7V15" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>{% elif dashboard_pot_trend == 'down' %}<div class="dashboard-trend-bubble" title="Trending Down"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M7 7L17 17M17 17H9M17 17V9" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>{% endif %}
+        </div>
       </div>
     </article>
     {% endif %}
     {% if global_position_balls_cleared > 0 and global_position_success_rate is not none %}
-    <article class="card card--wide" style="margin-bottom: 0; display: flex; align-items: center; justify-content: space-between; padding: 1.5rem 2rem;">
+    <article class="card card--wide" style="position: relative; margin-bottom: 0; display: flex; align-items: center; justify-content: space-between; padding: 1.5rem 2rem;">
       <div>
-        <h2 style="margin: 0 0 0.25rem; font-size: 1.25rem;">Position outcome</h2>
-        <p class="muted" style="margin: 0.35rem 0 0; font-size: 0.85rem; max-width: 22rem;">Overall: 1 − Σ position-related misses ÷ Σ balls cleared (docs/metric-position-success.md).</p>
-        <span class="muted mono" style="font-size: 0.9rem; display: inline-block; margin-top: 0.5rem;">{{ global_position_miss_events }} misses / {{ global_position_balls_cleared }} cleared</span>
+        <h2 title="Overall: 1 − Σ position-related misses ÷ Σ balls cleared (docs/metric-position-success.md)." style="margin: 0 0 0.25rem; font-size: 1.25rem; cursor: help; border-bottom: 1px dotted var(--muted); display: inline-block;">Position outcome</h2>
+        <div class="muted mono" style="font-size: 0.9rem; margin-top: 0.5rem;">{{ global_position_miss_events }} misses / {{ global_position_balls_cleared }} cleared</div>
       </div>
       <div style="text-align: right;">
-        <div style="font-size: 2.25rem; font-weight: 700; line-height: 1;">{{ "%.1f"|format(global_position_success_rate * 100) }}<span style="font-size: 1.1rem; color: var(--muted); font-weight: 600;">%</span></div>
+        <div class="dashboard-kpi-pct{% if dashboard_position_trend == 'up' %} dashboard-kpi-pct--up{% elif dashboard_position_trend == 'down' %} dashboard-kpi-pct--down{% endif %}">
+          <span class="dashboard-kpi-pct__value">{{ "%.1f"|format(global_position_success_rate * 100) }}</span><span class="dashboard-kpi-pct__suffix">%</span>
+          {% if dashboard_position_trend == 'up' %}<div class="dashboard-trend-bubble" title="Trending Up"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M7 17L17 7M17 7H9M17 7V15" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>{% elif dashboard_position_trend == 'down' %}<div class="dashboard-trend-bubble" title="Trending Down"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M7 7L17 17M17 17H9M17 17V9" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>{% endif %}
+        </div>
       </div>
     </article>
     {% endif %}
     {% if global_total_racks > 0 and global_rack_conversion_rate is not none %}
-    <article class="card card--wide" style="margin-bottom: 0; display: flex; align-items: center; justify-content: space-between; padding: 1.5rem 2rem;">
+    <article class="card card--wide" style="position: relative; margin-bottom: 0; display: flex; align-items: center; justify-content: space-between; padding: 1.5rem 2rem;">
       <div>
         <h2 style="margin: 0 0 0.25rem; font-size: 1.25rem;">Rack conversion</h2>
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.5rem;">
-          {% if global_rack_conversion_tier %}
-            {% set tier = global_rack_conversion_tier %}
-            {% include 'partials/tier_badge.html' %}
-          {% endif %}
-          <span class="muted mono" style="font-size: 0.9rem;">{{ global_racks_completed }} / {{ global_total_racks }} racks</span>
-        </div>
+        <div class="muted mono" style="font-size: 0.9rem; margin-top: 0.5rem;">{{ global_racks_completed }} / {{ global_total_racks }} racks</div>
       </div>
       <div style="text-align: right;">
-        <div style="font-size: 2.25rem; font-weight: 700; line-height: 1;">{{ "%.1f"|format(global_rack_conversion_rate * 100) }}<span style="font-size: 1.1rem; color: var(--muted); font-weight: 600;">%</span></div>
+        <div class="dashboard-kpi-pct{% if dashboard_rack_trend == 'up' %} dashboard-kpi-pct--up{% elif dashboard_rack_trend == 'down' %} dashboard-kpi-pct--down{% endif %}">
+          <span class="dashboard-kpi-pct__value">{{ "%.1f"|format(global_rack_conversion_rate * 100) }}</span><span class="dashboard-kpi-pct__suffix">%</span>
+          {% if dashboard_rack_trend == 'up' %}<div class="dashboard-trend-bubble" title="Trending Up"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M7 17L17 7M17 7H9M17 7V15" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>{% elif dashboard_rack_trend == 'down' %}<div class="dashboard-trend-bubble" title="Trending Down"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M7 7L17 17M17 17H9M17 17V9" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>{% endif %}
+        </div>
       </div>
     </article>
     {% endif %}
+
   </div>
   {% endif %}
 

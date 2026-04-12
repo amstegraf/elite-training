@@ -7,6 +7,7 @@ from app.deps import get_templates
 from app.models import FocusType, PrecisionSessionStatus, SessionMode, TableType
 from app.services import programs_repo
 from app.services.derived_metrics import (
+    dashboard_metric_trend,
     overall_position_success_breakdown,
     overall_pot_success_breakdown,
 )
@@ -37,6 +38,9 @@ async def dashboard(request: Request) -> object:
     global_rack_tier = rack_conversion_tier_label(g_rate)
     pot_rate, pot_made, pot_att = overall_pot_success_breakdown(all_sessions)
     pos_rate, pos_miss, pos_cleared = overall_position_success_breakdown(all_sessions)
+    pot_trend = dashboard_metric_trend(all_sessions, metric="pot")
+    position_trend = dashboard_metric_trend(all_sessions, metric="position")
+    rack_trend = dashboard_metric_trend(all_sessions, metric="rack_conversion")
     return templates.TemplateResponse(
         request,
         "dashboard/index.html",
@@ -54,6 +58,9 @@ async def dashboard(request: Request) -> object:
             "global_position_success_rate": pos_rate,
             "global_position_miss_events": pos_miss,
             "global_position_balls_cleared": pos_cleared,
+            "dashboard_pot_trend": pot_trend,
+            "dashboard_position_trend": position_trend,
+            "dashboard_rack_trend": rack_trend,
         },
     )
 

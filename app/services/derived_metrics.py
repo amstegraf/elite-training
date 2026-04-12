@@ -12,6 +12,9 @@ from app.models import (
     RackRecord,
 )
 
+# Minimum OLS slope (per session index, rates on 0–1) to show up/down trend on dashboard.
+_TREND_SLOPE_EPS = 0.002
+
 
 def miss_breaks_run(m: MissEvent) -> bool:
     """Whether this logged event ends the current ball run for streak / true-miss KPIs.
@@ -114,6 +117,27 @@ def count_position_related_miss_events(session: PrecisionSession) -> int:
             if no_shot_increment(m.outcome) > 0:
                 n += 1
             elif MissType.POSITION in m.types or MissType.SPEED in m.types:
+                n += 1
+    return n
+
+
+def is_position_related_miss(m: MissEvent) -> bool:
+    """Whether this miss counts toward position-related miss totals (same cases as above, OR form)."""
+    return (
+        no_shot_increment(m.outcome) > 0
+        or MissType.POSITION in m.types
+        or MissType.SPEED in m.types
+    )
+
+
+def count_position_related_misses_tagged(session: PrecisionSession, miss_type: MissType) -> int:
+    """Among position-related misses only, how many include ``miss_type`` in their tag list."""
+    n = 0
+    for r in session.racks:
+        for m in r.misses:
+            if not is_position_related_miss(m):
+                continue
+            if miss_type in m.types:
                 n += 1
     return n
 
@@ -390,6 +414,8 @@ def aggregate_sessions_progress(sessions: list[PrecisionSession]) -> dict[str, l
     position_success_rates: list[float | None] = []
     position_granular_miss_totals: list[int] = []
     speed_granular_miss_totals: list[int] = []
+    position_tag_pct_of_bad_play: list[float | None] = []
+    speed_tag_pct_of_bad_play: list[float | None] = []
     worst_rack_balls: list[int | None] = []
     best_rack_balls: list[int | None] = []
     avg_rack_balls: list[float] = []
@@ -430,6 +456,27 @@ def aggregate_sessions_progress(sessions: list[PrecisionSession]) -> dict[str, l
         )
         position_granular_miss_totals.append(count_misses_with_type(s, MissType.POSITION))
         speed_granular_miss_totals.append(count_misses_with_type(s, MissType.SPEED))
+        bad_play = count_position_related_miss_events(s)
+        if bad_play > 0:
+            position_tag_pct_of_bad_play.append(
+                round(
+                    100.0
+                    * count_position_related_misses_tagged(s, MissType.POSITION)
+                    / bad_play,
+                    1,
+                )
+            )
+            speed_tag_pct_of_bad_play.append(
+                round(
+                    100.0
+                    * count_position_related_misses_tagged(s, MissType.SPEED)
+                    / bad_play,
+                    1,
+                )
+            )
+        else:
+            position_tag_pct_of_bad_play.append(None)
+            speed_tag_pct_of_bad_play.append(None)
         worst_rack_balls.append(s.worst_rack_balls_cleared)
         best_rack_balls.append(s.best_rack_balls_cleared)
         avg_rack_balls.append(round(s.avg_balls_cleared_per_rack or 0, 2))
@@ -481,6 +528,8 @@ def aggregate_sessions_progress(sessions: list[PrecisionSession]) -> dict[str, l
         "position_success_rates": position_success_rates,
         "position_granular_miss_totals": position_granular_miss_totals,
         "speed_granular_miss_totals": speed_granular_miss_totals,
+        "position_tag_pct_of_bad_play": position_tag_pct_of_bad_play,
+        "speed_tag_pct_of_bad_play": speed_tag_pct_of_bad_play,
         "worst_rack_balls": worst_rack_balls,
         "best_rack_balls": best_rack_balls,
         "avg_rack_balls": avg_rack_balls,
@@ -493,3 +542,53 @@ def aggregate_sessions_progress(sessions: list[PrecisionSession]) -> dict[str, l
         "hist_labels": hist_labels,
         "hist_data": hist_data,
     }
+
+
+def _ols_slope(xs: list[float], ys: list[float]) -> float:
+    n = len(xs)
+    if n < 2:
+        return 0.0
+    mx = sum(xs) / n
+    my = sum(ys) / n
+    num = sum((x - mx) * (y - my) for x, y in zip(xs, ys, strict=True))
+    den = sum((x - mx) ** 2 for x in xs)
+    if den < 1e-12:
+        return 0.0
+    return num / den
+
+
+def dashboard_metric_trend(
+    sessions_newest_first: Iterable[PrecisionSession],
+    *,
+    metric: str,
+) -> str:
+    """Rough trend across completed sessions (chronological OLS slope on 0–1 rates).
+
+    ``metric`` is ``\"pot\"``, ``\"position\"``, or ``\"rack_conversion\"``.
+    Returns ``\"up\"``, ``\"down\"``, or ``\"flat\"``.
+    """
+    done = [
+        s for s in sessions_newest_first if s.status == PrecisionSessionStatus.COMPLETED
+    ]
+    done.sort(key=lambda s: s.started_at)
+    xs: list[float] = []
+    ys: list[float] = []
+    for i, s in enumerate(done):
+        recompute_session_aggregates(s)
+        if metric == "pot":
+            v = s.pot_success_rate if s.pot_attempts > 0 else None
+        elif metric == "position":
+            v = s.position_success_rate if s.total_balls_cleared > 0 else None
+        elif metric == "rack_conversion":
+            v = s.rack_conversion_rate if s.total_racks > 0 else None
+        else:
+            raise ValueError(f"unknown metric: {metric!r}")
+        if v is not None:
+            xs.append(float(i))
+            ys.append(float(v))
+    slope = _ols_slope(xs, ys)
+    if slope > _TREND_SLOPE_EPS:
+        return "up"
+    if slope < -_TREND_SLOPE_EPS:
+        return "down"
+    return "flat"
