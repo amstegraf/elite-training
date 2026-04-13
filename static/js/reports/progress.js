@@ -586,37 +586,70 @@ document.addEventListener('DOMContentLoaded', () => {
     // Miss type %
     const ctxTypes = document.getElementById('chart-miss-types');
     if (ctxTypes && data.labels && data.labels.length) {
-        const typeLabels = ['Position (true)', 'Alignment (true)', 'Delivery (true)', 'Speed (true)'];
+        const typeLabels = ['Position', 'Alignment', 'Delivery', 'Speed'];
         const typeKeys = ['miss_type_position', 'miss_type_alignment', 'miss_type_delivery', 'miss_type_speed'];
-        const typeColors = ['#a78bfa', '#f472b6', '#fcd34d', '#38bdf8'];
-        const sessionPalette = ['#a78bfa', '#f472b6', '#fcd34d', '#38bdf8', '#9ca3af', '#ff694b', '#7c3aed', '#14b8a6', '#f97316', '#64748b'];
         
-        let missTypeDatasets;
-        if (data.labels.length === 1) {
-            missTypeDatasets = [{
-                label: data.labels[0],
-                data: typeKeys.map(k => data[k] && data[k][0] != null ? Number(data[k][0]) : 0),
-                backgroundColor: typeColors,
-                borderRadius: 8
-            }];
-        } else {
-            missTypeDatasets = data.labels.map((lab, i) => ({
-                label: lab,
+        // Premium palette for rendering multiple session polygons
+        const sessionPalette = ['#a78bfa', '#f472b6', '#38bdf8', '#fcd34d', '#ff694b', '#14b8a6', '#f97316', '#64748b'];
+        
+        let missTypeDatasets = data.labels.map((sessionName, i) => {
+            const color = sessionPalette[i % sessionPalette.length];
+            // Get rgb from hex for rgba transparency
+            const r = parseInt(color.slice(1, 3), 16);
+            const g = parseInt(color.slice(3, 5), 16);
+            const b = parseInt(color.slice(5, 7), 16);
+            
+            return {
+                label: sessionName,
                 data: typeKeys.map(k => data[k] && data[k][i] != null ? Number(data[k][i]) : 0),
-                backgroundColor: sessionPalette[i % sessionPalette.length],
-                borderRadius: 8
-            }));
-        }
+                backgroundColor: `rgba(${r}, ${g}, ${b}, 0.25)`,
+                borderColor: color,
+                borderWidth: 2.5,
+                pointBackgroundColor: 'white',
+                pointBorderColor: color,
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                tension: 0.35 // smooth curved spider web
+            };
+        });
 
-        const typeOpt = cloneObj(commonLineOptions);
-        typeOpt.plugins.legend = { display: true, position: 'top' };
-        typeOpt.scales.y.max = 100;
-        typeOpt.scales.x.stacked = false;
-        typeOpt.scales.x.grid = { display: false };
         new Chart(ctxTypes, {
-            type: 'bar',
+            type: 'radar',
             data: { labels: typeLabels, datasets: missTypeDatasets },
-            options: typeOpt
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true, position: 'top', labels: { usePointStyle: true, boxWidth: 8 } },
+                    tooltip: {
+                        backgroundColor: 'rgba(26, 27, 31, 0.9)',
+                        titleFont: { size: 13, family: '"Outfit"' },
+                        bodyFont: { size: 13, family: '"Outfit"' },
+                        padding: 12,
+                        cornerRadius: 8
+                    }
+                },
+                scales: {
+                    r: {
+                        min: 0,
+                        max: 100,
+                        angleLines: { color: 'rgba(0,0,0,0.06)' },
+                        grid: { 
+                            color: 'rgba(0,0,0,0.06)', 
+                            circular: true // Makes it look completely modern like a literal target/radar
+                        },
+                        pointLabels: {
+                            font: { family: '"Outfit"', size: 13, weight: 600 },
+                            color: '#64748b'
+                        },
+                        ticks: {
+                            display: false, // hide the 0, 20, 40 etc stepping numbers for cleanliness
+                            stepSize: 25
+                        }
+                    }
+                }
+            }
         });
     }
 
