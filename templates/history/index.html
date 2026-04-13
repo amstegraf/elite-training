@@ -27,7 +27,7 @@
       <tbody>
         {% for s in sessions %}
         <tr data-session-id="{{ s.id }}">
-          <td class="mono">{{ s.started_at[:19] }}</td>
+          <td class="mono"><span class="local-session-range local-session-range--friendly" data-start="{{ s.started_at }}" data-end=""></span></td>
           <td>{{ plan_labels.get(s.plan_id, s.plan_id) }}</td>
           <td>{{ s.status.value }}</td>
           <td>{{ s.total_racks }}</td>

@@ -48,7 +48,7 @@
 
   {% if dashboard_reference_session_id and dashboard_reference_started_at %}
   <div class="banner dashboard-ref-banner">
-    <span class="small">Tier and KPIs use sessions on or after <strong class="mono">{{ dashboard_reference_started_at[:10] }}</strong> <span class="muted mono">{{ dashboard_reference_started_at[11:16] }}</span> ({{ dashboard_metrics_session_count }} session{% if dashboard_metrics_session_count != 1 %}s{% endif %}{% if dashboard_all_sessions_count and dashboard_metrics_session_count < dashboard_all_sessions_count %}; {{ dashboard_all_sessions_count }} loaded{% endif %}).</span>
+    <span class="small">Tier and KPIs use sessions on or after <strong class="mono"><span class="local-session-range local-session-range--friendly" data-start="{{ dashboard_reference_started_at }}" data-end=""></span></strong> ({{ dashboard_metrics_session_count }} session{% if dashboard_metrics_session_count != 1 %}s{% endif %}{% if dashboard_all_sessions_count and dashboard_metrics_session_count < dashboard_all_sessions_count %}; {{ dashboard_all_sessions_count }} loaded{% endif %}).</span>
     <form method="post" action="/actions/dashboard/reference-session" class="dashboard-ref-banner__form">
       <input type="hidden" name="clear" value="1">
       <button type="submit" class="dashboard-trend-bubble" title="Clear baseline" style="position: relative; top: 0; right: 0; border: 2px solid #ef4444; color: #ef4444; cursor: pointer;">
@@ -240,7 +240,7 @@
         <tbody>
           {% for s in recent_sessions %}
           <tr{% if dashboard_reference_session_id and s.id == dashboard_reference_session_id %} class="data-table__ref-row"{% endif %}>
-            <td class="mono font-normal">{{ s.started_at[:10] }} <span class="muted">{{ s.started_at[11:16] }}</span></td>
+            <td class="mono font-normal"><span class="local-session-range local-session-range--friendly" data-start="{{ s.started_at }}" data-end=""></span></td>
             <td>
               {% if s.status.value == 'in_progress' %}
               <span class="badge badge--active">Live</span>

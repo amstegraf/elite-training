@@ -1,3 +1,27 @@
+/** Chart x-labels from server are UTC wall times without offset; show in browser local TZ. */
+function progressChartLabelsToLocal(labels) {
+    if (!Array.isArray(labels)) return labels;
+    return labels.map((lb) => {
+        if (lb == null) return lb;
+        const s = String(lb).trim();
+        const m = s.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})$/);
+        let t;
+        if (m) {
+            t = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4]), Number(m[5]));
+        } else {
+            t = Date.parse(s);
+        }
+        if (Number.isNaN(t)) return lb;
+        return new Date(t).toLocaleString(undefined, {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+        });
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const rawData = document.getElementById('progress-data');
     if (!rawData) return;
@@ -8,6 +32,10 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) {
         console.error("Failed to parse progress data", e);
         return;
+    }
+
+    if (data.labels && data.labels.length > 0) {
+        data.labels = progressChartLabelsToLocal(data.labels);
     }
 
     if (!data.labels || data.labels.length === 0) {

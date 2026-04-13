@@ -139,3 +139,76 @@ def test_mesh_health_unreachable(monkeypatch: pytest.MonkeyPatch) -> None:
     body = r.json()
     assert body["reachable"] is False
 
+
+def test_mesh_settings_instruction_override_roundtrip(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("app.services.mesh_settings_store.mesh_settings_path", lambda: tmp_path / "mesh.json")
+    save_mesh_settings(
+        MeshSettings(
+            base_url="https://mesh.example",
+            system_instruction_override="Be brief.",
+        )
+    )
+    loaded = load_mesh_settings()
+    assert loaded.system_instruction_override == "Be brief."
+    assert loaded.base_url == "https://mesh.example"
+
+
+def test_mesh_instructions_proxy_ok(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "app.routers.api_ai_coach.resolve_mesh_base_url",
+        lambda: "http://mesh.test",
+    )
+
+    class Resp:
+        status_code = 200
+        text = (
+            '{"agent_name":"pool_billiards_coach",'
+            '"path":"instructions/local/pool_billiards_coach-instructions.md",'
+            '"text":"# Baseline\\n"}'
+        )
+
+    class AC:
+        async def __aenter__(self) -> AC:
+            return self
+
+        async def __aexit__(self, *args: object) -> None:
+            return None
+
+        get = AsyncMock(return_value=Resp())
+
+    monkeypatch.setattr("app.routers.api_ai_coach.httpx.AsyncClient", lambda **kw: AC())
+    client = TestClient(create_app())
+    r = client.get("/api/ai/mesh-instructions")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["ok"] is True
+    assert body["content"] == "# Baseline\n"
+
+
+def test_mesh_instructions_plain_text_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+    """When mesh returns raw markdown (no JSON), pass through unchanged."""
+    monkeypatch.setattr(
+        "app.routers.api_ai_coach.resolve_mesh_base_url",
+        lambda: "http://mesh.test",
+    )
+
+    class Resp:
+        status_code = 200
+        text = "# Legacy markdown only\n"
+
+    class AC:
+        async def __aenter__(self) -> AC:
+            return self
+
+        async def __aexit__(self, *args: object) -> None:
+            return None
+
+        get = AsyncMock(return_value=Resp())
+
+    monkeypatch.setattr("app.routers.api_ai_coach.httpx.AsyncClient", lambda **kw: AC())
+    client = TestClient(create_app())
+    r = client.get("/api/ai/mesh-instructions")
+    assert r.json()["content"] == "# Legacy markdown only\n"
+

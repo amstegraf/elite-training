@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from urllib.parse import quote
 
+import app.config as app_config
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 from pydantic import ValidationError
@@ -83,13 +84,18 @@ async def settings_profiles_delete(profile_id: str) -> RedirectResponse:
 async def settings_ai_mesh_page(request: Request) -> object:
     templates = get_templates()
     err = (request.query_params.get("err") or "").strip()
+    cfg = load_mesh_settings()
     return templates.TemplateResponse(
         request,
         "settings/ai_mesh.html",
         {
             "settings_nav_active": "ai_mesh",
-            "mesh_base_url": load_mesh_settings().base_url,
+            "mesh_base_url": cfg.base_url,
+            "instruction_override": cfg.system_instruction_override or "",
+            "pool_coach_agent": app_config.POOL_COACH_AGENT_NAME,
+            "mesh_tenant_id": app_config.MESH_TENANT_ID,
             "save_error": err or None,
+            "instructions_reset": request.query_params.get("instructions_reset") == "1",
         },
     )
 
@@ -98,6 +104,8 @@ async def settings_ai_mesh_page(request: Request) -> object:
 async def settings_ai_mesh_save(request: Request) -> RedirectResponse:
     raw = await request.form()
     url = str(raw.get("baseUrl", "")).strip()
+    override_raw = str(raw.get("systemInstructionOverride", ""))
+    override_val = override_raw.strip() or None
     try:
         normalized = validate_mesh_base_url(url)
     except ValueError as e:
@@ -105,8 +113,31 @@ async def settings_ai_mesh_save(request: Request) -> RedirectResponse:
             url=f"/settings/ai-mesh?err={quote(str(e))}",
             status_code=303,
         )
-    save_mesh_settings(MeshSettings.model_validate({"baseUrl": normalized}))
+    try:
+        save_mesh_settings(
+            MeshSettings.model_validate(
+                {"baseUrl": normalized, "systemInstructionOverride": override_val}
+            )
+        )
+    except ValidationError as e:
+        msg = "; ".join(f"{err['loc']}: {err['msg']}" for err in e.errors())
+        return RedirectResponse(
+            url=f"/settings/ai-mesh?err={quote(msg)}",
+            status_code=303,
+        )
     return RedirectResponse(url="/settings/ai-mesh?saved=1", status_code=303)
+
+
+@router.post("/settings/ai-mesh/reset-instructions")
+async def settings_ai_mesh_reset_instructions() -> RedirectResponse:
+    cfg = load_mesh_settings()
+    save_mesh_settings(
+        MeshSettings(
+            base_url=cfg.base_url,
+            system_instruction_override=None,
+        )
+    )
+    return RedirectResponse(url="/settings/ai-mesh?instructions_reset=1", status_code=303)
 
 
 @router.get("/settings/about")

@@ -10,6 +10,13 @@ POOL_COACH_AGENT_NAME = os.environ.get(
     "ELITE_POOL_COACH_AGENT", "pool_billiards_coach"
 ).strip()
 
+# Sent on POST /run as tenant_id (mesh tool policy / RLS). Override with ELITE_MESH_TENANT_ID.
+_MESH_TENANT_DEFAULT = "elite-training-app"
+MESH_TENANT_ID = (
+    os.environ.get("ELITE_MESH_TENANT_ID", _MESH_TENANT_DEFAULT).strip()
+    or _MESH_TENANT_DEFAULT
+)
+
 ROOT_DIR = Path(__file__).resolve().parent.parent
 TEMPLATES_DIR = ROOT_DIR / "templates"
 STATIC_DIR = ROOT_DIR / "static"

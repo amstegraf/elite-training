@@ -436,7 +436,7 @@ TIER_LABELS: tuple[str, str, str, str, str, str] = (
 
 
 class MeshSettings(BaseModel):
-    """Persisted mesh HTTP base (GET /health, POST /run)."""
+    """Persisted mesh HTTP base (GET /health, POST /run) and optional coach instruction override."""
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -445,4 +445,10 @@ class MeshSettings(BaseModel):
         alias="baseUrl",
         min_length=1,
         max_length=500,
+    )
+    # Sent as top-level system_instruction on POST /run when non-empty (mesh allow_instruction_override).
+    system_instruction_override: str | None = Field(
+        default=None,
+        alias="systemInstructionOverride",
+        max_length=120_000,
     )

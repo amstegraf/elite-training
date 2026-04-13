@@ -17,7 +17,6 @@ from app.services.pool_coach_cache import (
     has_session_coach_cache,
     load_progress_coach_cache,
     load_session_coach_cache,
-    mesh_response_to_storable,
     save_progress_coach_cache,
     save_session_coach_cache,
     storable_to_api_response,
@@ -26,7 +25,7 @@ from app.services.pool_coach_payload import (
     build_progress_coach_payload,
     build_session_coach_payload,
 )
-from app.services.mesh_settings_store import resolve_mesh_base_url
+from app.services.mesh_settings_store import load_mesh_settings, resolve_mesh_base_url
 from app.services.session_service import load_session_for_profile
 from app.services.sessions_repo import list_sessions
 
@@ -34,6 +33,7 @@ router = APIRouter(prefix="/api/ai", tags=["ai"])
 
 _MESH_HEALTH_TIMEOUT = 3.0
 _MESH_RUN_TIMEOUT = 120.0
+_MESH_INSTRUCTIONS_TIMEOUT = 15.0
 
 
 class PoolCoachBody(BaseModel):
@@ -74,6 +74,44 @@ async def mesh_health() -> dict[str, Any]:
             "detail": f"Mesh /health returned HTTP {r.status_code}.",
         }
     return {"reachable": True}
+
+
+@router.get("/mesh-instructions")
+async def mesh_instructions() -> dict[str, Any]:
+    """Proxy mesh GET /instructions?agent_name=… for Settings UI (file-backed baseline)."""
+    base = resolve_mesh_base_url()
+    url = f"{base.rstrip('/')}/instructions"
+    params = {"agent_name": app_config.POOL_COACH_AGENT_NAME}
+    try:
+        async with httpx.AsyncClient(timeout=_MESH_INSTRUCTIONS_TIMEOUT) as client:
+            r = await client.get(url, params=params)
+    except httpx.TimeoutException:
+        return {
+            "ok": False,
+            "content": "",
+            "detail": "Mesh host did not respond in time.",
+        }
+    except httpx.RequestError:
+        return {
+            "ok": False,
+            "content": "",
+            "detail": "Could not connect to mesh host.",
+        }
+    if r.status_code != 200:
+        return {
+            "ok": False,
+            "content": "",
+            "detail": f"Mesh /instructions returned HTTP {r.status_code}.",
+        }
+    raw = r.text
+    content = raw
+    try:
+        payload = json.loads(raw)
+        if isinstance(payload, dict) and isinstance(payload.get("text"), str):
+            content = payload["text"]
+    except (json.JSONDecodeError, TypeError):
+        pass
+    return {"ok": True, "content": content, "detail": None}
 
 
 @router.get("/pool-coach/cached")
@@ -154,9 +192,13 @@ async def pool_coach(request: Request, body: PoolCoachBody) -> dict[str, Any]:
         "runtime_name": app_config.POOL_COACH_RUNTIME_NAME,
         "agent_name": app_config.POOL_COACH_AGENT_NAME,
         "user_id": str(active),
+        "tenant_id": app_config.MESH_TENANT_ID,
         "message": json.dumps(payload, separators=(",", ":"), ensure_ascii=False),
         "session_id": None,
     }
+    override = (load_mesh_settings().system_instruction_override or "").strip()
+    if override:
+        mesh_body["system_instruction"] = override
     try:
         async with httpx.AsyncClient(timeout=_MESH_RUN_TIMEOUT) as client:
             r = await client.post(run_url, json=mesh_body)

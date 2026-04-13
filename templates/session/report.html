@@ -9,7 +9,7 @@
     <div>
       <p class="eyebrow">{{ program_name }} · {{ plan_name }}</p>
       <h1>Session report</h1>
-      <p class="lede mono">{{ session.started_at[:19] }}{% if session.ended_at %} → {{ session.ended_at[:19] }}{% endif %}</p>
+      <p class="lede mono"><span class="local-session-range local-session-range--friendly" data-start="{{ session.started_at }}" data-end="{{ session.ended_at or '' }}"></span></p>
     </div>
     <div class="row-actions" style="display: flex; gap: 0.5rem; align-items: center;">
       <button type="button" class="btn btn--ai" data-pool-coach-scope="session" data-session-id="{{ session.id }}" style="background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); color: white; border: none; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25); border-radius: 99px; display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.25rem; font-family: var(--font); font-weight: 600; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="if (!this.disabled) { this.style.transform='scale(1.05)'; this.style.boxShadow='0 6px 16px rgba(124, 58, 237, 0.35)'; }" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 12px rgba(124, 58, 237, 0.25)'">
@@ -264,7 +264,7 @@
             <td>{{ r.rack_number }}</td>
             <td>{% if r.balls_cleared is not none %}{{ r.balls_cleared }}{% else %}—{% endif %}</td>
             <td>{{ r.misses|length }}</td>
-            <td class="muted">{% if r.ended_at %}{{ r.ended_at[:19] }}{% else %}Open{% endif %}</td>
+            <td class="muted">{% if r.ended_at %}<span class="local-rack-ended" data-session-start="{{ session.started_at }}" data-rack-started="{{ r.started_at }}" data-rack-ended="{{ r.ended_at }}"></span>{% else %}Open{% endif %}</td>
           </tr>
           {% endfor %}
         </tbody>
