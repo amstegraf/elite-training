@@ -21,24 +21,24 @@
 
   <article class="card card--wide" style="margin-top: 1.5rem; background: var(--surface); border: 2px solid var(--border);">
     <h2 style="margin: 0 0 1rem; font-size: 1.15rem;">Live Tier Sandbox</h2>
-    <p class="muted" style="font-size: 0.9rem; margin-top: 0; margin-bottom: 1.5rem;">Adjust these mock session stats to immediately see how the Configuration Rules below rate your performance.</p>
+    <p class="muted" style="font-size: 0.9rem; margin-top: 0; margin-bottom: 1.5rem;">Adjust these mock session stats to immediately see how the Configuration Rules below rate your performance. Scores move continuously inside each configured percentage band.</p>
     
     <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
       <!-- Sandbox Inputs -->
       <div style="flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 1rem;">
         <label style="display: flex; align-items: center; gap: 1rem;">
           <div style="width: 100px; font-weight: 500;">Potting %</div>
-          <input type="range" id="mock_pot" min="0" max="100" step="1" value="94" style="flex-grow: 1; accent-color: var(--text);">
+          <input type="range" id="mock_pot" min="0" max="100" step="0.1" value="94" style="flex-grow: 1; accent-color: var(--text);">
           <div id="mock_pot_val" class="mono" style="width: 40px; text-align: right;">94%</div>
         </label>
         <label style="display: flex; align-items: center; gap: 1rem;">
           <div style="width: 100px; font-weight: 500;">Position %</div>
-          <input type="range" id="mock_pos" min="0" max="100" step="1" value="58" style="flex-grow: 1; accent-color: var(--text);">
+          <input type="range" id="mock_pos" min="0" max="100" step="0.1" value="58" style="flex-grow: 1; accent-color: var(--text);">
           <div id="mock_pos_val" class="mono" style="width: 40px; text-align: right;">58%</div>
         </label>
         <label style="display: flex; align-items: center; gap: 1rem;">
           <div style="width: 100px; font-weight: 500;">Convers. %</div>
-          <input type="range" id="mock_conv" min="0" max="100" step="1" value="22" style="flex-grow: 1; accent-color: var(--text);">
+          <input type="range" id="mock_conv" min="0" max="100" step="0.1" value="22" style="flex-grow: 1; accent-color: var(--text);">
           <div id="mock_conv_val" class="mono" style="width: 40px; text-align: right;">22%</div>
         </label>
       </div>
@@ -95,17 +95,24 @@
            parseFloat(document.querySelector('[name=conv_b2]').value) || 0,
            parseFloat(document.querySelector('[name=conv_b3]').value) || 0
          ];
-         const getScore = (val, bounds) => {
-           if (val < bounds[0]) return 0;
-           if (val < bounds[1]) return 1;
-           if (val < bounds[2]) return 2;
-           if (val < bounds[3]) return 3;
-           return 4;
+        const getContinuousScore = (val, bounds) => {
+          const [b0, b1, b2, b3] = bounds;
+          if (val < b0) {
+            if (b0 <= 0) return 0;
+            return Math.max(0, Math.min(1, val / b0));
+          }
+          if (val < b1) return 1 + ((val - b0) / (b1 - b0));
+          if (val < b2) return 2 + ((val - b1) / (b2 - b1));
+          if (val < b3) return 3 + ((val - b2) / (b3 - b2));
+          return 4;
          };
          const wPos = parseFloat(document.querySelector('[name=w_pos]').value) || 0;
          const wConv = parseFloat(document.querySelector('[name=w_conv]').value) || 0;
          const wPot = parseFloat(document.querySelector('[name=w_pot]').value) || 0;
-         const comp = (getScore(pos, posBounds) * wPos) + (getScore(conv, convBounds) * wConv) + (getScore(pot, potBounds) * wPot);
+        const comp =
+          (getContinuousScore(pos, posBounds) * wPos) +
+          (getContinuousScore(conv, convBounds) * wConv) +
+          (getContinuousScore(pot, potBounds) * wPot);
          const scale = parseInt(document.querySelector('[name=points_scale]').value, 10) || 1000;
          const tp = Math.round(comp * scale);
          const cuts = [];
@@ -263,7 +270,7 @@
 
       <fieldset style="border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin: 0; background: var(--surface);">
         <legend class="muted" style="font-size: 0.9rem; font-weight: 600; padding: 0 0.5rem;">Tier points scale</legend>
-        <p class="muted" style="font-size: 0.85rem; margin-top: 0; margin-bottom: 1rem;">Internal composite (0–4) is multiplied by this value for <strong>tier points</strong> (dashboard, sandbox). Elite spans from the last cut up to <span class="mono">4 × scale</span> (e.g. 4000 when scale is 1000).</p>
+        <p class="muted" style="font-size: 0.85rem; margin-top: 0; margin-bottom: 1rem;">Internal composite (0–4) is multiplied by this value for <strong>tier points</strong> (dashboard, sandbox). KPI scores are interpolated continuously between your percentage thresholds before weighting. Elite spans from the last cut up to <span class="mono">4 × scale</span> (e.g. 4000 when scale is 1000).</p>
         <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
           <div style="width: 140px; font-weight: 500;">Scale</div>
           <input type="range" id="points_scale_range" min="100" max="8000" step="50" value="{{ ts.composite_points_scale }}" oninput="document.getElementById('points_scale_num').value=this.value" style="flex-grow: 1; accent-color: var(--accent-brand); margin: 0;">

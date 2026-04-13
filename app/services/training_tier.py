@@ -6,24 +6,40 @@ from app.models import TIER_LABELS, TierSettings
 from app.services.tier_settings_store import load_tier_settings
 
 
-def kpi_score_from_pct(pct: float, lower_bounds: tuple[float, float, float, float]) -> int:
-    """Discrete score 0–4 from a KPI percentage and four ascending lower bounds."""
+def kpi_score_from_pct_continuous(
+    pct: float, lower_bounds: tuple[float, float, float, float]
+) -> float:
+    """
+    Continuous KPI score in [0, 4].
+
+    Score anchors are:
+    - score 1 at b0
+    - score 2 at b1
+    - score 3 at b2
+    - score 4 at b3
+
+    Between anchors, score moves linearly. At/above b3 the score is clamped to 4. For
+    values below b0, score moves from 0 up to (but not including) 1.
+    """
     b0, b1, b2, b3 = lower_bounds
-    if pct < b0:
-        return 0
-    if pct < b1:
-        return 1
-    if pct < b2:
-        return 2
-    if pct < b3:
-        return 3
-    return 4
+    x = float(pct)
+    if x < b0:
+        if b0 <= 0:
+            return 0.0
+        return max(0.0, min(1.0, x / b0))
+    if x < b1:
+        return 1.0 + (x - b0) / (b1 - b0)
+    if x < b2:
+        return 2.0 + (x - b1) / (b2 - b1)
+    if x < b3:
+        return 3.0 + (x - b2) / (b3 - b2)
+    return 4.0
 
 
 def composite_score(
-    pos_score: int,
-    conv_score: int,
-    pot_score: int,
+    pos_score: float,
+    conv_score: float,
+    pot_score: float,
     settings: TierSettings,
 ) -> float:
     return (
@@ -62,9 +78,9 @@ def _resolve_training_tier(
     pot_pct = pot_rate * 100.0
     pos_pct = pos_rate * 100.0
     conv_pct = conv_rate * 100.0
-    ps = kpi_score_from_pct(pot_pct, cfg.pot_pct_lower_bounds)
-    xs = kpi_score_from_pct(pos_pct, cfg.pos_pct_lower_bounds)
-    cs = kpi_score_from_pct(conv_pct, cfg.conv_pct_lower_bounds)
+    ps = kpi_score_from_pct_continuous(pot_pct, cfg.pot_pct_lower_bounds)
+    xs = kpi_score_from_pct_continuous(pos_pct, cfg.pos_pct_lower_bounds)
+    cs = kpi_score_from_pct_continuous(conv_pct, cfg.conv_pct_lower_bounds)
     comp = composite_score(xs, cs, ps, cfg)
     tp = tier_points_from_composite(comp, cfg)
     idx = tier_index_from_tier_points(tp, cfg)
