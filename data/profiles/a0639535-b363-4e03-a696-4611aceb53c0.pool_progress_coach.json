@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "scope": "progress",
+  "profileId": "a0639535-b363-4e03-a696-4611aceb53c0",
+  "referenceSessionId": null,
+  "savedAt": "2026-04-13T19:50:54Z",
+  "response": {
+    "ok": true,
+    "blocked": false,
+    "reason": "",
+    "outputText": "**SUMMARY**\nYour potting accuracy is strong, but your overall positional play is weak, leading to an emerging conversion rate. The primary limitation is inconsistent speed control, which directly impacts cue ball placement. Your high recovery rate indicates you frequently overcome initial poor position, but this masks the underlying issue.\n\n**ROOT CAUSE**\nThe dominant issue is speed control. Your failure breakdown shows speed as the largest contributor to positional errors (0.583), significantly outweighing other factors. This indicates a consistent inability to control the magnitude of the cue ball's travel, resulting in inaccurate landing zones.\n\n**IMPACT**\nInconsistent speed control directly degrades position quality by causing the cue ball to land outside optimal zones. This forces you into more difficult subsequent shots, increasing their complexity and reducing your overall shot success probability. Consequently, your conversion rate remains emerging despite strong potting ability, as you are frequently attempting shots from suboptimal positions.\n\n**SUPPORTING METRICS**\n*   `pot_success`: 0.9388 (Strong)\n*   `position_outcome`: 0.587 (Weak)\n*   `failure_breakdown.speed`: 0.583 (Dominant failure type)\n*   `conversion_rate`: 0.2222 (Emerging)\n*   `consistency.variance`: 7 (Unstable)\n*   `recovery_rate`: 0.8333 (Masks initial poor position)\n\n**ACTIONABLE FOCUS**\n1.  **Target Zone Practice:** For every positional shot, define a specific 10-20 cm target zone for the cue ball. Execute the shot aiming to land the cue ball within this zone. Track success rate for landing within the zone.\n2.  **Speed Calibration Drills:** Practice identical shots with varying cue ball travel distances (e.g., 1 foot, 2 feet, 3 feet) using a consistent object ball. Focus on achieving precise cue ball travel with minimal effort and consistent stroke length.\n3.  **Post-Shot Distance Evaluation:** Immediately after each shot, objectively assess if the cue ball traveled too far or not far enough relative to the intended target zone. Log this specific error type (long/short) for every positional failure.\n\n**IGNORE**\n*   Potting accuracy\n*   Delivery\n*   Alignment",
+    "meshSessionId": "a0639535-b363-4e03-a696-4611aceb53c0-5a89b376",
+    "runtimeName": "pool_billiards_coach_runtime",
+    "framework": "google-adk"
+  }
+}

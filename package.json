@@ -1,7 +1,7 @@
 {
   "name": "elite-training-desktop",
   "productName": "Elite Training",
-  "version": "0.3.2",
+  "version": "0.4.1",
   "private": true,
   "description": "Desktop shell for Elite Training (Electron + local FastAPI)",
   "main": "electron/main.cjs",
