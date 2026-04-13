@@ -8,25 +8,25 @@
   "pos_pct_lower_bounds": [
     30.0,
     50.0,
-    65.0,
-    75.0
+    70.0,
+    90.0
   ],
   "conv_pct_lower_bounds": [
     0.0,
     10.0,
-    35.0,
-    50.0
+    40.0,
+    60.0
   ],
   "weight_pos": 0.3,
   "weight_conv": 0.5,
   "weight_pot": 0.2,
-  "penalty_factor": 0.29,
-  "composite_points_scale": 1000,
+  "penalty_factor": 0.3,
+  "composite_points_scale": 2500,
   "composite_points_upper_bounds": [
     500,
-    1000,
     2000,
-    3000,
-    3500
+    6500,
+    8000,
+    9000
   ]
 }

@@ -301,18 +301,43 @@
   margin-bottom: 1rem;
 }
 
-/* Miss Modal Specifics */
+/* Miss Modal Redesign */
 .miss-modal {
-  padding: 2rem;
-  gap: 1.5rem;
+  padding: 0;
+  overflow: hidden;
+  background: white;
+  min-width: 360px;
+}
+
+.miss-modal__header {
+  background: #1e293b;
+  padding: 1.5rem 2rem;
+  position: relative;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
 }
 
 .miss-modal__header h2 {
-  font-size: 1.6rem;
-  margin: 0 0 0.35rem;
+  font-size: 1.5rem;
+  margin: 0 0 0.25rem;
+  color: white;
   letter-spacing: -0.02em;
 }
 
+.miss-modal__content {
+  padding: 1.5rem 2rem 2rem;
+}
+
+.miss-section-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #94a3b8;
+  margin-bottom: 0.85rem;
+  display: block;
+}
+
+/* Base Form Defaults Inside Modal */
 .input-large {
   font-size: 1.25rem !important;
   padding: 0.85rem 1.1rem !important;
@@ -320,83 +345,237 @@
   text-align: center;
 }
 
-.miss-modal__group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-  margin-bottom: 0.5rem;
+/* Ball Missed Row Additions */
+.ball-grid-new label.ball-chip { margin: 0; }
+.ball-grid-new span {
+  box-shadow: 0 3px 6px rgba(0,0,0,0.15), inset 0 2px 4px rgba(255,255,255,0.4);
+}
+.ball-grid-new .ball-9 span {
+  box-shadow: 0 3px 6px rgba(0,0,0,0.15);
 }
 
-.label-text {
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: var(--text);
+/* Miss Types Grid */
+.miss-reasons-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.reason-chip {
   display: block;
+  cursor: pointer;
+  position: relative;
+  margin: 0;
 }
 
-.chip-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.65rem;
-}
-
-.check-chip {
-  flex-direction: row !important;
-  margin: 0 !important;
-  gap: 0 !important;
-}
-
-.check-chip input {
+.reason-chip input {
   position: absolute;
   opacity: 0;
   pointer-events: none;
 }
 
-.check-chip span {
-  display: inline-flex;
-  padding: 0.65rem 1.15rem;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--muted);
+.reason-chip-content {
+  display: flex;
+  align-items: center;
+  background: #f1f5f9;
+  border-radius: 14px;
+  padding: 0.75rem;
+  border: 1.5px solid transparent;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  user-select: none;
+  box-sizing: border-box;
 }
 
-.check-chip:hover span {
-  background: var(--surface);
-  color: var(--text);
-  border-color: #d1d5df;
-  transform: translateY(-1px);
+.reason-chip:hover .reason-chip-content {
+  background: #e2e8f0;
+  transform: translateY(-2px);
 }
 
-.check-chip input:checked + span {
+.reason-chip .icon-box {
+  background: white;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.75rem;
+  flex-shrink: 0;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+  transition: all 0.2s;
+}
+
+.reason-chip .text-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.reason-chip .text-box strong {
+  font-size: 0.95rem;
+  color: #1e293b;
+  line-height: 1.1;
+  margin-bottom: 0.15rem;
+}
+
+.reason-chip .text-box small {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  line-height: 1;
+}
+
+/* Checked State */
+.reason-chip input:checked + .reason-chip-content {
+  background: white;
+  border-color: #ff694b;
+  box-shadow: 0 4px 10px rgba(255, 105, 75, 0.1);
+  transform: translateY(-2px);
+}
+
+.reason-chip input:checked + .reason-chip-content .icon-box {
+  background: #ff694b;
+  color: white !important;
+}
+
+.reason-chip input:checked + .reason-chip-content .icon-box svg {
+  stroke: white !important;
+}
+
+/* Outcome Grid */
+.outcome-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.outcome-chip {
+  display: block;
+  cursor: pointer;
+  position: relative;
+  margin: 0;
+}
+
+.outcome-chip input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.outcome-chip-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+  border-radius: 14px;
+  padding: 1.15rem 0.5rem;
+  border: 1.5px solid transparent;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.outcome-chip:hover .outcome-chip-content {
+  background: #e2e8f0;
+  transform: translateY(-2px);
+}
+
+.outcome-chip .icon-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.65rem;
+  transition: all 0.2s;
+}
+
+.outcome-chip-content strong {
+  font-size: 0.9rem;
+  color: #1e293b;
+}
+
+.outcome-playable .icon-circle { background: #dcfce7; color: #16a34a; }
+.outcome-pot-miss .icon-circle { background: #ffedd5; color: #f97316; }
+.outcome-no-shot .icon-circle { background: #fee2e2; color: #ef4444; }
+
+.outcome-chip input:checked + .outcome-chip-content {
+  background: white;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+  transform: translateY(-2px);
+}
+
+.outcome-playable input:checked + .outcome-chip-content {
+  border-color: #16a34a; 
+  box-shadow: 0 4px 10px rgba(22, 163, 74, 0.1);
+}
+
+.outcome-pot-miss input:checked + .outcome-chip-content {
+  border-color: #f97316; 
+  box-shadow: 0 4px 10px rgba(249, 115, 22, 0.1);
+}
+
+.outcome-no-shot input:checked + .outcome-chip-content {
+  border-color: #ef4444; 
+  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.1);
+}
+
+.outcome-playable input:checked + .outcome-chip-content .icon-circle {
+  background: #16a34a;
+  color: white !important;
+}
+.outcome-pot-miss input:checked + .outcome-chip-content .icon-circle {
+  background: #f97316;
+  color: white !important;
+}
+.outcome-no-shot input:checked + .outcome-chip-content .icon-circle {
+  background: #ef4444;
+  color: white !important;
+}
+
+.outcome-chip input:checked + .outcome-chip-content .icon-circle svg,
+.outcome-playable input:checked + .outcome-chip-content .icon-circle svg,
+.outcome-pot-miss input:checked + .outcome-chip-content .icon-circle svg,
+.outcome-no-shot input:checked + .outcome-chip-content .icon-circle svg {
+  stroke: white !important;
+}
+
+/* Actions Bottom */
+.miss-modal__actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.5rem;
+}
+
+.btn-cancel-action {
+  background: transparent;
+  border: none;
+  font-weight: 700;
+  color: #1e293b;
+  font-size: 1rem;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  transition: opacity 0.2s;
+}
+.btn-cancel-action:hover { opacity: 0.7; }
+
+.btn-save-action {
   background: var(--accent-brand);
   color: white;
-  border-color: var(--accent-brand);
-  box-shadow: 0 4px 14px rgba(255, 105, 75, 0.25);
-  transform: translateY(-1px);
+  border: none;
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 0.9rem 2rem;
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 4px 10px rgba(255, 105, 75, 0.25);
+  transition: all 0.2s;
 }
-
-.miss-modal__row {
-  display: flex;
-  gap: 1.25rem;
-}
-.miss-modal__row > * {
-  flex: 1;
-}
-
-.font-normal {
-  font-weight: 400;
-  font-size: 0.85rem;
-}
-
-.miss-modal__actions {
-  margin-top: 1rem;
-  padding-top: 1.75rem;
-  border-top: 1px solid var(--border);
+.btn-save-action:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(255, 105, 75, 0.35);
 }
 
 /* Live Session HUD Updates */
@@ -504,8 +683,8 @@
 
 .ball-chip input:checked + span {
   transform: scale(1.15);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-  border-color: var(--text);
+  box-shadow: 0 0 0 2px white, 0 0 0 4px #ff694b, 0 8px 20px rgba(0,0,0,0.25);
+  border-color: transparent !important;
   z-index: 10;
 }
 
@@ -525,11 +704,7 @@
   border: 1px solid var(--border);
 }
 
-/* Adjust checked border for bright balls */
-.ball-1 input:checked + span,
-.ball-9 input:checked + span {
-  border-color: #222;
-}
+/* Border removed */
 
 /* End Rack checkmark styling */
 .end-ball-chip input:checked + span::after {
@@ -549,6 +724,4 @@
   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
-.miss-modal .ball-chip input:checked + span {
-  border-color: #ed333b;
-}
+/* Removed miss-modal border */
