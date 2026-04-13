@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.requests import Request
 
 from app.config import STATIC_DIR
-from app.routers import api_programs, api_sessions, dashboard, profiles, settings, training
+from app.routers import api_ai_coach, api_programs, api_sessions, dashboard, profiles, settings, training
 from app.services import programs_repo
 from app.services.active_profile import attach_profile_context, set_profile_cookie
 
@@ -46,5 +46,6 @@ def create_app() -> FastAPI:
     app.include_router(training.router)
     app.include_router(api_programs.router)
     app.include_router(api_sessions.router)
+    app.include_router(api_ai_coach.router)
 
     return app

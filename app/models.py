@@ -433,3 +433,16 @@ TIER_LABELS: tuple[str, str, str, str, str, str] = (
     "Semi-pro",
     "Elite",
 )
+
+
+class MeshSettings(BaseModel):
+    """Persisted mesh HTTP base (GET /health, POST /run)."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    base_url: str = Field(
+        default="http://127.0.0.1:8090",
+        alias="baseUrl",
+        min_length=1,
+        max_length=500,
+    )

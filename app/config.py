@@ -1,6 +1,15 @@
 import os
 from pathlib import Path
 
+# Agent mesh (pondicular / run_mesh_host). ELITE_MESH_BASE_URL overrides persisted file.
+# Runtime/agent IDs for pool coach POST /run.
+POOL_COACH_RUNTIME_NAME = os.environ.get(
+    "ELITE_POOL_COACH_RUNTIME", "pool_billiards_coach_runtime"
+).strip()
+POOL_COACH_AGENT_NAME = os.environ.get(
+    "ELITE_POOL_COACH_AGENT", "pool_billiards_coach"
+).strip()
+
 ROOT_DIR = Path(__file__).resolve().parent.parent
 TEMPLATES_DIR = ROOT_DIR / "templates"
 STATIC_DIR = ROOT_DIR / "static"
