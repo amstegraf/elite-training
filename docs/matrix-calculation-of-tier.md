@@ -15,17 +15,18 @@ Threshold anchors, weights, and imbalance penalty factor are configured in `data
 Each KPI is converted to a continuous score in `[0, 4]` using four ascending lower bounds:
 
 - `b0, b1, b2, b3`
-- score anchors: `1 at b0`, `2 at b1`, `3 at b2`, `4 at b3`
+- score anchors: `1 at b0`, `2 at b1`, `3 at b2`, `3 at b3`, `4 at 100%`
 - values between anchors are linearly interpolated
-- values at/above `b3` are clamped to `4`
+- values above `b3` continue to climb smoothly toward 4 by 100%
 
 Piecewise definition:
 
 - if `pct < b0`: `score = clamp(pct / b0, 0, 1)` (or `0` when `b0 <= 0`)
 - if `b0 <= pct < b1`: `score = 1 + (pct - b0) / (b1 - b0)`
 - if `b1 <= pct < b2`: `score = 2 + (pct - b1) / (b2 - b1)`
-- if `b2 <= pct < b3`: `score = 3 + (pct - b2) / (b3 - b2)`
-- if `pct >= b3`: `score = 4`
+- if `b2 <= pct < b3`: `score = 3`
+- if `b3 <= pct < 100`: `score = 3 + (pct - b3) / (100 - b3)`
+- if `pct >= 100`: `score = 4`
 
 This removes large jumps caused by old step-only scoring.
 
@@ -58,7 +59,7 @@ Default `penalty_factor` is `0.25`.
   - Semi-pro requires all KPI >= `b3`
   - Elite additionally requires Elite points band
 
-This keeps smooth points while enforcing semantic per-tier minimum execution.
+This keeps smooth points while enforcing semantic per-tier minimum execution, and preserves headroom above Semi-pro for a meaningful Elite zone.
 
 Defaults (example) with `scale=1000` give a 0-4000 points space, while preserving smooth movement.
 

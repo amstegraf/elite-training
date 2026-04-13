@@ -339,8 +339,9 @@ class TierSettings(BaseModel):
     """
     Matrix tier model (docs/matrix-calculation-of-tier.md).
 
-    Each ``*_pct_lower_bounds`` tuple is (b0,b1,b2,b3): score 0 if pct < b0, score 1 if
-    b0<=pct<b1, … score 4 if pct>=b3. Percent values are on the usual 0–100 display scale.
+    Each ``*_pct_lower_bounds`` tuple is (b0,b1,b2,b3): score 0 if pct < b0, score 1 at b0,
+    score 2 at b1, score 3 at b2/b3, then score approaches 4 between b3 and 100%.
+    Percent values are on the usual 0–100 display scale.
 
     Internal composite is still 0–4 (weighted KPI scores), with optional imbalance penalty.
     **Tier points** = adjusted composite ×

@@ -16,10 +16,11 @@ def kpi_score_from_pct_continuous(
     - score 1 at b0
     - score 2 at b1
     - score 3 at b2
-    - score 4 at b3
+    - score 3 at b3 (Semi-pro minimum)
+    - score 4 at 100%
 
-    Between anchors, score moves linearly. At/above b3 the score is clamped to 4. For
-    values below b0, score moves from 0 up to (but not including) 1.
+    Between anchors, score moves linearly. For values below b0, score moves from 0 up to
+    (but not including) 1.
     """
     b0, b1, b2, b3 = lower_bounds
     x = float(pct)
@@ -32,7 +33,14 @@ def kpi_score_from_pct_continuous(
     if x < b2:
         return 2.0 + (x - b1) / (b2 - b1)
     if x < b3:
-        return 3.0 + (x - b2) / (b3 - b2)
+        # Keep a flat plateau across [b2, b3) so there is no cliff at b3.
+        return 3.0
+    top_anchor = max(100.0, b3)
+    if x < top_anchor:
+        span = top_anchor - b3
+        if span <= 1e-9:
+            return 4.0
+        return 3.0 + (x - b3) / span
     return 4.0
 
 

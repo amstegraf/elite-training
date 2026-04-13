@@ -177,6 +177,36 @@ def test_penalty_factor_zero_disables_penalty_effect() -> None:
     assert meta["tier_points"] == 1490
 
 
+def test_b3_maps_to_score_three_and_keeps_elite_headroom() -> None:
+    cfg = TierSettings(
+        pot_pct_lower_bounds=(65.0, 82.0, 90.0, 94.0),
+        pos_pct_lower_bounds=(30.0, 50.0, 65.0, 75.0),
+        conv_pct_lower_bounds=(0.0, 10.0, 35.0, 50.0),
+        weight_pos=0.3,
+        weight_conv=0.5,
+        weight_pot=0.2,
+        penalty_factor=0.25,
+    )
+    assert kpi_score_from_pct_continuous(94.0, cfg.pot_pct_lower_bounds) == pytest.approx(3.0)
+    assert kpi_score_from_pct_continuous(75.0, cfg.pos_pct_lower_bounds) == pytest.approx(3.0)
+    assert kpi_score_from_pct_continuous(50.0, cfg.conv_pct_lower_bounds) == pytest.approx(3.0)
+    meta = training_tier_dashboard_meta(0.94, 0.75, 0.50, settings=cfg)
+    assert meta is not None
+    # Semi-pro minima now land around 3000, leaving room up to 4000 for Elite.
+    assert meta["tier_points"] == 3000
+
+
+def test_no_cliff_dive_at_b3_boundary() -> None:
+    bounds = (0.0, 10.0, 35.0, 60.0)
+    below = kpi_score_from_pct_continuous(59.9, bounds)
+    at = kpi_score_from_pct_continuous(60.0, bounds)
+    above = kpi_score_from_pct_continuous(60.1, bounds)
+    # No drop at b3: score should be continuous/non-decreasing.
+    assert below == pytest.approx(3.0)
+    assert at == pytest.approx(3.0)
+    assert above > at
+
+
 def test_penalty_factor_roundtrip_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("app.services.tier_settings_store.tier_settings_path", lambda: tmp_path / "tier_settings.json")
     a = TierSettings(penalty_factor=0.33)
