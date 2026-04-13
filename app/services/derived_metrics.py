@@ -430,8 +430,14 @@ def aggregate_sessions_progress(sessions: list[PrecisionSession]) -> dict[str, l
         if s.total_racks == 0:
             continue
 
-        labels.append(s.started_at[:10])
-        avg_balls_cleared.append(round(s.avg_balls_cleared_per_rack or 0, 2))
+        # Use date+time so the x-axis stays readable when several sessions land on the same day.
+        started = s.started_at
+        labels.append(started[:16].replace("T", " ") if len(started) >= 16 else started[:10])
+        avg_balls_cleared.append(
+            None
+            if s.avg_balls_cleared_per_rack is None
+            else round(s.avg_balls_cleared_per_rack, 2)
+        )
         tr = s.true_miss_count
         true_misses_per_rack.append(round(tr / max(1, s.total_racks), 2))
         training_logs_per_rack.append(
@@ -479,7 +485,11 @@ def aggregate_sessions_progress(sessions: list[PrecisionSession]) -> dict[str, l
             speed_tag_pct_of_bad_play.append(None)
         worst_rack_balls.append(s.worst_rack_balls_cleared)
         best_rack_balls.append(s.best_rack_balls_cleared)
-        avg_rack_balls.append(round(s.avg_balls_cleared_per_rack or 0, 2))
+        avg_rack_balls.append(
+            None
+            if s.avg_balls_cleared_per_rack is None
+            else round(s.avg_balls_cleared_per_rack, 2)
+        )
         recovery_pct.append(
             round(s.recovery_rate * 100, 1) if s.recovery_rate is not None else None
         )

@@ -32,146 +32,207 @@
       <p class="dashboard__lede">Watch your metrics evolve over time across all your training sessions.</p>
     </div>
   </header>
+  <div class="progress-hero-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- Card 1: Pot Success -->
+    <article class="chart-card" style="text-align: center; padding: 2rem 1.5rem; justify-content: center; position: relative;">
+      <h3 style="font-size: 1rem; color: var(--text); margin-bottom: 1.5rem;">Pot Success</h3>
+      <div style="position: relative; width: 140px; height: 140px; margin: 0 auto 1.5rem;">
+        <canvas id="chart-pot-success"></canvas>
+        <div id="pot-success-center-text" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 700; color: var(--text);">
+          --%
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <div id="pot-success-trend-icon" style="color: #22c55e;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+        </div>
+        <p id="hero-pot-sub" class="muted small" style="margin: 0.35rem 0 0; min-height: 1.1em;"></p>
+        <div class="muted" style="font-size: 0.85rem; font-weight: 500; margin-top: 0.25rem;">Same pool as dashboard</div>
+      </div>
+    </article>
+
+    <!-- Card 2: Positional Outcome -->
+    <article class="chart-card" style="text-align: center; padding: 2rem 1.5rem;">
+      <h3 style="font-size: 1rem; color: var(--text); margin-bottom: 1rem;">Positional Outcome</h3>
+      <div style="height: 120px; margin-bottom: 0.35rem; position: relative;">
+        <canvas id="chart-position-success"></canvas>
+      </div>
+      <div style="display: flex; justify-content: center; min-height: 28px; margin-bottom: 0.35rem;">
+        <span id="position-success-trend-icon"></span>
+      </div>
+      <div>
+        <div id="position-success-metric" style="font-size: 2rem; font-weight: 700; color: var(--text); line-height: 1;">--%</div>
+        <p id="hero-pos-sub" class="muted small" style="margin: 0.35rem 0 0; min-height: 1.1em;"></p>
+        <div class="muted" style="font-size: 0.85rem; font-weight: 500; margin-top: 0.35rem;">Same pool as dashboard</div>
+      </div>
+    </article>
+
+    <!-- Card 3: Rack Conversion -->
+    <article class="chart-card" style="text-align: center; padding: 2rem 1.5rem; display: flex; flex-direction: column; justify-content: space-between;">
+      <h3 style="font-size: 1rem; color: var(--text); margin-bottom: 1rem;">Rack Conversion</h3>
+      <div style="height: 120px; flex: 1; margin-bottom: 0.35rem; position: relative;">
+        <canvas id="chart-rack-conversion"></canvas>
+      </div>
+      <div style="display: flex; justify-content: center; min-height: 28px; margin-bottom: 0.35rem;">
+        <span id="rack-conversion-trend-icon"></span>
+      </div>
+      <div>
+        <div id="rack-conversion-metric" style="font-size: 2rem; font-weight: 700; color: var(--text); line-height: 1;">--%</div>
+        <p id="hero-rack-sub" class="muted small" style="margin: 0.35rem 0 0; min-height: 1.1em;"></p>
+        <div class="muted" style="font-size: 0.85rem; font-weight: 500; margin-top: 0.35rem;">Line = per session; % = dashboard pool</div>
+      </div>
+    </article>
+  </div>
+
+  <p class="muted" style="text-align: center; margin-bottom: 4rem;">Top row matches the dashboard KPIs (weighted over completed sessions in range, including your baseline if set). Below, each chart still shows how those numbers move from session to session.</p>
+
   <div class="section-title" style="margin-top: 2.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
     <div style="width: 12px; height: 12px; border-radius: 50%; background: var(--pr);"></div>
-    <h2 style="margin: 0; font-size: 1.5rem;">Target: Maximization <span class="muted" style="font-weight: normal; font-size: 1.1rem; margin-left: 0.25rem;">(Aim High)</span></h2>
+    <h2 style="margin: 0; font-size: 1.5rem;">Session Trends & Dynamics <span class="muted" style="font-weight: normal; font-size: 1.1rem; margin-left: 0.25rem;">(Detailed)</span></h2>
   </div>
 
   <div class="progress-grid">
-    <article class="chart-card">
-      <h3 style="display: flex; align-items: center; gap: 0.4rem;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
-        Pot success
-      </h3>
-      <p class="muted">Potted balls ÷ pot attempts per session. Attempts = potted + pot-miss / both logs; no-shot &amp; playable excluded from denominator as missed pots.</p>
-      <div class="chart-container">
-        <canvas id="chart-pot-success"></canvas>
-      </div>
-    </article>
 
+    <!-- Avg Balls Cleared (Primary KPI moved up) -->
     <article class="chart-card">
-      <h3 style="display: flex; align-items: center; gap: 0.4rem;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
-        Position outcome
-      </h3>
-      <p class="muted">Per session: 1 − (position-related misses ÷ balls cleared). A miss counts if outcome is <strong>no-shot/both</strong>, or it has a <strong>position</strong> or <strong>speed</strong> tag (docs/metric-position-success.md).</p>
-      <div class="chart-container">
-        <canvas id="chart-position-success"></canvas>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+        <div>
+          <h3 style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.25rem; font-size: 1.1rem;">
+            Avg Balls Cleared
+          </h3>
+          <p class="muted" style="margin: 0; font-size: 0.85rem; max-width: 80%;">Your primary performance metric. Combines position, potting, and decision making.</p>
+        </div>
+        <div id="metric-avg-balls" style="font-size: 1.75rem; font-weight: 700; color: var(--text); line-height: 1;">--</div>
       </div>
-    </article>
-
-    <article class="chart-card">
-      <h3 style="display: flex; align-items: center; gap: 0.4rem;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
-        Position vs speed tags (per session)
-      </h3>
-      <p class="muted">Per session: misses with a <strong>position</strong> tag vs <strong>speed</strong> tag as a percentage of all <strong>position-related</strong> misses (no-shot/both, or tagged position/speed). A single miss can raise both lines.</p>
-      <div class="chart-container">
-        <canvas id="chart-position-speed-granular"></canvas>
-      </div>
-    </article>
-
-    <article class="chart-card">
-      <h3 style="display: flex; align-items: center; gap: 0.4rem;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
-        Rack conversion rate
-      </h3>
-      <p class="muted">Ended racks where you cleared all 9 balls ÷ total ended racks that session — raw run-out rate.</p>
-      <div class="chart-container">
-        <canvas id="chart-rack-conversion"></canvas>
-      </div>
-    </article>
-
-    <article class="chart-card">
-      <h3 style="display: flex; align-items: center; gap: 0.4rem;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
-        Avg Balls Cleared per Rack
-      </h3>
-      <p class="muted">Your primary performance metric. Combines position, potting, and decision making.</p>
       <div class="chart-container">
         <canvas id="chart-avg-balls"></canvas>
       </div>
     </article>
 
+    <!-- Flow efficiency -->
     <article class="chart-card">
-      <h3 style="display: flex; align-items: center; gap: 0.4rem;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
-        Flow efficiency
-      </h3>
-      <p class="muted">Balls cleared ÷ (balls cleared + training misses) per session — continuity, not raw success only.</p>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+        <div>
+          <h3 style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.25rem; font-size: 1.1rem;">
+            Flow Efficiency
+          </h3>
+          <p class="muted" style="margin: 0; font-size: 0.85rem; max-width: 80%;">Balls cleared ÷ (balls cleared + training misses) — continuity.</p>
+        </div>
+        <div id="metric-flow-efficiency" style="font-size: 1.75rem; font-weight: 700; color: var(--text); line-height: 1;">--%</div>
+      </div>
       <div class="chart-container">
         <canvas id="chart-conversion"></canvas>
       </div>
     </article>
 
+    <!-- Best run (streaks) -->
     <article class="chart-card">
-      <h3 style="display: flex; align-items: center; gap: 0.4rem;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
-        Best run (streaks)
-      </h3>
-      <p class="muted">Longest ball run without a <strong>true</strong> miss (same rules as session reports). No-shot / playable logs do not reset the streak.</p>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+        <div>
+          <h3 style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.25rem; font-size: 1.1rem;">
+            Best Run
+          </h3>
+          <p class="muted" style="margin: 0; font-size: 0.85rem; max-width: 80%;">Longest ball run without a true miss.</p>
+        </div>
+        <div id="metric-best-run" style="font-size: 1.75rem; font-weight: 700; color: var(--text); line-height: 1;">--</div>
+      </div>
       <div class="chart-container">
         <canvas id="chart-best-run"></canvas>
       </div>
     </article>
 
+    <!-- Recovery vs failed recovery -->
     <article class="chart-card">
-      <h3 style="display: flex; align-items: center; gap: 0.4rem;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
-        Recovery vs failed recovery
-      </h3>
-      <p class="muted">After each training miss: % where the next log was <strong>not</strong> a true miss (recovery) vs <strong>was</strong> a true miss (failed). Denominator = training misses in that session (see docs/recovery-metric.md).</p>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+        <div>
+          <h3 style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.25rem; font-size: 1.1rem;">
+            Recovery Rate
+          </h3>
+          <p class="muted" style="margin: 0; font-size: 0.85rem; max-width: 80%;">After a training miss: % where the next log was not a true miss.</p>
+        </div>
+        <div id="metric-recovery" style="font-size: 1.75rem; font-weight: 700; color: var(--text); line-height: 1;">--%</div>
+      </div>
       <div class="chart-container">
         <canvas id="chart-recovery"></canvas>
       </div>
     </article>
+
+    <!-- Position vs speed tags -->
+    <article class="chart-card">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+        <div>
+          <h3 style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.25rem; font-size: 1.1rem;">
+            Position vs Speed Tags
+          </h3>
+          <p class="muted" style="margin: 0; font-size: 0.85rem; max-width: 80%;">Misses with a position tag vs speed tag as a % of position-related misses.</p>
+        </div>
+      </div>
+      <div class="chart-container">
+        <canvas id="chart-position-speed-granular"></canvas>
+      </div>
+    </article>
+
   </div>
 
   <div class="section-title" style="margin-top: 4rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
     <div style="width: 12px; height: 12px; border-radius: 50%; background: #dc2626;"></div>
-    <h2 style="margin: 0; font-size: 1.5rem;">Target: Minimization <span class="muted" style="font-weight: normal; font-size: 1.1rem; margin-left: 0.25rem;">(Aim Low)</span></h2>
+    <h2 style="margin: 0; font-size: 1.5rem;">Failure Diagnostics <span class="muted" style="font-weight: normal; font-size: 1.1rem; margin-left: 0.25rem;">(Aim Low)</span></h2>
   </div>
 
   <div class="progress-grid">
     <article class="chart-card">
-      <h3 style="display: flex; align-items: center; gap: 0.4rem;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
-        True miss rate
-      </h3>
-      <p class="muted">True misses ÷ ended racks per session (hard failures per rack). Lower is stricter run discipline.</p>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+        <div>
+          <h3 style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.25rem; font-size: 1.1rem;">
+            True Miss Rate
+          </h3>
+          <p class="muted" style="margin: 0; font-size: 0.85rem; max-width: 80%;">True misses ÷ ended racks per session (hard failures per rack).</p>
+        </div>
+        <div id="metric-true-miss-rate" style="font-size: 1.75rem; font-weight: 700; color: var(--text); line-height: 1;">--</div>
+      </div>
       <div class="chart-container">
         <canvas id="chart-true-miss-rate"></canvas>
       </div>
     </article>
 
     <article class="chart-card">
-      <h3 style="display: flex; align-items: center; gap: 0.4rem;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
-        Misses per rack
-      </h3>
-      <p class="muted"><strong>True misses</strong> end a ball run when the outcome is <strong>pot miss</strong> (or legacy <strong>both</strong>). <strong>No shot (position)</strong> and <strong>playable</strong> are soft logs for streaks here; no-shot is still counted in its own KPI.</p>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+        <div>
+          <h3 style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.25rem; font-size: 1.1rem;">
+            Misses per Rack
+          </h3>
+          <p class="muted" style="margin: 0; font-size: 0.85rem; max-width: 80%;">Training misses vs true misses per rack.</p>
+        </div>
+      </div>
       <div class="chart-container">
         <canvas id="chart-misses-rack"></canvas>
       </div>
     </article>
 
     <article class="chart-card">
-      <h3 style="display: flex; align-items: center; gap: 0.4rem;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
-        Rack consistency
-      </h3>
-      <p class="muted">Balls cleared per rack: worst vs average vs best. A wide gap flags volatility.</p>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+        <div>
+          <h3 style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.25rem; font-size: 1.1rem;">
+            Rack Consistency
+          </h3>
+          <p class="muted" style="margin: 0; font-size: 0.85rem; max-width: 80%;">Balls cleared per rack: worst vs average vs best.</p>
+        </div>
+      </div>
       <div class="chart-container">
         <canvas id="chart-rack-spread"></canvas>
       </div>
     </article>
 
     <article class="chart-card">
-      <h3 style="display: flex; align-items: center; gap: 0.4rem;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
-        "No Shot Due to Position" Count
-      </h3>
-      <p class="muted">Critical metric. We expect a sharp drop early as positional play improves.</p>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+        <div>
+          <h3 style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.25rem; font-size: 1.1rem;">
+            No Shot Events
+          </h3>
+          <p class="muted" style="margin: 0; font-size: 0.85rem; max-width: 80%;">Count of "No Shot Due to Position" logs.</p>
+        </div>
+        <div id="metric-no-shot" style="font-size: 1.75rem; font-weight: 700; color: var(--text); line-height: 1;">--</div>
+      </div>
       <div class="chart-container">
         <canvas id="chart-no-shot"></canvas>
       </div>
@@ -179,8 +240,8 @@
 
     <!-- Chart 5: Miss Type Distribution -->
     <article class="chart-card" style="grid-column: 1 / -1;">
-      <h2>Miss type (true misses only)</h2>
-      <p class="muted">Share of tag selections on <strong>run-breaking</strong> events only—aligned with pot-miss style failures, not every training log.</p>
+      <h2 style="font-size: 1.25rem; margin-bottom: 0.25rem;">Miss type (true misses only)</h2>
+      <p class="muted" style="margin-top: 0;">Share of tag selections on <strong>run-breaking</strong> events only.</p>
       <div class="chart-container" style="height: 350px;">
         <canvas id="chart-miss-types"></canvas>
       </div>
@@ -188,8 +249,8 @@
 
     <!-- Chart 6: Miss Ball Histogram -->
     <article class="chart-card" style="grid-column: 1 / -1;">
-      <h2>True miss by ball</h2>
-      <p class="muted">Ball number on <strong>true</strong> misses only (streak-breaking). Shape-only logs are excluded.</p>
+      <h2 style="font-size: 1.25rem; margin-bottom: 0.25rem;">True miss by ball</h2>
+      <p class="muted" style="margin-top: 0;">Ball number on <strong>true</strong> misses only (streak-breaking).</p>
       <div class="chart-container" style="height: 350px;">
         <canvas id="chart-miss-hist"></canvas>
       </div>
@@ -207,5 +268,5 @@
 <!-- Include Chart.js from CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <!-- Include our custom JS -->
-<script src="{{ url_for('static', path='js/reports/progress.js') }}?v=1.4" defer></script>
+<script src="{{ url_for('static', path='js/reports/progress.js') }}?v=1.7" defer></script>
 {% endblock %}

@@ -7,13 +7,21 @@ from fastapi.responses import RedirectResponse
 from app.deps import get_templates
 from app.models import PrecisionSessionStatus
 from app.services import programs_repo
+from app.services.dashboard_reference_session import (
+    REFERENCE_SESSION_COOKIE_NAME,
+    filter_sessions_since_reference,
+)
 from app.services.derived_metrics import (
     aggregate_sessions_progress,
     best_run_balls_for_rack,
+    dashboard_metric_trend,
     miss_type_percentages,
+    overall_position_success_breakdown,
+    overall_pot_success_breakdown,
     rack_granular_position_speed_series,
     recompute_session_aggregates,
 )
+from app.services.rack_conversion_tiers import overall_rack_conversion_breakdown
 from app.services.training_tier import training_tier_label
 from app.services.session_service import load_session_for_profile
 from app.services.sessions_repo import list_sessions
@@ -131,17 +139,50 @@ async def progress_page(request: Request) -> object:
     templates = get_templates()
     needs = getattr(request.state, "needs_first_profile", False)
     active = getattr(request.state, "active_profile_id", None)
-    sessions = (
-        []
-        if (needs or not active)
-        else list_sessions(limit=500, profile_id=active)
-    )
-    progress_data = aggregate_sessions_progress(sessions)
-    
+    if needs or not active:
+        metrics_sessions = []
+    else:
+        raw = list_sessions(limit=500, profile_id=active)
+        ref = (request.cookies.get(REFERENCE_SESSION_COOKIE_NAME) or "").strip()
+        metrics_sessions, _ = filter_sessions_since_reference(raw, ref or None)
+
+    progress_data = aggregate_sessions_progress(metrics_sessions)
+
+    if not needs and active:
+        pot_rate, pot_made, pot_att = overall_pot_success_breakdown(metrics_sessions)
+        pos_rate, pos_miss, pos_cleared = overall_position_success_breakdown(
+            metrics_sessions
+        )
+        g_rate, g_rc, g_tr = overall_rack_conversion_breakdown(metrics_sessions)
+        progress_data["hero_pot_pct"] = (
+            round(pot_rate * 1000) / 10 if pot_rate is not None else None
+        )
+        progress_data["hero_pot_made"] = pot_made
+        progress_data["hero_pot_attempts"] = pot_att
+        progress_data["hero_pos_pct"] = (
+            round(pos_rate * 1000) / 10 if pos_rate is not None else None
+        )
+        progress_data["hero_pos_miss"] = pos_miss
+        progress_data["hero_pos_cleared"] = pos_cleared
+        progress_data["hero_rack_conv_pct"] = (
+            round(g_rate * 1000) / 10 if g_rate is not None else None
+        )
+        progress_data["hero_racks_completed"] = g_rc
+        progress_data["hero_total_racks"] = g_tr
+        progress_data["hero_pot_trend"] = dashboard_metric_trend(
+            metrics_sessions, metric="pot"
+        )
+        progress_data["hero_position_trend"] = dashboard_metric_trend(
+            metrics_sessions, metric="position"
+        )
+        progress_data["hero_rack_trend"] = dashboard_metric_trend(
+            metrics_sessions, metric="rack_conversion"
+        )
+
     return templates.TemplateResponse(
         request,
         "progress/index.html",
         {
-            "progress_data_json": json.dumps(progress_data)
+            "progress_data_json": json.dumps(progress_data),
         },
     )

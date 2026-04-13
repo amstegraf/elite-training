@@ -361,6 +361,40 @@ def test_aggregate_progress_recomputes_stale_session_fields() -> None:
     assert out["training_logs_per_rack"] == [1.0]
 
 
+def test_aggregate_progress_avg_balls_null_when_racks_lack_cleared_counts() -> None:
+    """Do not substitute 0 for unknown avg balls/rack — matches session report (—)."""
+    from app.models import PrecisionSessionStatus, SessionMode, TableType
+
+    r = RackRecord(
+        rack_number=1,
+        ended_at="2026-01-01T12:00:00+00:00",
+        balls_cleared=None,
+        misses=[
+            MissEvent(
+                ball_number=3,
+                types=[MissType.POSITION],
+                outcome=MissOutcome.PLAYABLE,
+                created_at="2026-01-01T12:00:01+00:00",
+            ),
+        ],
+    )
+    s = PrecisionSession(
+        id="no-bc",
+        program_id="p",
+        plan_id="pl",
+        table_type=TableType.EIGHT_FT,
+        mode=SessionMode.RACK,
+        status=PrecisionSessionStatus.COMPLETED,
+        racks=[r],
+    )
+    recompute_session_aggregates(s)
+    assert s.avg_balls_cleared_per_rack is None
+
+    out = aggregate_sessions_progress([s])
+    assert out["avg_balls_cleared"] == [None]
+    assert out["avg_rack_balls"] == [None]
+
+
 def test_aggregate_position_speed_pct_of_bad_play() -> None:
     from app.models import PrecisionSessionStatus, SessionMode, TableType
 
