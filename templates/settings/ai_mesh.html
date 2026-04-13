@@ -1,0 +1,62 @@
+{% extends "settings/_layout.html" %}
+{% block settings_title %}AI coach / mesh{% endblock %}
+{% block settings_body %}
+<section>
+  <header class="page__header" style="margin-bottom: 0;">
+    <div>
+      <h1 style="margin: 0 0 0.35rem;">AI coach / mesh</h1>
+      <p class="lede" style="margin: 0;">Base URL for the agent mesh HTTP host (<span class="mono">GET /health</span>,
+        <span class="mono">POST /run</span>). Saved to <span class="mono">data/mesh_settings.json</span>. Set
+        <span class="mono">ELITE_MESH_BASE_URL</span> in the environment to override for deployments.</p>
+    </div>
+    <a class="btn btn--ghost" href="/">Dashboard</a>
+  </header>
+
+  {% if request.query_params.get('saved') == '1' %}
+  <p class="banner" style="margin-top: 1rem;">Settings saved.</p>
+  {% endif %}
+  {% if save_error %}
+  <p class="banner banner--warn" style="margin-top: 1rem;">{{ save_error }}</p>
+  {% endif %}
+
+  <article class="card card--wide" style="margin-top: 1.5rem;">
+    <form method="post" action="/settings/ai-mesh" class="modal-form" style="max-width: 40rem;">
+      <label class="modal-label">Mesh base URL
+        <input type="url" name="baseUrl" class="modal-input" required maxlength="500"
+          value="{{ mesh_base_url }}" placeholder="http://127.0.0.1:8090" autocomplete="off">
+      </label>
+      <p class="muted small" style="margin: 0.5rem 0 1rem;">No trailing path — host root only (e.g.
+        <span class="mono">https://mesh.example.com</span>).</p>
+      <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+        <button type="submit" class="btn">Save</button>
+        <button type="button" class="btn btn--ghost" id="btn-mesh-test">Test connection</button>
+        <span id="mesh-test-result" class="muted small" style="min-height: 1.25em;"></span>
+      </div>
+    </form>
+  </article>
+</section>
+<script>
+  (function () {
+    const btn = document.getElementById("btn-mesh-test");
+    const out = document.getElementById("mesh-test-result");
+    if (!btn || !out) return;
+    btn.addEventListener("click", async function () {
+      out.textContent = "Checking…";
+      try {
+        const r = await fetch("/api/ai/mesh-health", { credentials: "same-origin" });
+        const data = await r.json().catch(function () { return {}; });
+        if (data.reachable) {
+          out.textContent = "Reachable.";
+          out.style.color = "var(--pr, #16a34a)";
+        } else {
+          out.textContent = data.detail || "Not reachable.";
+          out.style.color = "var(--warn, #b45309)";
+        }
+      } catch (e) {
+        out.textContent = "Request failed.";
+        out.style.color = "var(--warn, #b45309)";
+      }
+    });
+  })();
+</script>
+{% endblock %}

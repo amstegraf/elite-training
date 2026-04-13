@@ -1,0 +1,15 @@
+<dialog id="pool-coach-dialog" class="modal">
+  <div class="modal__body" style="max-width: 36rem; width: min(92vw, 36rem);">
+    <div class="miss-modal__header" style="position: relative;">
+      <h2 style="margin: 0; font-size: 1.15rem;">AI coach</h2>
+      <button type="button" class="btn btn--icon" id="pool-coach-close" aria-label="Close"
+        style="position: absolute; top: 0; right: 0;">&times;</button>
+    </div>
+    <p id="pool-coach-status" class="muted" style="margin: 0.75rem 0 0; min-height: 1.25em;"></p>
+    <div id="pool-coach-body"
+      style="white-space: pre-wrap; max-height: 60vh; overflow-y: auto; margin-top: 0.75rem; line-height: 1.45;"></div>
+    <menu class="modal__actions miss-modal__actions" style="margin-top: 1rem;">
+      <button type="button" class="btn" id="pool-coach-dismiss">Close</button>
+    </menu>
+  </div>
+</dialog>
