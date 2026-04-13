@@ -1,137 +1,89 @@
-🧠 1) Inputs (your KPIs)
-========================
+# Matrix Calculation of Tier
 
-Use only:
+## 1) Inputs
 
--   **Potting % (POT)**
--   **Position Success % (POS)**
--   **Rack Conversion % (CONV)**
+Tiering uses three KPI rates (0-1 in code, shown as percentages in UI):
 
-* * * * *
+- Pot success (POT)
+- Position outcome (POS)
+- Rack conversion (CONV)
 
-🎯 2) Normalize each KPI into a score (0--4)
-===========================================
+Threshold anchors, weights, and imbalance penalty factor are configured in `data/tier_settings.json`.
 
-POT score
----------
+## 2) Continuous KPI score (0 to 4)
 
-<90%   → 0\
-90--93  → 1\
-93--95  → 2\
-95--97  → 3\
-97%+   → 4
+Each KPI is converted to a continuous score in `[0, 4]` using four ascending lower bounds:
 
-* * * * *
+- `b0, b1, b2, b3`
+- score anchors: `1 at b0`, `2 at b1`, `3 at b2`, `4 at b3`
+- values between anchors are linearly interpolated
+- values at/above `b3` are clamped to `4`
 
-POS score
----------
+Piecewise definition:
 
-<55%   → 0\
-55--65  → 1\
-65--75  → 2\
-75--85  → 3\
-85%+   → 4
+- if `pct < b0`: `score = clamp(pct / b0, 0, 1)` (or `0` when `b0 <= 0`)
+- if `b0 <= pct < b1`: `score = 1 + (pct - b0) / (b1 - b0)`
+- if `b1 <= pct < b2`: `score = 2 + (pct - b1) / (b2 - b1)`
+- if `b2 <= pct < b3`: `score = 3 + (pct - b2) / (b3 - b2)`
+- if `pct >= b3`: `score = 4`
 
-* * * * *
+This removes large jumps caused by old step-only scoring.
 
-CONV score
-----------
+## 3) Weighted composite (base)
 
-<20%   → 0\
-20--35  → 1\
-35--50  → 2\
-50--65  → 3\
-65%+   → 4
+The composite stays in `[0, 4]`:
 
-* * * * *
+`composite = pos_score * weight_pos + conv_score * weight_conv + pot_score * weight_pot`
 
-🧮 3) Weighted composite score
-==============================
+Because weights sum to `1`, small KPI changes produce small composite changes.
 
-Position matters most → then conversion → then potting
+## 4) Imbalance penalty adjustment
 
-Composite Score =\
-( POS * 0.5 ) +\
-( CONV * 0.3 ) +\
-( POT * 0.2 )
+To avoid inflated ratings from one KPI being much higher than the others:
 
-Range:
+- `imbalance = max(pot_score, pos_score, conv_score) - min(pot_score, pos_score, conv_score)`
+- `penalty = imbalance * penalty_factor`
+- `composite_adjusted = clamp(composite - penalty, 0, 4)`
 
-0 → 4
+Default `penalty_factor` is `0.25`.
 
-* * * * *
+## 5) Tier points and labels (hybrid)
 
-🏁 4) Tier mapping
-==================
+- `tier_points = composite_adjusted * composite_points_scale`
+- points band is selected by `composite_points_upper_bounds`
+- final displayed label is gated by KPI minima for that label:
+  - Amateur requires all KPI >= `b0`
+  - Strong Amateur requires all KPI >= `b1`
+  - Advanced requires all KPI >= `b2`
+  - Semi-pro requires all KPI >= `b3`
+  - Elite additionally requires Elite points band
 
-0.0 -- 1.0   → Inconsistent / developing\
-1.0 -- 2.0   → Strong amateur\
-2.0 -- 3.0   → Advanced\
-3.0 -- 3.5   → Semi-pro\
-3.5 -- 4.0   → Elite
+This keeps smooth points while enforcing semantic per-tier minimum execution.
 
-* * * * *
+Defaults (example) with `scale=1000` give a 0-4000 points space, while preserving smooth movement.
 
-🧠 5) Why this works (important)
-================================
+## 6) Example (default bounds + default penalty)
 
--   POT stabilizes early → low weight
--   POS drives pattern quality → high weight
--   CONV reflects real outcome → medium weight
+Using default bounds from `TierSettings`:
 
-* * * * *
+- POT 94% -> `2 + (94-93)/(95-93) = 2.5`
+- POS 58% -> `1 + (58-55)/(65-55) = 1.3`
+- CONV 22% -> `1 + (22-20)/(35-20) = 1.1333`
 
-📊 6) Example (your current numbers)
-====================================
+With default weights `(pos=0.5, conv=0.3, pot=0.2)`:
 
--   POT: 94% → **2**
--   POS: 58% → **1**
--   CONV: 22% → **1**
+- `composite_base = 1.3*0.5 + 1.1333*0.3 + 2.5*0.2 = 1.49`
+- `imbalance = 2.5 - 1.1333 = 1.3667`
+- `penalty = 1.3667 * 0.25 = 0.3417`
+- `composite_adjusted = 1.49 - 0.3417 = 1.1483`
+- `tier_points ~= 1148`
 
-Score =\
-(1 * 0.5) + (1 * 0.3) + (2 * 0.2)\
-= 0.5 + 0.3 + 0.4 = 1.2
+This keeps progression smooth while reducing over-rating when KPI balance is poor.
 
-→ **Strong amateur (low side)**
+## 7) Why hybrid label gating matters
 
-* * * * *
+A player can have high points due to weighting and smooth scoring while still missing minimums for a higher semantic tier on one KPI.  
+In that case:
 
-🧠 7) Matrix view (optional UI)
-===============================
-
-You can also display a **3-axis interpretation**:
-
-| POS \ CONV | Low (<35) | Mid (35--50) | High (50+) |
-| --- | --- | --- | --- |
-| Low (<65) | Developing | Amateur | Amateur |
-| Mid (65--75) | Amateur | Advanced | Advanced |
-| High (75+) | Advanced | Semi-pro | Elite |
-
-Potting acts as a **modifier**, not a primary axis.
-
-* * * * *
-
-🔧 8) Algorithm (ready for dev)
-===============================
-
-int potScore = getPotScore(pot);\
-int posScore = getPosScore(pos);\
-int convScore = getConvScore(conv);
-
-double composite =\
-    (posScore * 0.5) +\
-    (convScore * 0.3) +\
-    (potScore * 0.2);
-
-Tier tier = mapToTier(composite);
-
-* * * * *
-
-⚠️ 9) Important rule
-====================
-
-Do NOT allow:
-
-> high POT to push tier alone
-
-That's why weight is low.
+- points are kept (continuous progression)
+- label is capped to the highest tier whose minima are fully met

@@ -48,6 +48,7 @@
         <div style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; color: var(--muted); font-weight: 600;">Resulting Tier</div>
         <div id="sandbox_tier" style="font-size: 1.5rem; font-weight: 700; color: var(--accent-brand);">Loading...</div>
         <div id="sandbox_tp" class="mono" style="margin-top: 0.35rem; font-size: 1.1rem; font-weight: 600; color: var(--text);">0 tier pts</div>
+        <div id="sandbox_note" class="muted small" style="margin-top: 0.45rem; text-align: center;">Label is gated by KPI minima.</div>
       </div>
     </div>
   </article>
@@ -101,34 +102,57 @@
             if (b0 <= 0) return 0;
             return Math.max(0, Math.min(1, val / b0));
           }
-          if (val < b1) return 1 + ((val - b0) / (b1 - b0));
-          if (val < b2) return 2 + ((val - b1) / (b2 - b1));
-          if (val < b3) return 3 + ((val - b2) / (b3 - b2));
+          if (val < b1) return b1 > b0 ? (1 + ((val - b0) / (b1 - b0))) : 1;
+          if (val < b2) return b2 > b1 ? (2 + ((val - b1) / (b2 - b1))) : 2;
+          if (val < b3) return b3 > b2 ? (3 + ((val - b2) / (b3 - b2))) : 3;
           return 4;
          };
          const wPos = parseFloat(document.querySelector('[name=w_pos]').value) || 0;
          const wConv = parseFloat(document.querySelector('[name=w_conv]').value) || 0;
          const wPot = parseFloat(document.querySelector('[name=w_pot]').value) || 0;
+        const penaltyFactor = parseFloat(document.querySelector('[name=penalty_factor]').value) || 0;
+        const sPos = getContinuousScore(pos, posBounds);
+        const sConv = getContinuousScore(conv, convBounds);
+        const sPot = getContinuousScore(pot, potBounds);
         const comp =
-          (getContinuousScore(pos, posBounds) * wPos) +
-          (getContinuousScore(conv, convBounds) * wConv) +
-          (getContinuousScore(pot, potBounds) * wPot);
+          (sPos * wPos) +
+          (sConv * wConv) +
+          (sPot * wPot);
+        const imbalance = Math.max(sPos, sConv, sPot) - Math.min(sPos, sConv, sPot);
+        const compAdjusted = Math.max(0, Math.min(4, comp - (imbalance * penaltyFactor)));
          const scale = parseInt(document.querySelector('[name=points_scale]').value, 10) || 1000;
-         const tp = Math.round(comp * scale);
+        const tp = Math.round(compAdjusted * scale);
          const cuts = [];
          for (let i = 0; i < 5; i++) {
            const el = document.querySelector('[name=comp_pt_' + i + ']');
            cuts.push(el ? (parseInt(el.value, 10) || 0) : 0);
          }
-         let tier = TIER_NAMES[TIER_NAMES.length - 1];
+        let pointsTierIdx = cuts.length;
          for (let i = 0; i < cuts.length; i++) {
            if (tp < cuts[i]) {
-             tier = TIER_NAMES[i];
+            pointsTierIdx = i;
              break;
            }
          }
-         document.getElementById('sandbox_tier').innerText = tier;
+        const gateTierIdx = (() => {
+          if (pot >= potBounds[3] && pos >= posBounds[3] && conv >= convBounds[3]) return 4;
+          if (pot >= potBounds[2] && pos >= posBounds[2] && conv >= convBounds[2]) return 3;
+          if (pot >= potBounds[1] && pos >= posBounds[1] && conv >= convBounds[1]) return 2;
+          if (pot >= potBounds[0] && pos >= posBounds[0] && conv >= convBounds[0]) return 1;
+          return 0;
+        })();
+        const effectiveTierIdx = (pointsTierIdx >= TIER_NAMES.length - 1 && gateTierIdx >= TIER_NAMES.length - 2)
+          ? TIER_NAMES.length - 1
+          : Math.min(pointsTierIdx, gateTierIdx);
+        const tier = TIER_NAMES[effectiveTierIdx];
+        document.getElementById('sandbox_tier').innerText = tier;
          document.getElementById('sandbox_tp').innerText = tp + " tier pts";
+        const note = document.getElementById('sandbox_note');
+        if (note) {
+          note.innerText = (effectiveTierIdx < pointsTierIdx)
+            ? ("Points band suggests " + TIER_NAMES[pointsTierIdx] + ", but KPI \n minima gate label to " + tier + ".")
+            : "Label and points band are aligned.";
+        }
        } catch (e) {
          console.warn("Sandbox data parsing error", e);
        }
@@ -248,7 +272,7 @@
 
       <fieldset style="border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin: 0; background: var(--surface);">
         <legend class="muted" style="font-size: 0.9rem; font-weight: 600; padding: 0 0.5rem;">Score weights</legend>
-        <p class="muted" style="font-size: 0.85rem; margin-top: 0; margin-bottom: 1rem;">POS / CONV / POT weights must sum to 1.00 (within 0.01).</p>
+        <p class="muted" style="font-size: 0.85rem; margin-top: 0; margin-bottom: 1rem;">POS / CONV / POT weights must sum to 1.00 (within 0.01). Imbalance penalty reduces inflated scores when one KPI is much higher than the others.</p>
         <div style="display: flex; flex-direction: column; gap: 1rem;">
           <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
             <div style="width: 140px; font-weight: 500;">Position</div>
@@ -265,12 +289,17 @@
             <input type="range" min="0" max="1" step="0.01" value="{{ ts.weight_pot }}" oninput="this.nextElementSibling.value=this.value" style="flex-grow: 1; accent-color: var(--accent-brand); margin: 0;">
             <input name="w_pot" type="number" step="0.01" required value="{{ ts.weight_pot }}" oninput="this.previousElementSibling.value=this.value" style="width: 80px; margin: 0;">
           </div>
+          <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
+            <div style="width: 140px; font-weight: 500;">Penalty factor</div>
+            <input type="range" min="0" max="1" step="0.01" value="{{ ts.penalty_factor }}" oninput="this.nextElementSibling.value=this.value" style="flex-grow: 1; accent-color: var(--accent-brand); margin: 0;">
+            <input name="penalty_factor" type="number" step="0.01" min="0" max="1" required value="{{ ts.penalty_factor }}" oninput="this.previousElementSibling.value=this.value" style="width: 80px; margin: 0;">
+          </div>
         </div>
       </fieldset>
 
       <fieldset style="border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin: 0; background: var(--surface);">
         <legend class="muted" style="font-size: 0.9rem; font-weight: 600; padding: 0 0.5rem;">Tier points scale</legend>
-        <p class="muted" style="font-size: 0.85rem; margin-top: 0; margin-bottom: 1rem;">Internal composite (0–4) is multiplied by this value for <strong>tier points</strong> (dashboard, sandbox). KPI scores are interpolated continuously between your percentage thresholds before weighting. Elite spans from the last cut up to <span class="mono">4 × scale</span> (e.g. 4000 when scale is 1000).</p>
+        <p class="muted" style="font-size: 0.85rem; margin-top: 0; margin-bottom: 1rem;">Adjusted composite (0–4) is multiplied by this value for <strong>tier points</strong> (dashboard, sandbox). KPI scores are interpolated continuously between your percentage thresholds, then imbalance penalty is applied before scaling. Elite spans from the last cut up to <span class="mono">4 × scale</span> (e.g. 4000 when scale is 1000).</p>
         <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
           <div style="width: 140px; font-weight: 500;">Scale</div>
           <input type="range" id="points_scale_range" min="100" max="8000" step="50" value="{{ ts.composite_points_scale }}" oninput="document.getElementById('points_scale_num').value=this.value" style="flex-grow: 1; accent-color: var(--accent-brand); margin: 0;">

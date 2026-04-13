@@ -49,6 +49,28 @@ def composite_score(
     )
 
 
+def imbalance_penalty_adjusted_composite(
+    *,
+    pos_score: float,
+    conv_score: float,
+    pot_score: float,
+    base_composite: float,
+    settings: TierSettings,
+) -> tuple[float, float, float]:
+    """
+    Apply KPI-imbalance penalty to composite:
+    imbalance = max(score) - min(score)
+    penalty = imbalance * penalty_factor
+    adjusted = clamp(base - penalty, 0, 4)
+    """
+    max_score = max(pos_score, conv_score, pot_score)
+    min_score = min(pos_score, conv_score, pot_score)
+    imbalance = max_score - min_score
+    penalty = imbalance * settings.penalty_factor
+    adjusted = max(0.0, min(4.0, base_composite - penalty))
+    return adjusted, imbalance, penalty
+
+
 def tier_points_from_composite(composite: float, settings: TierSettings) -> float:
     return composite * float(settings.composite_points_scale)
 
@@ -65,13 +87,47 @@ def max_tier_points(settings: TierSettings) -> int:
     return settings.composite_points_scale * 4
 
 
+def threshold_gate_tier_index(
+    *, pot_pct: float, pos_pct: float, conv_pct: float, settings: TierSettings
+) -> int:
+    """
+    Hard KPI minimum gate for semantic tier label:
+    - Beginner: below any Amateur minima
+    - Amateur: meets b0 minima on all KPIs
+    - Strong Amateur: meets b1 minima on all KPIs
+    - Advanced: meets b2 minima on all KPIs
+    - Semi-pro: meets b3 minima on all KPIs
+    """
+    pb = settings.pot_pct_lower_bounds
+    xb = settings.pos_pct_lower_bounds
+    cb = settings.conv_pct_lower_bounds
+    if pot_pct >= pb[3] and pos_pct >= xb[3] and conv_pct >= cb[3]:
+        return 4
+    if pot_pct >= pb[2] and pos_pct >= xb[2] and conv_pct >= cb[2]:
+        return 3
+    if pot_pct >= pb[1] and pos_pct >= xb[1] and conv_pct >= cb[1]:
+        return 2
+    if pot_pct >= pb[0] and pos_pct >= xb[0] and conv_pct >= cb[0]:
+        return 1
+    return 0
+
+
+def semantic_tier_index_with_threshold_gate(
+    *, points_tier_index: int, gate_tier_index: int
+) -> int:
+    # Elite is allowed only if Semi-pro minima are met (gate==4) and points place user in Elite.
+    if points_tier_index >= len(TIER_LABELS) - 1 and gate_tier_index >= len(TIER_LABELS) - 2:
+        return len(TIER_LABELS) - 1
+    return min(points_tier_index, gate_tier_index)
+
+
 def _resolve_training_tier(
     pot_rate: float | None,
     pos_rate: float | None,
     conv_rate: float | None,
     *,
     settings: TierSettings | None,
-) -> tuple[TierSettings, float, int] | None:
+) -> tuple[TierSettings, float, int, float, float, float, float, float, float] | None:
     if pot_rate is None or pos_rate is None or conv_rate is None:
         return None
     cfg = settings if settings is not None else load_tier_settings()
@@ -81,10 +137,17 @@ def _resolve_training_tier(
     ps = kpi_score_from_pct_continuous(pot_pct, cfg.pot_pct_lower_bounds)
     xs = kpi_score_from_pct_continuous(pos_pct, cfg.pos_pct_lower_bounds)
     cs = kpi_score_from_pct_continuous(conv_pct, cfg.conv_pct_lower_bounds)
-    comp = composite_score(xs, cs, ps, cfg)
+    base_comp = composite_score(xs, cs, ps, cfg)
+    comp, imbalance, penalty = imbalance_penalty_adjusted_composite(
+        pos_score=xs,
+        conv_score=cs,
+        pot_score=ps,
+        base_composite=base_comp,
+        settings=cfg,
+    )
     tp = tier_points_from_composite(comp, cfg)
     idx = tier_index_from_tier_points(tp, cfg)
-    return cfg, comp, idx
+    return cfg, comp, idx, base_comp, imbalance, penalty, pot_pct, pos_pct, conv_pct
 
 
 def training_tier_label(
@@ -101,7 +164,14 @@ def training_tier_label(
     resolved = _resolve_training_tier(pot_rate, pos_rate, conv_rate, settings=settings)
     if resolved is None:
         return None
-    return TIER_LABELS[resolved[2]]
+    cfg, _comp, idx, _base_comp, _imbalance, _penalty, pot_pct, pos_pct, conv_pct = resolved
+    gate_idx = threshold_gate_tier_index(
+        pot_pct=pot_pct, pos_pct=pos_pct, conv_pct=conv_pct, settings=cfg
+    )
+    effective_idx = semantic_tier_index_with_threshold_gate(
+        points_tier_index=idx, gate_tier_index=gate_idx
+    )
+    return TIER_LABELS[effective_idx]
 
 
 def training_tier_dashboard_meta(
@@ -111,11 +181,11 @@ def training_tier_dashboard_meta(
     *,
     settings: TierSettings | None = None,
 ) -> dict[str, Any] | None:
-    """Tier points (0–4×scale), progress within current band, gap to next cut (points)."""
+    """Adjusted tier points/meta (after imbalance penalty), progress, and gap to next cut."""
     resolved = _resolve_training_tier(pot_rate, pos_rate, conv_rate, settings=settings)
     if resolved is None:
         return None
-    cfg, comp, idx = resolved
+    cfg, comp, idx, base_comp, imbalance, penalty, _pot_pct, _pos_pct, _conv_pct = resolved
     scale = cfg.composite_points_scale
     tp = tier_points_from_composite(comp, cfg)
     tier_pts = int(round(tp))
@@ -132,6 +202,9 @@ def training_tier_dashboard_meta(
         )
         return {
             "composite": round(comp, 4),
+            "base_composite": round(base_comp, 4),
+            "imbalance": round(imbalance, 4),
+            "penalty": round(penalty, 4),
             "tier_points": tier_pts,
             "points_to_next": None,
             "next_tier_label": None,
@@ -148,6 +221,9 @@ def training_tier_dashboard_meta(
 
     return {
         "composite": round(comp, 4),
+        "base_composite": round(base_comp, 4),
+        "imbalance": round(imbalance, 4),
+        "penalty": round(penalty, 4),
         "tier_points": tier_pts,
         "points_to_next": gap_pts,
         "next_tier_label": next_label,

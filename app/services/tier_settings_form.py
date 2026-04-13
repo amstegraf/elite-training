@@ -42,6 +42,7 @@ def parse_tier_settings_form(form: Mapping[str, str]) -> TierSettings:
         weight_pos=req_float("w_pos"),
         weight_conv=req_float("w_conv"),
         weight_pot=req_float("w_pot"),
+        penalty_factor=req_float("penalty_factor"),
         composite_points_scale=req_int("points_scale"),
         composite_points_upper_bounds=(
             req_int("comp_pt_0"),

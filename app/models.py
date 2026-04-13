@@ -342,7 +342,8 @@ class TierSettings(BaseModel):
     Each ``*_pct_lower_bounds`` tuple is (b0,b1,b2,b3): score 0 if pct < b0, score 1 if
     b0<=pct<b1, … score 4 if pct>=b3. Percent values are on the usual 0–100 display scale.
 
-    Internal composite is still 0–4 (weighted KPI scores). **Tier points** = composite ×
+    Internal composite is still 0–4 (weighted KPI scores), with optional imbalance penalty.
+    **Tier points** = adjusted composite ×
     ``composite_points_scale`` (default 1000 → whole-number UI, e.g. 0–4000).
     ``composite_points_upper_bounds`` are five strictly ascending **exclusive** upper
     limits on tier points (six tiers: below first cut → tier 0, …, at/above last cut → Elite).
@@ -355,6 +356,7 @@ class TierSettings(BaseModel):
     weight_pos: float = Field(default=0.5, ge=0.0, le=1.0)
     weight_conv: float = Field(default=0.3, ge=0.0, le=1.0)
     weight_pot: float = Field(default=0.2, ge=0.0, le=1.0)
+    penalty_factor: float = Field(default=0.25, ge=0.0, le=1.0)
 
     composite_points_scale: int = Field(default=1000, ge=50, le=50_000)
     composite_points_upper_bounds: tuple[int, int, int, int, int] = (

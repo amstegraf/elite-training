@@ -182,7 +182,7 @@ Use it for **week-to-week** or **month-to-month** perspective when individual se
 
 Here you can adjust **how strict your tier ladder is**: the percentage bands for potting, positional outcome, and rack conversion, the **balance** between those three dimensions, and the **point scale** that maps your composite performance to names like Amateur or Elite.
 
-Tier scoring is **continuous within each configured percentage band** (not hard jumps at each boundary), so small percentage improvements produce small tier-point moves toward promotion or away from demotion.
+Tier scoring is **continuous within each configured percentage band** (not hard jumps at each boundary), so small percentage improvements produce small tier-point moves toward promotion or away from demotion. The model also applies an **imbalance penalty** when one KPI is much higher than the others, so tier points reward balanced development instead of one-dimensional performance. Tier **labels** are then gated by each tier's configured minimums across all three KPIs, so a high point total cannot label you Advanced/Semi-pro if one KPI is still below that tier's required floor.
 
 Changes apply to the **dashboard badge** and **session report tier** going forward. A built-in **sandbox** lets you slide example percentages and see what tier would result before you save.
 
