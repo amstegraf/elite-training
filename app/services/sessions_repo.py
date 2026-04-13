@@ -35,6 +35,8 @@ def save_session(session: PrecisionSession) -> None:
 
 
 def delete_session(session_id: str) -> bool:
+    from app.services.pool_coach_cache import delete_session_coach_cache  # noqa: PLC0415
+
     s = load_session(session_id)
     path = _session_path(session_id)
     if not path.exists():
@@ -44,6 +46,7 @@ def delete_session(session_id: str) -> bool:
 
         profiles_repo.remove_session(s.profile_id, session_id)
     path.unlink()
+    delete_session_coach_cache(session_id)
     return True
 
 

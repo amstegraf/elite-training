@@ -131,6 +131,9 @@ def delete_profile_orphan_sessions(profile_id: str) -> bool:
     path = _profile_path(profile_id)
     if path.exists():
         path.unlink()
+    from app.services.pool_coach_cache import delete_progress_coach_cache  # noqa: PLC0415
+
+    delete_progress_coach_cache(profile_id)
     return True
 
 

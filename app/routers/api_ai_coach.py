@@ -4,13 +4,23 @@ import json
 from typing import Any, Literal
 
 import httpx
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, ConfigDict, Field
 
 import app.config as app_config
 from app.services.dashboard_reference_session import (
     REFERENCE_SESSION_COOKIE_NAME,
     filter_sessions_since_reference,
+)
+from app.services.pool_coach_cache import (
+    has_progress_coach_cache,
+    has_session_coach_cache,
+    load_progress_coach_cache,
+    load_session_coach_cache,
+    mesh_response_to_storable,
+    save_progress_coach_cache,
+    save_session_coach_cache,
+    storable_to_api_response,
 )
 from app.services.pool_coach_payload import (
     build_progress_coach_payload,
@@ -31,6 +41,7 @@ class PoolCoachBody(BaseModel):
 
     scope: Literal["session", "progress"]
     session_id: str | None = Field(default=None, alias="sessionId")
+    regenerate: bool = False
 
 
 def _profile_ctx(request: Request) -> tuple[str | None, bool]:
@@ -38,6 +49,11 @@ def _profile_ctx(request: Request) -> tuple[str | None, bool]:
         getattr(request.state, "active_profile_id", None),
         getattr(request.state, "needs_first_profile", False),
     )
+
+
+def _reference_session_id(request: Request) -> str | None:
+    ref = (request.cookies.get(REFERENCE_SESSION_COOKIE_NAME) or "").strip()
+    return ref or None
 
 
 @router.get("/mesh-health")
@@ -60,11 +76,51 @@ async def mesh_health() -> dict[str, Any]:
     return {"reachable": True}
 
 
+@router.get("/pool-coach/cached")
+async def pool_coach_cached(
+    request: Request,
+    scope: Literal["session", "progress"],
+    session_id: str | None = Query(default=None, alias="sessionId"),
+) -> dict[str, Any]:
+    """Whether a saved coach analysis exists for this scope (progress respects reference-session cookie)."""
+    active, needs = _profile_ctx(request)
+    if needs or not active:
+        return {"hasCached": False}
+    if scope == "session":
+        if not session_id:
+            return {"hasCached": False}
+        session = load_session_for_profile(
+            session_id,
+            active_profile_id=active,
+            needs_first_profile=needs,
+        )
+        if not session:
+            return {"hasCached": False}
+        return {"hasCached": has_session_coach_cache(session_id)}
+    ref = _reference_session_id(request)
+    return {"hasCached": has_progress_coach_cache(active, reference_session_id=ref)}
+
+
+def _api_shape_from_mesh(data: dict[str, Any], *, from_cache: bool) -> dict[str, Any]:
+    return {
+        "ok": bool(data.get("ok", True)),
+        "blocked": bool(data.get("blocked", False)),
+        "reason": data.get("reason"),
+        "outputText": data.get("output_text") or data.get("outputText"),
+        "meshSessionId": data.get("session_id") or data.get("sessionId"),
+        "runtimeName": data.get("runtime_name"),
+        "framework": data.get("framework"),
+        "fromCache": from_cache,
+    }
+
+
 @router.post("/pool-coach")
 async def pool_coach(request: Request, body: PoolCoachBody) -> dict[str, Any]:
     active, needs = _profile_ctx(request)
     if needs or not active:
         raise HTTPException(status_code=400, detail="No active player profile.")
+
+    ref = _reference_session_id(request)
 
     if body.scope == "session":
         if not body.session_id:
@@ -78,10 +134,19 @@ async def pool_coach(request: Request, body: PoolCoachBody) -> dict[str, Any]:
             raise HTTPException(status_code=404, detail="Session not found.")
         payload = build_session_coach_payload(session)
     else:
-        raw = list_sessions(limit=500, profile_id=active)
-        ref = (request.cookies.get(REFERENCE_SESSION_COOKIE_NAME) or "").strip()
-        filtered, _ = filter_sessions_since_reference(raw, ref or None)
+        raw_sessions = list_sessions(limit=500, profile_id=active)
+        filtered, _ = filter_sessions_since_reference(raw_sessions, ref)
         payload = build_progress_coach_payload(filtered)
+
+    if not body.regenerate:
+        if body.scope == "session" and body.session_id:
+            hit = load_session_coach_cache(body.session_id)
+            if hit:
+                return storable_to_api_response(hit["response"], from_cache=True)
+        elif body.scope == "progress":
+            hit = load_progress_coach_cache(active, reference_session_id=ref)
+            if hit:
+                return storable_to_api_response(hit["response"], from_cache=True)
 
     base = resolve_mesh_base_url()
     run_url = f"{base.rstrip('/')}/run"
@@ -120,12 +185,12 @@ async def pool_coach(request: Request, body: PoolCoachBody) -> dict[str, Any]:
             detail=data.get("detail", data.get("message", f"Mesh HTTP {r.status_code}")),
         )
 
-    return {
-        "ok": bool(data.get("ok", True)),
-        "blocked": bool(data.get("blocked", False)),
-        "reason": data.get("reason"),
-        "outputText": data.get("output_text") or data.get("outputText"),
-        "meshSessionId": data.get("session_id") or data.get("sessionId"),
-        "runtimeName": data.get("runtime_name"),
-        "framework": data.get("framework"),
-    }
+    if body.scope == "session":
+        sid = body.session_id
+        if not sid:
+            raise HTTPException(status_code=422, detail="sessionId is required for session scope.")
+        save_session_coach_cache(sid, data)
+    else:
+        save_progress_coach_cache(active, data, reference_session_id=ref)
+
+    return _api_shape_from_mesh(data, from_cache=False)
