@@ -28,7 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     let data;
     try {
-        data = JSON.parse(rawData.textContent);
+        const payload = rawData.dataset.json || "{}";
+        data = JSON.parse(JSON.parse(payload));
     } catch (e) {
         console.error("Failed to parse progress data", e);
         return;

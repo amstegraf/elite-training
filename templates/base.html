@@ -78,20 +78,20 @@
   </div>
   <div id="first-profile-modal" class="modal-root" role="dialog" aria-modal="true" aria-labelledby="first-profile-title" {% if not request.state.needs_first_profile %}hidden{% endif %}>
     <div class="modal-dialog">
-      <h2 id="first-profile-title" style="margin: 0 0 0.5rem; font-size: 1.15rem;">Create your first player</h2>
-      <p class="muted" style="margin: 0 0 1rem; font-size: 0.9rem;">Existing sessions on this device will be linked to this player.</p>
+      <h2 id="first-profile-title" class="modal-title">Create your first player</h2>
+      <p class="muted modal-copy">Existing sessions on this device will be linked to this player.</p>
       <form id="first-profile-form" class="modal-form">
         <label class="modal-label">Name
           <input type="text" name="name" autocomplete="name" required maxlength="200" class="modal-input">
         </label>
-        <button type="submit" class="btn btn--primary" style="width: 100%; margin-top: 1rem;">Continue</button>
+        <button type="submit" class="btn btn--primary modal-submit">Continue</button>
       </form>
     </div>
   </div>
 
   <div id="add-profile-modal" class="modal-root" role="dialog" aria-modal="true" aria-labelledby="add-profile-title" hidden>
     <div class="modal-dialog">
-      <h2 id="add-profile-title" style="margin: 0 0 0.5rem; font-size: 1.15rem;">Add player</h2>
+      <h2 id="add-profile-title" class="modal-title">Add player</h2>
       <form id="add-profile-form" class="modal-form">
         <label class="modal-label">Name
           <input type="text" name="name" autocomplete="name" required maxlength="200" class="modal-input" id="add-profile-name">
@@ -106,57 +106,7 @@
 
   <div id="app-toast" class="toast" role="status" aria-live="polite" hidden></div>
   <script src="{{ url_for('static', path='js/common/toast.js') }}?v=1.3" defer></script>
-  <script>
-    (function () {
-      const firstForm = document.getElementById("first-profile-form");
-      if (firstForm) {
-        firstForm.addEventListener("submit", async function (e) {
-          e.preventDefault();
-          const name = (firstForm.querySelector('input[name="name"]') || {}).value.trim();
-          if (!name) return;
-          const r = await fetch("/profiles/first", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: name }),
-            credentials: "same-origin",
-          });
-          if (r.ok) window.location.reload();
-        });
-      }
-      const addOpen = document.getElementById("profile-add-open");
-      const addModal = document.getElementById("add-profile-modal");
-      const addForm = document.getElementById("add-profile-form");
-      const addCancel = document.getElementById("add-profile-cancel");
-      function openAdd() {
-        if (!addModal) return;
-        addModal.hidden = false;
-        const inp = document.getElementById("add-profile-name");
-        if (inp) inp.focus();
-      }
-      function closeAdd() {
-        if (addModal) addModal.hidden = true;
-      }
-      if (addOpen) addOpen.addEventListener("click", function (e) {
-        e.preventDefault();
-        openAdd();
-      });
-      if (addCancel) addCancel.addEventListener("click", closeAdd);
-      if (addForm) {
-        addForm.addEventListener("submit", async function (e) {
-          e.preventDefault();
-          const name = (addForm.querySelector('input[name="name"]') || {}).value.trim();
-          if (!name) return;
-          const r = await fetch("/profiles", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: name }),
-            credentials: "same-origin",
-          });
-          if (r.ok) window.location.reload();
-        });
-      }
-    })();
-  </script>
+  <script src="{{ url_for('static', path='js/common/app.js') }}?v=1.1" defer></script>
   <script src="{{ url_for('static', path='js/common/local_datetime.js') }}?v=3" defer></script>
   {% block scripts %}{% endblock %}
 </body>

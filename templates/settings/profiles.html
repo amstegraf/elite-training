@@ -2,35 +2,35 @@
 {% block settings_title %}Player profiles{% endblock %}
 {% block settings_body %}
 <section>
-  <header class="page__header" style="margin-bottom: 0;">
+  <header class="page__header settings-page-header">
     <div>
-      <h1 style="margin: 0 0 0.35rem;">Player profiles</h1>
-      <p class="lede" style="margin: 0;">Rename or remove players. Removing a player keeps all session files; those sessions become <strong>unassigned</strong> (no <span class="mono">profileId</span>) until you create a player again or link them from the first-run flow. Use <strong>Export zip</strong> to download that player’s sessions; your browser save dialog picks the folder (default filename: player name and date).</p>
+      <h1 class="settings-page-title">Player profiles</h1>
+      <p class="lede settings-page-lede">Rename or remove players. Removing a player keeps all session files; those sessions become <strong>unassigned</strong> (no <span class="mono">profileId</span>) until you create a player again or link them from the first-run flow. Use <strong>Export zip</strong> to download that player’s sessions; your browser save dialog picks the folder (default filename: player name and date).</p>
     </div>
     <a class="btn btn--ghost" href="/">Dashboard</a>
   </header>
 
   {% set qp = request.query_params %}
   {% if qp.get('renamed') == '1' %}
-  <p class="banner" style="margin-top: 1rem;">Name updated.</p>
+  <p class="banner settings-banner-spaced">Name updated.</p>
   {% endif %}
   {% if qp.get('deleted') == '1' %}
-  <p class="banner" style="margin-top: 1rem;">Profile removed. Sessions remain on disk as unassigned.</p>
+  <p class="banner settings-banner-spaced">Profile removed. Sessions remain on disk as unassigned.</p>
   {% endif %}
   {% if qp.get('err') == 'rename_empty' %}
-  <p class="banner banner--warn" style="margin-top: 1rem;">Name cannot be empty.</p>
+  <p class="banner banner--warn settings-banner-spaced">Name cannot be empty.</p>
   {% elif qp.get('err') == 'rename_notfound' %}
-  <p class="banner banner--warn" style="margin-top: 1rem;">Could not rename that profile.</p>
+  <p class="banner banner--warn settings-banner-spaced">Could not rename that profile.</p>
   {% elif qp.get('err') == 'delete_notfound' %}
-  <p class="banner banner--warn" style="margin-top: 1rem;">Profile not found.</p>
+  <p class="banner banner--warn settings-banner-spaced">Profile not found.</p>
   {% elif qp.get('err') == 'rename_invalid' %}
-  <p class="banner banner--warn" style="margin-top: 1rem;">Name is too long (max 200 characters).</p>
+  <p class="banner banner--warn settings-banner-spaced">Name is too long (max 200 characters).</p>
   {% endif %}
 
-  <article class="card card--wide" style="margin-top: 1.5rem;">
-    <h2 style="margin: 0 0 1rem; font-size: 1.1rem;">Profiles</h2>
+  <article class="card card--wide settings-card-block">
+    <h2 class="settings-card-heading">Profiles</h2>
     {% if not profiles_rows %}
-    <p class="muted" style="margin: 0;">No profiles yet. Use the sidebar to create your first player.</p>
+    <p class="muted settings-paragraph-compact">No profiles yet. Use the sidebar to create your first player.</p>
     {% else %}
     <div class="table-wrap">
       <table class="table profiles-table">
@@ -53,15 +53,15 @@
             <td>
               <form method="post" action="/settings/profiles/{{ row.id }}/rename" class="profiles-table__rename">
                 <input type="text" name="name" value="{{ row.name }}" maxlength="200" required class="profiles-table__input" aria-label="Name for {{ row.name }}">
-                <button type="submit" class="btn btn--ghost" style="padding: 0.4rem 0.75rem; font-size: 0.85rem;">Save</button>
+                <button type="submit" class="btn btn--ghost settings-btn-compact">Save</button>
               </form>
             </td>
             <td>
-              <a class="btn btn--ghost" style="padding: 0.4rem 0.75rem; font-size: 0.85rem; white-space: nowrap;" href="/api/profiles/{{ row.id }}/export-zip">Export zip</a>
+              <a class="btn btn--ghost settings-btn-compact settings-nowrap" href="/api/profiles/{{ row.id }}/export-zip">Export zip</a>
             </td>
             <td class="table-actions">
-              <form method="post" action="/settings/profiles/{{ row.id }}/delete" class="profiles-table__delete" onsubmit="return confirm('Delete this player? Sessions stay on disk without a player (unassigned).');">
-                <button type="submit" class="btn" style="background: var(--fr); color: #6b1a24;">Delete</button>
+              <form method="post" action="/settings/profiles/{{ row.id }}/delete" class="profiles-table__delete" data-confirm-message="Delete this player? Sessions stay on disk without a player (unassigned).">
+                <button type="submit" class="btn settings-btn-delete">Delete</button>
               </form>
             </td>
           </tr>
@@ -72,4 +72,7 @@
     {% endif %}
   </article>
 </section>
+{% endblock %}
+{% block settings_scripts %}
+<script src="{{ url_for('static', path='js/settings/profiles.js') }}?v=1.0" defer></script>
 {% endblock %}

@@ -280,6 +280,15 @@ code,
   color: var(--pr-dim);
 }
 
+.tier-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+}
+
 .badge--paused {
   background: var(--warning);
   color: #b47000;
@@ -789,6 +798,21 @@ input::placeholder, textarea::placeholder {
   border-radius: var(--radius);
   box-shadow: var(--shadow-lg);
   padding: 1.5rem;
+}
+
+.modal-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.15rem;
+}
+
+.modal-copy {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+}
+
+.modal-submit {
+  width: 100%;
+  margin-top: 1rem;
 }
 
 .modal-form {

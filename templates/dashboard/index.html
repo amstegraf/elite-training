@@ -5,9 +5,9 @@
 {% endblock %}
 {% block content %}
 <section class="page dashboard animate-in">
-  <header class="page__header dashboard__hero" style="display: flex; justify-content: space-between; align-items: flex-start;">
+  <header class="page__header dashboard__hero dashboard-hero-layout">
     <div>
-      <div style="display: flex; align-items: center; gap: 1rem;">
+      <div class="dashboard-hero-heading-row">
         <h1>Ready to train?</h1>
         {% if global_training_tier %}
         <div class="dashboard-tier-block">
@@ -16,19 +16,19 @@
             {% include 'partials/tier_badge.html' %}
           </div>
           {% if global_training_tier_meta %}
-          <div class="dashboard-tier-block__meta muted" title="Tier points = composite (0–4) × your settings scale. Progress within current band: {{ global_training_tier_meta.band_lo_pts }}–{{ global_training_tier_meta.band_hi_pts }} pts." style="width: 100%; min-width: 180px;">
-            <div style="display: flex; align-items: baseline; gap: 0.4rem; margin-bottom: 0.35rem; font-size: 0.85rem;">
-              <span style="font-weight: 700; color: var(--text); font-size: 0.9rem;" class="mono">{{ global_training_tier_meta.tier_points }} <span style="font-size: 0.75rem; color: var(--muted); font-weight: normal; font-family: var(--font-main);">pts</span></span>
+          <div class="dashboard-tier-block__meta muted dashboard-tier-meta" title="Tier points = composite (0–4) × your settings scale. Progress within current band: {{ global_training_tier_meta.band_lo_pts }}–{{ global_training_tier_meta.band_hi_pts }} pts.">
+            <div class="dashboard-tier-meta__row">
+              <span class="mono dashboard-tier-meta__value">{{ global_training_tier_meta.tier_points }} <span class="dashboard-tier-meta__suffix">pts</span></span>
               {% if global_training_tier_meta.points_to_next is not none %}
-              <span style="color: var(--muted); opacity: 0.6; font-size: 0.75rem;">|</span>
-              <span class="mono" style="font-size: 0.8rem; font-weight: 600;">{{ global_training_tier_meta.points_to_next }} <span style="font-family: var(--font-main); font-weight: normal; font-size: 0.75rem;">to {{ global_training_tier_meta.next_tier_label }}</span></span>
+              <span class="dashboard-tier-meta__pipe">|</span>
+              <span class="mono dashboard-tier-meta__delta">{{ global_training_tier_meta.points_to_next }} <span class="dashboard-tier-meta__delta-label">to {{ global_training_tier_meta.next_tier_label }}</span></span>
               {% else %}
-              <span style="color: var(--muted); opacity: 0.6; font-size: 0.75rem;">|</span>
-              <span style="font-size: 0.75rem;">Max tier attained</span>
+              <span class="dashboard-tier-meta__pipe">|</span>
+              <span class="dashboard-tier-meta__max">Max tier attained</span>
               {% endif %}
             </div>
-            <div style="width: 100%; height: 6px; background: rgba(0,0,0,0.06); border-radius: 4px; overflow: hidden;">
-               <div style="height: 100%; width: {{ global_training_tier_meta.progress_pct }}%; background: var(--accent-brand); border-radius: 4px; transition: width 0.8s ease-out;"></div>
+            <div class="dashboard-tier-meta__bar">
+               <div class="dashboard-tier-meta__bar-fill" data-progress="{{ global_training_tier_meta.progress_pct }}"></div>
             </div>
           </div>
           {% endif %}
@@ -38,7 +38,7 @@
       <p class="dashboard__lede">Select an active program and focus on logging your misses to track progression.</p>
     </div>
     {% if continue_session_id %}
-    <a class="btn btn--pr btn--xl" style="height: fit-content;" href="/session/{{ continue_session_id }}">Continue session</a>
+    <a class="btn btn--pr btn--xl dashboard-hero-continue" href="/session/{{ continue_session_id }}">Continue session</a>
     {% endif %}
   </header>
 
@@ -51,7 +51,7 @@
     <span class="small">Tier and KPIs use sessions on or after <strong class="mono"><span class="local-session-range local-session-range--friendly" data-start="{{ dashboard_reference_started_at }}" data-end=""></span></strong> ({{ dashboard_metrics_session_count }} session{% if dashboard_metrics_session_count != 1 %}s{% endif %}{% if dashboard_all_sessions_count and dashboard_metrics_session_count < dashboard_all_sessions_count %}; {{ dashboard_all_sessions_count }} loaded{% endif %}).</span>
     <form method="post" action="/actions/dashboard/reference-session" class="dashboard-ref-banner__form">
       <input type="hidden" name="clear" value="1">
-      <button type="submit" class="dashboard-trend-bubble" title="Clear baseline" style="position: relative; top: 0; right: 0; border: 2px solid #ef4444; color: #ef4444; cursor: pointer;">
+      <button type="submit" class="dashboard-trend-bubble dashboard-ref-clear-btn" title="Clear baseline">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
       </button>
     </form>
@@ -59,14 +59,14 @@
   {% endif %}
 
   {% if (global_total_racks > 0 and global_rack_conversion_rate is not none) or (global_pot_attempts > 0 and global_pot_success_rate is not none) or (global_position_balls_cleared > 0 and global_position_success_rate is not none) %}
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+  <div class="dashboard-kpi-grid">
     {% if global_pot_attempts > 0 and global_pot_success_rate is not none %}
-    <article class="card card--wide" style="position: relative; margin-bottom: 0; display: flex; align-items: center; justify-content: space-between; padding: 1.5rem 2rem;">
+    <article class="card card--wide dashboard-kpi-card">
       <div>
-        <h2 title="Overall: Σ balls potted ÷ Σ pot attempts (same as session reports; pot miss / both only)." style="margin: 0 0 0.25rem; font-size: 1.25rem; cursor: help; border-bottom: 1px dotted var(--muted); display: inline-block;">Pot success</h2>
-        <div class="muted mono" style="font-size: 0.9rem; margin-top: 0.5rem;">{{ global_pot_potted }} / {{ global_pot_attempts }}</div>
+        <h2 title="Overall: Σ balls potted ÷ Σ pot attempts (same as session reports; pot miss / both only)." class="dashboard-kpi-card__title dashboard-kpi-card__title--hint">Pot success</h2>
+        <div class="muted mono dashboard-kpi-card__meta">{{ global_pot_potted }} / {{ global_pot_attempts }}</div>
       </div>
-      <div style="text-align: right;">
+      <div class="dashboard-kpi-card__value-wrap">
         <div class="dashboard-kpi-pct{% if dashboard_pot_trend == 'up' %} dashboard-kpi-pct--up{% elif dashboard_pot_trend == 'down' %} dashboard-kpi-pct--down{% endif %}">
           <span class="dashboard-kpi-pct__value">{{ "%.1f"|format(global_pot_success_rate * 100) }}</span><span class="dashboard-kpi-pct__suffix">%</span>
           {% if dashboard_pot_trend == 'up' %}<div class="dashboard-trend-bubble" title="Trending Up"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M7 17L17 7M17 7H9M17 7V15" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>{% elif dashboard_pot_trend == 'down' %}<div class="dashboard-trend-bubble" title="Trending Down"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M7 7L17 17M17 17H9M17 17V9" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>{% endif %}
@@ -75,12 +75,12 @@
     </article>
     {% endif %}
     {% if global_position_balls_cleared > 0 and global_position_success_rate is not none %}
-    <article class="card card--wide" style="position: relative; margin-bottom: 0; display: flex; align-items: center; justify-content: space-between; padding: 1.5rem 2rem;">
+    <article class="card card--wide dashboard-kpi-card">
       <div>
-        <h2 title="Overall: 1 − Σ position-related misses ÷ Σ balls cleared (docs/metric-position-success.md)." style="margin: 0 0 0.25rem; font-size: 1.25rem; cursor: help; border-bottom: 1px dotted var(--muted); display: inline-block;">Position outcome</h2>
-        <div class="muted mono" style="font-size: 0.9rem; margin-top: 0.5rem;">{{ global_position_miss_events }} misses / {{ global_position_balls_cleared }} cleared</div>
+        <h2 title="Overall: 1 − Σ position-related misses ÷ Σ balls cleared (docs/metric-position-success.md)." class="dashboard-kpi-card__title dashboard-kpi-card__title--hint">Position outcome</h2>
+        <div class="muted mono dashboard-kpi-card__meta">{{ global_position_miss_events }} misses / {{ global_position_balls_cleared }} cleared</div>
       </div>
-      <div style="text-align: right;">
+      <div class="dashboard-kpi-card__value-wrap">
         <div class="dashboard-kpi-pct{% if dashboard_position_trend == 'up' %} dashboard-kpi-pct--up{% elif dashboard_position_trend == 'down' %} dashboard-kpi-pct--down{% endif %}">
           <span class="dashboard-kpi-pct__value">{{ "%.1f"|format(global_position_success_rate * 100) }}</span><span class="dashboard-kpi-pct__suffix">%</span>
           {% if dashboard_position_trend == 'up' %}<div class="dashboard-trend-bubble" title="Trending Up"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M7 17L17 7M17 7H9M17 7V15" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>{% elif dashboard_position_trend == 'down' %}<div class="dashboard-trend-bubble" title="Trending Down"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M7 7L17 17M17 17H9M17 17V9" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>{% endif %}
@@ -89,12 +89,12 @@
     </article>
     {% endif %}
     {% if global_total_racks > 0 and global_rack_conversion_rate is not none %}
-    <article class="card card--wide" style="position: relative; margin-bottom: 0; display: flex; align-items: center; justify-content: space-between; padding: 1.5rem 2rem;">
+    <article class="card card--wide dashboard-kpi-card">
       <div>
-        <h2 style="margin: 0 0 0.25rem; font-size: 1.25rem;">Rack conversion</h2>
-        <div class="muted mono" style="font-size: 0.9rem; margin-top: 0.5rem;">{{ global_racks_completed }} / {{ global_total_racks }} racks</div>
+        <h2 class="dashboard-kpi-card__title">Rack conversion</h2>
+        <div class="muted mono dashboard-kpi-card__meta">{{ global_racks_completed }} / {{ global_total_racks }} racks</div>
       </div>
-      <div style="text-align: right;">
+      <div class="dashboard-kpi-card__value-wrap">
         <div class="dashboard-kpi-pct{% if dashboard_rack_trend == 'up' %} dashboard-kpi-pct--up{% elif dashboard_rack_trend == 'down' %} dashboard-kpi-pct--down{% endif %}">
           <span class="dashboard-kpi-pct__value">{{ "%.1f"|format(global_rack_conversion_rate * 100) }}</span><span class="dashboard-kpi-pct__suffix">%</span>
           {% if dashboard_rack_trend == 'up' %}<div class="dashboard-trend-bubble" title="Trending Up"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M7 17L17 7M17 7H9M17 7V15" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>{% elif dashboard_rack_trend == 'down' %}<div class="dashboard-trend-bubble" title="Trending Down"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M7 7L17 17M17 17H9M17 17V9" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>{% endif %}
@@ -119,10 +119,10 @@
 
       {% if ns.active_program %}
         <h2 class="stat-card__value">{{ ns.active_program.name }}</h2>
-        <p style="opacity:0.8; margin-bottom:1.5rem">Duration: {{ ns.active_program.duration_days }} days</p>
+        <p class="dashboard-start-session-note">Duration: {{ ns.active_program.duration_days }} days</p>
       {% else %}
         <h2 class="stat-card__value">No active program</h2>
-        <p style="opacity:0.8; margin-bottom:1.5rem">Select or create to begin.</p>
+        <p class="dashboard-start-session-note">Select or create to begin.</p>
       {% endif %}
 
       {% if ns.has_plan %}
@@ -146,13 +146,13 @@
           </select>
         </label>
         <div class="row row--spread">
-          <label style="flex:1">Table
+          <label class="dashboard-flex-label">Table
             <select name="table_type">
               <option value="eight_ft" selected>8 ft</option>
               <option value="nine_ft">9 ft</option>
             </select>
           </label>
-          <label style="flex:1">Mode
+          <label class="dashboard-flex-label">Mode
             <select name="mode">
               <option value="rack">Rack</option>
               <option value="position">Position</option>
@@ -170,19 +170,19 @@
 
     <!-- Secondary: Program Management -->
     <article class="card settings-card">
-      <div class="row row--spread" style="margin-bottom:1.5rem">
-        <h2 style="margin:0">Programs</h2>
+      <div class="row row--spread dashboard-row-gap-lg">
+        <h2 class="dashboard-heading-compact">Programs</h2>
         <button type="button" class="btn btn--ghost btn--sm" id="btn-create-program">New program</button>
       </div>
 
       {% if programs_root.programs %}
       <ul class="list list--programs">
         {% for p in programs_root.programs %}
-        <li style="padding:1rem 0">
+        <li class="dashboard-program-item">
           <div class="row row--spread">
             <div>
-              <strong style="color:var(--text)">{{ p.name }}</strong>
-              <span class="muted" style="margin-left:0.5rem">{{ p.duration_days }} days</span>
+              <strong class="dashboard-program-name">{{ p.name }}</strong>
+              <span class="muted dashboard-inline-gap-sm">{{ p.duration_days }} days</span>
               {% if p.active %}<span class="pill pill--active">Active</span>{% endif %}
             </div>
             <div class="row-actions">
@@ -196,20 +196,20 @@
           {% if p.plans %}
           <ul class="list list--nested">
             {% for pl in p.plans %}
-            <li class="row row--spread" style="padding:0.35rem 0">
+            <li class="row row--spread dashboard-nested-item">
               <span class="small">{{ pl.name }} · {{ pl.focus_type.value }}</span>
             </li>
             {% endfor %}
           </ul>
           {% endif %}
-          <button type="button" class="btn btn--ghost btn--icon" style="margin-top:0.5rem" onclick="document.getElementById('plan-modal').showModal(); document.querySelector('#plan-modal select[name=\'program_id\']').value = '{{ p.id }}'">+ Add Plan</button>
+          <button type="button" class="btn btn--ghost btn--icon dashboard-add-plan-btn" data-open-modal="plan-modal" data-program-id="{{ p.id }}">+ Add Plan</button>
         </li>
         {% endfor %}
       </ul>
       {% else %}
-      <div class="dashboard__new" style="margin-top:1rem">
+      <div class="dashboard__new dashboard-new-top-gap">
         <span class="muted">Let's set up your first training journey.</span>
-        <button type="button" class="btn" onclick="document.getElementById('program-modal').showModal()">Create program</button>
+        <button type="button" class="btn" data-open-modal="program-modal">Create program</button>
       </div>
       {% endif %}
     </article>
@@ -252,12 +252,12 @@
             <td>{{ s.total_racks }}</td>
             <td>{{ s.total_misses }}</td>
             <td class="dashboard-ref-col">
-              <form method="post" action="/actions/dashboard/reference-session" style="margin:0">
+              <form method="post" action="/actions/dashboard/reference-session" class="dashboard-form-reset">
                 <input type="hidden" name="session_id" value="{{ s.id }}">
                 <button type="submit" class="btn btn--ghost btn--sm" title="Recalculate tier and KPIs from this session onward">Set</button>
               </form>
             </td>
-            <td class="actions" style="justify-content:flex-end">
+            <td class="actions dashboard-actions-end">
               {% if s.status.value == 'in_progress' %}
               <a class="btn btn--pr btn--small" href="/session/{{ s.id }}">Open</a>
               {% else %}
@@ -270,7 +270,7 @@
       </table>
     </div>
     {% else %}
-    <div style="padding: 2rem; text-align:center; background: var(--surface2); border-radius: var(--radius)">
+    <div class="dashboard-empty-sessions">
       <p class="muted">No sessions yet. Start one above.</p>
     </div>
     {% endif %}
@@ -280,26 +280,26 @@
 <!-- Modals -->
 <dialog id="program-modal" class="modal">
   <form method="post" action="/actions/program" class="modal__body">
-    <div class="row row--spread" style="margin-bottom:1rem">
-      <h2 style="margin:0">New program</h2>
-      <button type="button" class="btn btn--icon" onclick="this.closest('dialog').close()">&times;</button>
+    <div class="row row--spread dashboard-row-gap-md">
+      <h2 class="dashboard-heading-compact">New program</h2>
+      <button type="button" class="btn btn--icon" data-close-dialog>&times;</button>
     </div>
     <div class="form-grid">
       <label>Name<input name="name" required placeholder="e.g. Precision"></label>
       <label>Duration (days)<input name="duration_days" type="number" min="1" value="90"></label>
     </div>
     <menu class="modal__actions miss-modal__actions">
-      <button type="button" class="btn btn--ghost" onclick="this.closest('dialog').close()">Cancel</button>
+      <button type="button" class="btn btn--ghost" data-close-dialog>Cancel</button>
       <button type="submit" class="btn btn--primary">Create program</button>
     </menu>
   </form>
 </dialog>
 
 <dialog id="plan-modal" class="modal">
-  <form method="post" action="/actions/plan" class="modal__body" style="max-height:85vh; overflow-y:auto;">
-    <div class="row row--spread" style="margin-bottom:1rem">
-      <h2 style="margin:0">Add plan</h2>
-      <button type="button" class="btn btn--icon" onclick="this.closest('dialog').close()">&times;</button>
+  <form method="post" action="/actions/plan" class="modal__body dashboard-plan-modal-body">
+    <div class="row row--spread dashboard-row-gap-md">
+      <h2 class="dashboard-heading-compact">Add plan</h2>
+      <button type="button" class="btn btn--icon" data-close-dialog>&times;</button>
     </div>
     <div class="form-grid">
       <label>Program
@@ -317,13 +317,13 @@
           <option value="mixed" selected>Mixed</option>
         </select>
       </label>
-      <div class="row row--spread" style="flex-wrap: wrap;">
-        <label style="flex:1; min-width: 140px; box-sizing: border-box;">Target diameter (cm)<input name="target_diameter_cm" type="number" step="0.1" placeholder="20" style="width: 100%;"></label>
-        <label style="flex:1; min-width: 140px; box-sizing: border-box;">Sessions / week<input name="sessions_per_week" type="number" min="1" placeholder="4" style="width: 100%;"></label>
+      <div class="row row--spread dashboard-wrap-row">
+        <label class="dashboard-modal-field">Target diameter (cm)<input name="target_diameter_cm" type="number" step="0.1" placeholder="20" class="dashboard-input-full"></label>
+        <label class="dashboard-modal-field">Sessions / week<input name="sessions_per_week" type="number" min="1" placeholder="4" class="dashboard-input-full"></label>
       </div>
     </div>
     <menu class="modal__actions miss-modal__actions">
-      <button type="button" class="btn btn--ghost" onclick="this.closest('dialog').close()">Cancel</button>
+      <button type="button" class="btn btn--ghost" data-close-dialog>Cancel</button>
       <button type="submit" class="btn btn--primary">Save plan</button>
     </menu>
   </form>
@@ -331,19 +331,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const btnCreateProgram = document.getElementById('btn-create-program');
-    const programModal = document.getElementById('program-modal');
-    if (btnCreateProgram && programModal) {
-      btnCreateProgram.addEventListener('click', () => programModal.showModal());
-    }
-
-    const btnAddPlan = document.getElementById('btn-add-plan');
-    const planModal = document.getElementById('plan-modal');
-    if (btnAddPlan && planModal) {
-      btnAddPlan.addEventListener('click', () => planModal.showModal());
-    }
-  });
-</script>
+<script src="{{ url_for('static', path='js/dashboard/dashboard.js') }}?v=1.0" defer></script>
 {% endblock %}

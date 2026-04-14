@@ -1,31 +1,25 @@
-<dialog id="pool-coach-dialog" class="modal" style="max-width: 52rem; width: 94vw; overflow-x: hidden; overflow-y: auto;">
-  <style>
-    @keyframes ai-spin { 100% { transform: rotate(360deg); } }
-    .ai-spinner { animation: ai-spin 1s linear infinite; stroke: #7c3aed; }
-  </style>
-  <div class="modal__body" style="padding: 2rem;">
-    <div style="display: flex; align-items: center; gap: 0.75rem; border-bottom: 2px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.5rem; position: relative;">
+<dialog id="pool-coach-dialog" class="modal">
+  <div class="modal__body pool-coach-modal__body">
+    <div class="pool-coach-modal__header">
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
-      <h2 style="margin: 0; font-size: 1.5rem; font-weight: 700; color: var(--text);">AI coach</h2>
-      <button type="button" class="btn btn--icon" id="pool-coach-close" aria-label="Close"
-        style="position: absolute; top: -1rem; right: -1rem; font-size: 1.5rem; background: transparent; border: none; cursor: pointer;">&times;</button>
+      <h2 class="pool-coach-modal__title">AI coach</h2>
+      <button type="button" class="btn btn--icon pool-coach-modal__close" id="pool-coach-close" aria-label="Close">&times;</button>
     </div>
     
-    <div id="pool-coach-status" style="margin: 0; min-height: 1.5em; display: flex; align-items: center; gap: 0.5rem; font-weight: 500; color: var(--muted);"></div>
+    <div id="pool-coach-status"></div>
     
-    <div id="pool-coach-body"
-      style="white-space: pre-wrap; word-wrap: break-word; overflow-x: hidden; max-height: 55vh; overflow-y: auto; margin-top: 0.5rem; line-height: 1.6; color: var(--text); font-size: 1.05rem;"></div>
+    <div id="pool-coach-body"></div>
       
-    <menu style="margin: 1.5rem 0 0; padding: 0; display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 0.75rem;">
-      <button type="button" class="btn" id="pool-coach-regenerate" style="display: none; align-items: center; gap: 0.5rem; background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); color: white; border: none; box-shadow: 0 2px 10px rgba(124, 58, 237, 0.3); font-weight: 600;">
+    <menu class="pool-coach-modal__actions">
+      <button type="button" class="btn" id="pool-coach-regenerate">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
         Regenerate
       </button>
-      <button type="button" class="btn" id="pool-coach-copy" style="background: var(--surface2, #eee); color: var(--text); border: none; display: none; align-items: center; gap: 0.5rem;">
+      <button type="button" class="btn" id="pool-coach-copy">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
         Copy
       </button>
-      <button type="button" class="btn" id="pool-coach-dismiss" style="background: var(--surface2, #eee); color: var(--text); border: none;">Close</button>
+      <button type="button" class="btn" id="pool-coach-dismiss">Close</button>
     </menu>
   </div>
 </dialog>

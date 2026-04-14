@@ -312,6 +312,12 @@
       }
     });
   }
+  document.querySelectorAll(".btn-cancel-dialog").forEach((el) => {
+    el.addEventListener("click", () => {
+      const dlg = el.closest("dialog");
+      if (dlg) dlg.close();
+    });
+  });
   missCancel.addEventListener("click", () => dialog.close());
   rackCancel.addEventListener("click", () => rackDialog.close());
 

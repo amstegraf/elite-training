@@ -33,13 +33,13 @@
     <article class="card card--live hud-actions-card">
       <div id="rules-banner" class="rules-banner" hidden></div>
       
-      <div class="hud-cta-container" style="display:flex; flex-direction:column; align-items:center; gap: 2rem;">
+      <div class="hud-cta-container session-hud-cta-stack">
         
-        <div class="massive-timer-container" style="text-align:center;">
-          <div id="session-duration" style="font-size: 4rem; font-weight: 700; line-height: 1; color: var(--text); font-family: 'Outfit', sans-serif; letter-spacing: -1.5px; margin-bottom: 0.5rem;">00:00:00</div>
-          <button type="button" class="btn btn--ghost btn--sm" id="btn-pause" style="border-radius: 999px; padding-left: 1rem; padding-right: 1rem;">
-            <svg id="icon-pause" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block; margin-right:6px; vertical-align:text-bottom;"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
-            <svg id="icon-play" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none; margin-right:6px; vertical-align:text-bottom;"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+        <div class="massive-timer-container session-timer-center">
+          <div id="session-duration" class="session-duration-display">00:00:00</div>
+          <button type="button" class="btn btn--ghost btn--sm session-pause-btn" id="btn-pause">
+            <svg id="icon-pause" class="session-pause-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+            <svg id="icon-play" class="session-play-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
             <span id="btn-pause-text">Pause timing</span>
           </button>
         </div>
@@ -52,14 +52,14 @@
         </button>
       </div>
       
-      <div class="row row--spread" style="margin-top:1.5rem">
+      <div class="row row--spread session-row-top-gap">
         <div class="row-actions">
           <button type="button" class="btn" id="btn-end-rack">End rack</button>
           <button type="button" class="btn" id="btn-new-rack" disabled>Start next rack</button>
         </div>
         <button type="button" class="btn btn--ghost" id="btn-end-session">End session</button>
       </div>
-      <p class="muted small" id="rack-state-hint" style="margin-top: 1rem;"></p>
+      <p class="muted small session-rack-hint" id="rack-state-hint"></p>
     </article>
 
     <div class="session-side-stack">
@@ -101,17 +101,17 @@
   <form method="dialog" id="miss-form" class="modal__body miss-modal">
     <div class="miss-modal__header">
       <h2>Log miss</h2>
-      <p style="color: rgba(255,255,255,0.7); margin: 0; font-size: 0.85rem;">Track what went wrong</p>
-      <button type="button" class="miss-modal__close btn-cancel-dialog" onclick="document.getElementById('miss-dialog').close()" style="position: absolute; top: 1.25rem; right: 1.25rem; background: none; border: none; color: white; cursor: pointer; opacity: 0.7;">
+      <p class="session-modal-subtle">Track what went wrong</p>
+      <button type="button" class="miss-modal__close btn-cancel-dialog session-dialog-close session-dialog-close-btn">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
       </button>
     </div>
     
     <div class="miss-modal__content">
     
-    <div class="miss-modal__group" style="margin-bottom: 2rem">
+    <div class="miss-modal__group session-group-gap-lg">
       <span class="miss-section-title">BALL MISSED</span>
-      <div class="ball-grid-new" style="display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; max-width: 340px; margin: 0 auto;">
+      <div class="ball-grid-new session-ball-grid-new">
         <label class="ball-chip ball-1"><input type="radio" name="ball_number" value="1" required><span>1</span></label>
         <label class="ball-chip ball-2"><input type="radio" name="ball_number" value="2" required><span>2</span></label>
         <label class="ball-chip ball-3"><input type="radio" name="ball_number" value="3" required><span>3</span></label>
@@ -124,13 +124,13 @@
       </div>
     </div>
     
-    <div class="miss-modal__group" style="margin-bottom: 1.5rem;">
+    <div class="miss-modal__group session-group-gap-md">
       <span class="miss-section-title">WHAT WENT WRONG</span>
       <div class="miss-reasons-grid">
         <label class="reason-chip">
           <input type="checkbox" name="types" value="position"> 
           <div class="reason-chip-content">
-            <div class="icon-box" style="color: #ff694b;">
+            <div class="icon-box session-icon-position">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="1" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="1" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="23" y2="12"/></svg>
             </div>
             <div class="text-box">
@@ -142,7 +142,7 @@
         <label class="reason-chip">
           <input type="checkbox" name="types" value="alignment"> 
           <div class="reason-chip-content">
-            <div class="icon-box" style="color: #f472b6;">
+            <div class="icon-box session-icon-alignment">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
             </div>
             <div class="text-box">
@@ -154,7 +154,7 @@
         <label class="reason-chip">
           <input type="checkbox" name="types" value="delivery"> 
           <div class="reason-chip-content">
-            <div class="icon-box" style="color: #64748b;">
+            <div class="icon-box session-icon-delivery">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
             </div>
             <div class="text-box">
@@ -166,7 +166,7 @@
         <label class="reason-chip">
           <input type="checkbox" name="types" value="speed"> 
           <div class="reason-chip-content">
-            <div class="icon-box" style="color: #38bdf8;">
+            <div class="icon-box session-icon-speed">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 14l4-4"/><path d="M3.34 16a10 10 0 1 1 17.32 0"/></svg>
             </div>
             <div class="text-box">
@@ -223,13 +223,13 @@
   <form method="dialog" id="rack-end-form" class="modal__body miss-modal">
     <div class="miss-modal__header">
       <h2>End rack</h2>
-      <p style="color: rgba(255,255,255,0.7); margin: 0; font-size: 0.85rem;">Select the balls you successfully potted this rack.</p>
+      <p class="session-modal-subtle">Select the balls you successfully potted this rack.</p>
     </div>
     
     <div class="miss-modal__content">
     
     <div class="miss-modal__group">
-      <span class="label-text" style="text-align: center;">Balls potted</span>
+      <span class="label-text session-label-center">Balls potted</span>
       <div class="ball-grid">
         <label class="ball-chip end-ball-chip ball-1"><input type="checkbox" name="end_ball" class="end-ball-checkbox" value="1"><span>1</span></label>
         <label class="ball-chip end-ball-chip ball-2"><input type="checkbox" name="end_ball" class="end-ball-checkbox" value="2"><span>2</span></label>
@@ -243,8 +243,8 @@
       </div>
     </div>
     
-    <div class="muted small" style="text-align: center; margin-top: 0.5rem; font-size: 0.95rem;">
-      <strong id="end-rack-count" style="color: var(--text); font-size: 1.1rem;">0</strong> balls cleared
+    <div class="muted small session-end-rack-count-wrap">
+      <strong id="end-rack-count" class="session-end-rack-count">0</strong> balls cleared
     </div>
 
     <div class="miss-modal__actions">

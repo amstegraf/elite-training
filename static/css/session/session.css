@@ -665,6 +665,115 @@
   padding: 1.5rem 0;
 }
 
+.session-hud-cta-stack {
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.session-timer-center {
+  text-align: center;
+}
+
+.session-duration-display {
+  font-size: 4rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+  font-family: "Outfit", sans-serif;
+  letter-spacing: -1.5px;
+  margin-bottom: 0.5rem;
+}
+
+.session-pause-btn {
+  border-radius: 999px;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.session-pause-icon,
+.session-play-icon {
+  display: inline-block;
+  margin-right: 6px;
+  vertical-align: text-bottom;
+}
+
+.session-play-icon {
+  display: none;
+}
+
+.session-row-top-gap {
+  margin-top: 1.5rem;
+}
+
+.session-rack-hint {
+  margin-top: 1rem;
+}
+
+.session-modal-subtle {
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.session-dialog-close-btn {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.session-group-gap-lg {
+  margin-bottom: 2rem;
+}
+
+.session-group-gap-md {
+  margin-bottom: 1.5rem;
+}
+
+.session-ball-grid-new {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  max-width: 340px;
+  margin: 0 auto;
+}
+
+.session-icon-position {
+  color: #ff694b;
+}
+
+.session-icon-alignment {
+  color: #f472b6;
+}
+
+.session-icon-delivery {
+  color: #64748b;
+}
+
+.session-icon-speed {
+  color: #38bdf8;
+}
+
+.session-label-center {
+  text-align: center;
+}
+
+.session-end-rack-count-wrap {
+  text-align: center;
+  margin-top: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.session-end-rack-count {
+  color: var(--text);
+  font-size: 1.1rem;
+}
+
 .btn-log-massive {
   width: 100%;
   max-width: 320px;

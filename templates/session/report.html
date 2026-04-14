@@ -11,8 +11,8 @@
       <h1>Session report</h1>
       <p class="lede mono"><span class="local-session-range local-session-range--friendly" data-start="{{ session.started_at }}" data-end="{{ session.ended_at or '' }}"></span></p>
     </div>
-    <div class="row-actions" style="display: flex; gap: 0.5rem; align-items: center;">
-      <button type="button" class="btn btn--ai" data-pool-coach-scope="session" data-session-id="{{ session.id }}" style="background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); color: white; border: none; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25); border-radius: 99px; display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.25rem; font-family: var(--font); font-weight: 600; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="if (!this.disabled) { this.style.transform='scale(1.05)'; this.style.boxShadow='0 6px 16px rgba(124, 58, 237, 0.35)'; }" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 12px rgba(124, 58, 237, 0.25)'">
+    <div class="row-actions">
+      <button type="button" class="btn btn--ai btn--ai-coach" data-pool-coach-scope="session" data-session-id="{{ session.id }}">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
         AI Analysis
       </button>
@@ -21,9 +21,9 @@
     </div>
   </header>
 
-  <div class="grid grid--2" style="margin-bottom: 1.5rem; align-items: stretch;">
+  <div class="grid grid--2 report-grid-main">
     <!-- Performance Layer -->
-    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+    <div class="report-stack">
       <div class="reports__kpi-grid">
         <article class="stat-card stat-card--pr">
           <div class="stat-card__label">Avg balls / rack</div>
@@ -37,10 +37,10 @@
         
         <article class="stat-card">
           <div class="stat-card__label">Best run</div>
-          <div class="stat-card__value">{{ session.best_run_balls }} <span style="font-size: 1rem; color: var(--muted); font-weight: normal;">balls</span></div>
+          <div class="stat-card__value">{{ session.best_run_balls }} <span class="report-unit-muted">balls</span></div>
         </article>
         
-        <div style="display: flex; align-items: center; justify-content: flex-start; padding-left: 0.5rem;">
+        <div class="report-tier-cell">
           {% if training_tier %}
             {% set tier = training_tier %}
             {% include 'partials/tier_badge.html' %}
@@ -53,111 +53,111 @@
           <div class="stat-card__label">Flow efficiency</div>
           <div class="stat-card__value">
             {% if session.conversion_efficiency is not none %}
-            {{ "%.1f"|format(session.conversion_efficiency * 100) }}<span style="font-size: 1rem; color: var(--muted); font-weight: normal;">%</span>
+            {{ "%.1f"|format(session.conversion_efficiency * 100) }}<span class="report-unit-muted">%</span>
             {% else %}—{% endif %}
           </div>
-          <p class="muted" style="margin: 0.5rem 0 0; font-size: 0.8rem; line-height: 1.35;">Continuity despite soft logs.</p>
+          <p class="muted report-kpi-note">Continuity despite soft logs.</p>
         </article>
         
         <article class="stat-card">
           <div class="stat-card__label">True miss rate</div>
           <div class="stat-card__value">
             {% if session.true_miss_rate is not none %}
-            {{ "%.2f"|format(session.true_miss_rate) }}<span style="font-size: 1rem; color: var(--muted); font-weight: normal;"> / rack</span>
+            {{ "%.2f"|format(session.true_miss_rate) }}<span class="report-unit-muted"> / rack</span>
             {% else %}—{% endif %}
           </div>
-          <p class="muted" style="margin: 0.5rem 0 0; font-size: 0.8rem; line-height: 1.35;">Hard run-ending failures per rack.</p>
+          <p class="muted report-kpi-note">Hard run-ending failures per rack.</p>
         </article>
       </div>
     </div>
     
     <!-- Consistency & Execution Layer -->
-    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-      <article class="card" style="flex: 1;">
-        <h2 style="margin: 0 0 1rem; font-size: 1.15rem;">Rack Consistency</h2>
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; height: 100%;">
-          <div style="text-align: center; padding: 1rem; background: var(--surface2); border-radius: 12px; display: flex; flex-direction: column; justify-content: center;">
-            <div class="muted" style="font-size: 0.85rem; margin-bottom: 0.25rem;">Worst</div>
-            <div style="font-size: 2rem; font-weight: 700; color: #dc2626;">{% if session.worst_rack_balls_cleared is not none %}{{ session.worst_rack_balls_cleared }}{% else %}—{% endif %}</div>
+    <div class="report-stack">
+      <article class="card report-card-grow">
+        <h2 class="report-card-heading">Rack Consistency</h2>
+        <div class="report-consistency-grid">
+          <div class="report-consistency-item report-consistency-item--worst">
+            <div class="muted report-consistency-label">Worst</div>
+            <div class="report-consistency-value report-consistency-value--worst">{% if session.worst_rack_balls_cleared is not none %}{{ session.worst_rack_balls_cleared }}{% else %}—{% endif %}</div>
           </div>
-          <div style="text-align: center; padding: 1rem; background: var(--surface); box-shadow: var(--shadow); border-radius: 12px; display: flex; flex-direction: column; justify-content: center;">
-            <div class="muted" style="font-size: 0.85rem; margin-bottom: 0.25rem;">Average</div>
-            <div style="font-size: 2rem; font-weight: 700;">{% if session.avg_balls_cleared_per_rack is not none %}{{ "%.2f"|format(session.avg_balls_cleared_per_rack) }}{% else %}—{% endif %}</div>
+          <div class="report-consistency-item report-consistency-item--avg">
+            <div class="muted report-consistency-label">Average</div>
+            <div class="report-consistency-value">{% if session.avg_balls_cleared_per_rack is not none %}{{ "%.2f"|format(session.avg_balls_cleared_per_rack) }}{% else %}—{% endif %}</div>
           </div>
-          <div style="text-align: center; padding: 1rem; background: var(--pr); border-radius: 12px; display: flex; flex-direction: column; justify-content: center;">
-            <div class="muted" style="font-size: 0.85rem; margin-bottom: 0.25rem;">Best</div>
-            <div style="font-size: 2rem; font-weight: 700;">{% if session.best_rack_balls_cleared is not none %}{{ session.best_rack_balls_cleared }}{% else %}—{% endif %}</div>
+          <div class="report-consistency-item report-consistency-item--best">
+            <div class="muted report-consistency-label">Best</div>
+            <div class="report-consistency-value">{% if session.best_rack_balls_cleared is not none %}{{ session.best_rack_balls_cleared }}{% else %}—{% endif %}</div>
           </div>
         </div>
       </article>
       
-      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem;">
-        <article class="stat-card" style="display: flex; flex-direction: column; justify-content: flex-start; padding: 1.25rem 1.5rem; background: var(--surface);">
-          <h2 style="margin: 0 0 0.5rem; font-size: 1.1rem; color: var(--text);">Pot success</h2>
-          <div style="font-size: 2.25rem; font-weight: 700; line-height: 1; color: var(--text); margin-bottom: 0.5rem;">
-            {% if session.pot_success_rate is not none %}{{ "%.1f"|format(session.pot_success_rate * 100) }}<span style="font-size: 1.25rem; color: var(--muted); font-weight: 600;">%</span>{% else %}—{% endif %}
+      <div class="report-kpi-triple">
+        <article class="stat-card report-kpi-tile">
+          <h2 class="report-kpi-tile__title">Pot success</h2>
+          <div class="report-kpi-tile__value">
+            {% if session.pot_success_rate is not none %}{{ "%.1f"|format(session.pot_success_rate * 100) }}<span class="report-kpi-tile__suffix">%</span>{% else %}—{% endif %}
           </div>
-          <span class="muted mono" style="font-size: 0.85rem;">{{ session.total_balls_cleared }} / {{ session.pot_attempts }} attempts</span>
+          <span class="muted mono report-kpi-tile__meta">{{ session.total_balls_cleared }} / {{ session.pot_attempts }} attempts</span>
         </article>
 
-        <article class="stat-card" style="display: flex; flex-direction: column; justify-content: flex-start; padding: 1.25rem 1.5rem; background: var(--surface);">
-          <h2 style="margin: 0 0 0.5rem; font-size: 1.1rem; color: var(--text);">Pos. outcome</h2>
-          <div style="font-size: 2.25rem; font-weight: 700; line-height: 1; color: var(--text); margin-bottom: 0.5rem;">
-            {% if session.position_success_rate is not none %}{{ "%.1f"|format(session.position_success_rate * 100) }}<span style="font-size: 1.25rem; color: var(--muted); font-weight: 600;">%</span>{% else %}—{% endif %}
+        <article class="stat-card report-kpi-tile">
+          <h2 class="report-kpi-tile__title">Pos. outcome</h2>
+          <div class="report-kpi-tile__value">
+            {% if session.position_success_rate is not none %}{{ "%.1f"|format(session.position_success_rate * 100) }}<span class="report-kpi-tile__suffix">%</span>{% else %}—{% endif %}
           </div>
-          <span class="muted mono" style="font-size: 0.85rem;">{{ session.position_related_miss_count }} / {{ session.total_balls_cleared }}</span>
+          <span class="muted mono report-kpi-tile__meta">{{ session.position_related_miss_count }} / {{ session.total_balls_cleared }}</span>
         </article>
 
-        <article class="stat-card" style="display: flex; flex-direction: column; justify-content: flex-start; padding: 1.25rem 1.5rem; background: var(--surface);">
-          <h2 style="margin: 0 0 0.5rem; font-size: 1.1rem; color: var(--text);">Conversion</h2>
-          <div style="font-size: 2.25rem; font-weight: 700; line-height: 1; color: var(--text); margin-bottom: 0.5rem;">
-            {% if session.rack_conversion_rate is not none %}{{ "%.1f"|format(session.rack_conversion_rate * 100) }}<span style="font-size: 1.25rem; color: var(--muted); font-weight: 600;">%</span>{% else %}—{% endif %}
+        <article class="stat-card report-kpi-tile">
+          <h2 class="report-kpi-tile__title">Conversion</h2>
+          <div class="report-kpi-tile__value">
+            {% if session.rack_conversion_rate is not none %}{{ "%.1f"|format(session.rack_conversion_rate * 100) }}<span class="report-kpi-tile__suffix">%</span>{% else %}—{% endif %}
           </div>
-          <span class="muted mono" style="font-size: 0.85rem;">{{ session.racks_completed }} / {{ session.total_racks }} racks</span>
+          <span class="muted mono report-kpi-tile__meta">{{ session.racks_completed }} / {{ session.total_racks }} racks</span>
         </article>
       </div>
     </div>
   </div>
 
-  <div class="reports__kpi-grid" style="margin-bottom: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));">
+  <div class="reports__kpi-grid report-kpi-grid-compact">
     <!-- Row: Misses & Recoveries -->
     <article class="stat-card stat-card--fr">
       <div class="stat-card__label">True misses (Break)</div>
       <div class="stat-card__value">{{ session.true_miss_count }}</div>
     </article>
     
-    <article class="stat-card" style="background: var(--surface2);">
+    <article class="stat-card report-kpi-muted-card">
       <div class="stat-card__label">Training misses (Soft)</div>
-      <div class="stat-card__value" style="color: var(--text);">{{ session.training_miss_count }}</div>
+      <div class="stat-card__value report-value-text">{{ session.training_miss_count }}</div>
     </article>
     
-    <article class="stat-card" style="background: var(--surface2);">
+    <article class="stat-card report-kpi-muted-card">
       <div class="stat-card__label">Total physical misses</div>
-      <div class="stat-card__value" style="color: var(--muted);">{{ session.total_misses }}</div>
+      <div class="stat-card__value report-value-muted">{{ session.total_misses }}</div>
     </article>
 
-    <article class="stat-card" style="background: var(--surface);">
-      <div class="stat-card__label" style="color: #6d28d9;">Recovery rate</div>
+    <article class="stat-card report-kpi-surface-card">
+      <div class="stat-card__label report-label-violet">Recovery rate</div>
       <div class="stat-card__value">
         {% if session.recovery_rate is not none %}
-        {{ "%.1f"|format(session.recovery_rate * 100) }}<span style="font-size: 1rem; color: var(--muted); font-weight: normal;">%</span>
+        {{ "%.1f"|format(session.recovery_rate * 100) }}<span class="report-unit-muted">%</span>
         {% else %}—{% endif %}
       </div>
     </article>
 
-    <article class="stat-card" style="background: var(--surface);">
-      <div class="stat-card__label" style="color: #b91c1c;">Failed recovery rate</div>
+    <article class="stat-card report-kpi-surface-card">
+      <div class="stat-card__label report-label-red">Failed recovery rate</div>
       <div class="stat-card__value">
         {% if session.failed_recovery_rate is not none %}
-        {{ "%.1f"|format(session.failed_recovery_rate * 100) }}<span style="font-size: 1rem; color: var(--muted); font-weight: normal;">%</span>
+        {{ "%.1f"|format(session.failed_recovery_rate * 100) }}<span class="report-unit-muted">%</span>
         {% else %}—{% endif %}
       </div>
     </article>
 
-    <article class="stat-card" style="background: var(--surface2);">
+    <article class="stat-card report-kpi-muted-card">
       <div class="stat-card__label">Recovered / Failed</div>
-      <div class="stat-card__value" style="color: var(--muted);">
-        <span style="color: #6d28d9;">{{ session.recovery_count }}</span> / <span style="color: #dc2626;">{{ session.failed_recovery_count }}</span>
+      <div class="stat-card__value report-value-muted">
+        <span class="report-value-violet">{{ session.recovery_count }}</span> / <span class="report-value-red">{{ session.failed_recovery_count }}</span>
       </div>
     </article>
   </div>
@@ -176,7 +176,7 @@
         <div class="bar-row">
           <div class="bar-label">{{ label }}</div>
           <div class="bar-track">
-            <div class="bar-fill" style="width: {{ val }}%; background-color: {{ color }};"></div>
+            <div class="bar-fill" data-width="{{ val }}" data-color="{{ color }}"></div>
           </div>
           <div class="bar-val">{{ val }}%</div>
         </div>
@@ -184,63 +184,63 @@
       </div>
     </article>
 
-    <article class="card card--wide" style="display: flex; flex-direction: column;">
-      <h2 style="margin-bottom: 0;">Session Details</h2>
+    <article class="card card--wide report-details-card">
+      <h2 class="report-details-title">Session Details</h2>
       
-      <div style="flex-grow: 1; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-top: 1.5rem; align-content: space-between;">
+      <div class="report-details-grid">
         
         <div>
-          <h3 class="eyebrow" style="margin-bottom: 0.75rem;">Profile & Time</h3>
+          <h3 class="eyebrow report-subheading">Profile & Time</h3>
           <dl class="kv kv--spread">
-            <dt>Table</dt><dd class="mono" style="text-transform: capitalize;">{{ session.table_type.value }}</dd>
-            <dt>Mode</dt><dd class="mono" style="text-transform: capitalize;">{{ session.mode.value }}</dd>
+            <dt>Table</dt><dd class="mono report-capitalize">{{ session.table_type.value }}</dd>
+            <dt>Mode</dt><dd class="mono report-capitalize">{{ session.mode.value }}</dd>
             <dt>Duration</dt><dd class="mono">{{ session.duration_seconds // 3600 }}:{{ "%02d" | format((session.duration_seconds % 3600) // 60) }}:{{ "%02d" | format(session.duration_seconds % 60) }}</dd>
             <dt>Balls cleared</dt><dd class="mono">{{ session.total_balls_cleared }}</dd>
           </dl>
         </div>
 
         <div>
-          <h3 class="eyebrow" style="color: var(--accent-brand); margin-bottom: 0.75rem;">Execution Matrix</h3>
+          <h3 class="eyebrow report-subheading report-subheading--brand">Execution Matrix</h3>
           <dl class="kv kv--spread">
             <dt>Pot success</dt><dd class="mono">{% if session.pot_success_rate is not none %}{{ "%.1f"|format(session.pot_success_rate * 100) }}%{% else %}—{% endif %}</dd>
-            <dt>Pot misses</dt><dd class="mono">{{ session.pot_miss_shot_count }} <span class="muted" style="font-size: 0.75rem;">/ {{ session.pot_attempts }} attempts</span></dd>
+            <dt>Pot misses</dt><dd class="mono">{{ session.pot_miss_shot_count }} <span class="muted report-small-muted">/ {{ session.pot_attempts }} attempts</span></dd>
             <dt>Pos. outcome</dt><dd class="mono">{{ session.position_related_miss_count }} / {{ session.total_balls_cleared }}{% if session.position_success_rate is not none %} — {{ "%.1f"|format(session.position_success_rate * 100) }}%{% endif %}</dd>
           </dl>
         </div>
 
         <div>
-          <h3 class="eyebrow" style="color: var(--pr-dim); margin-bottom: 0.75rem;">Racks & Conversion</h3>
+          <h3 class="eyebrow report-subheading report-subheading--pr">Racks & Conversion</h3>
           <dl class="kv kv--spread">
-            <dt>Total / Run-outs</dt><dd class="mono">{{ session.total_racks }} <span class="muted" style="font-size: 0.75rem;">/ {{ session.racks_completed }} completed</span></dd>
+            <dt>Total / Run-outs</dt><dd class="mono">{{ session.total_racks }} <span class="muted report-small-muted">/ {{ session.racks_completed }} completed</span></dd>
             <dt>Conversion rate</dt><dd class="mono">{% if session.rack_conversion_rate is not none %}{{ "%.1f"|format(session.rack_conversion_rate * 100) }}%{% else %}—{% endif %}</dd>
             <dt>Session tier</dt><dd class="mono">{% if training_tier %}{{ training_tier }}{% else %}—{% endif %}</dd>
           </dl>
         </div>
 
         <div>
-          <h3 class="eyebrow" style="color: #a78bfa; margin-bottom: 0.75rem;">Training Resilience</h3>
+          <h3 class="eyebrow report-subheading report-subheading--lavender">Training Resilience</h3>
           <dl class="kv kv--spread">
             <dt>No shot (pos)</dt><dd class="mono">{{ session.no_shot_position_count }}</dd>
-            <dt>Recoveries</dt><dd class="mono"><span style="color: #6d28d9;">{{ session.recovery_count }}</span></dd>
-            <dt>Failed recoveries</dt><dd class="mono"><span style="color: #db2777;">{{ session.failed_recovery_count }}</span></dd>
+            <dt>Recoveries</dt><dd class="mono"><span class="report-value-violet">{{ session.recovery_count }}</span></dd>
+            <dt>Failed recoveries</dt><dd class="mono"><span class="report-value-fuchsia">{{ session.failed_recovery_count }}</span></dd>
           </dl>
         </div>
 
       </div>
     </article>
 
-  <article class="card card--wide" style="margin-bottom: 1.5rem;">
+  <article class="card card--wide report-card-bottom-gap">
     <h2>Best Run per Rack</h2>
     <p class="muted">Visualize your streaks sequentially across this session.</p>
-    <div style="position: relative; height: 300px; width: 100%;">
+    <div class="report-chart-wrap">
       <canvas id="chart-rack-runs"></canvas>
     </div>
   </article>
 
-  <article class="card card--wide" style="margin-bottom: 1.5rem;">
+  <article class="card card--wide report-card-bottom-gap">
     <h2>Position vs speed tags (per rack)</h2>
     <p class="muted">Granular miss logs: how many misses included a <strong>position</strong> tag vs a <strong>speed</strong> tag on each ended rack (a single miss can contribute to both).</p>
-    <div style="position: relative; height: 300px; width: 100%;">
+    <div class="report-chart-wrap">
       <canvas id="chart-pos-speed-rack"></canvas>
     </div>
   </article>
@@ -289,334 +289,13 @@
 
   <div id="session-rack-tooltip" class="rack-tooltip" hidden role="tooltip"></div>
 
-  <form class="inline-danger" method="dialog" onsubmit="return false;">
+  <form class="inline-danger" method="dialog">
     <button type="button" class="btn btn--ghost" id="btn-delete-session">Delete session</button>
   </form>
 </section>
 {% include "partials/pool_coach_modal.html" %}
+  <div id="report-data" data-chart='{{ chart_data_json|tojson }}' data-session-id="{{ session.id }}" hidden></div>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    (function () {
-      const btn = document.getElementById("btn-delete-session");
-      if (btn) {
-        btn.addEventListener("click", async () => {
-          if (!confirm("Delete this session permanently?")) return;
-          const res = await fetch("/api/sessions/{{ session.id }}", { method: "DELETE" });
-          if (res.ok) {
-            window.location.href = "/history";
-          } else if (window.showToast) {
-            window.showToast("Could not delete session", true);
-          } else {
-            alert("Could not delete session");
-          }
-        });
-      }
-
-      // Chart.js rendering for Best Runs per Rack
-      const rawData = {{ chart_data_json|safe }};
-      const canvas = document.getElementById('chart-rack-runs');
-      if (canvas && rawData.labels && rawData.labels.length > 0) {
-        Chart.defaults.font.family = '"Outfit", "Inter", system-ui, sans-serif';
-        Chart.defaults.color = '#8e9199';
-        Chart.defaults.scale.grid.color = 'rgba(0, 0, 0, 0.04)';
-        
-        new Chart(canvas, {
-          type: 'line',
-          data: {
-            labels: rawData.labels,
-            datasets: [{
-              label: 'Best Run',
-              data: rawData.runs,
-              borderColor: '#ff694b',
-              backgroundColor: 'rgba(255, 105, 75, 0.2)',
-              fill: true,
-              tension: 0.3,
-              borderWidth: 3,
-              pointRadius: 4,
-              pointHoverRadius: 6,
-              pointBorderColor: '#ff694b',
-              pointBackgroundColor: '#fff',
-              pointBorderWidth: 2
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { display: false },
-              tooltip: {
-                backgroundColor: 'rgba(26, 27, 31, 0.9)',
-                titleFont: { size: 13, family: '"Outfit"' },
-                bodyFont: { size: 14, family: '"Cascadia Code", monospace' },
-                padding: 12,
-                cornerRadius: 8,
-              }
-            },
-            scales: {
-              y: { beginAtZero: true, border: { display: false }, max: 9 },
-              x: { grid: { display: false }, border: { display: false } }
-            },
-            interaction: { mode: 'nearest', axis: 'x', intersect: false }
-          }
-        });
-      }
-
-      const posSpdCanvas = document.getElementById('chart-pos-speed-rack');
-      if (
-        posSpdCanvas &&
-        rawData.labels &&
-        rawData.labels.length > 0 &&
-        rawData.position_misses_per_rack &&
-        rawData.speed_misses_per_rack
-      ) {
-        new Chart(posSpdCanvas, {
-          type: 'line',
-          data: {
-            labels: rawData.labels,
-            datasets: [
-              {
-                label: 'Position tags',
-                data: rawData.position_misses_per_rack,
-                borderColor: '#7c3aed',
-                backgroundColor: 'rgba(124, 58, 237, 0.08)',
-                fill: false,
-                tension: 0.3,
-                borderWidth: 3,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                pointBorderColor: '#7c3aed',
-                pointBackgroundColor: '#fff',
-                pointBorderWidth: 2,
-              },
-              {
-                label: 'Speed tags',
-                data: rawData.speed_misses_per_rack,
-                borderColor: '#0284c7',
-                backgroundColor: 'rgba(2, 132, 199, 0.08)',
-                fill: false,
-                tension: 0.3,
-                borderWidth: 3,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                pointBorderColor: '#0284c7',
-                pointBackgroundColor: '#fff',
-                pointBorderWidth: 2,
-              },
-            ],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { display: true, position: 'top' },
-              tooltip: {
-                backgroundColor: 'rgba(26, 27, 31, 0.9)',
-                titleFont: { size: 13, family: '"Outfit"' },
-                bodyFont: { size: 14, family: '"Cascadia Code", monospace' },
-                padding: 12,
-                cornerRadius: 8,
-              },
-            },
-            scales: {
-              y: { beginAtZero: true, ticks: { stepSize: 1 }, border: { display: false } },
-              x: { grid: { display: false }, border: { display: false } },
-            },
-            interaction: { mode: 'index', axis: 'x', intersect: false },
-          },
-        });
-      }
-    })();
-  </script>
-  <script>
-    (function () {
-      const tip = document.getElementById("session-rack-tooltip");
-      if (!tip) return;
-
-      /* Under .table-wrap (overflow-x) fixed descendants can clip in some engines; body is safe. */
-      if (tip.parentElement !== document.body) {
-        document.body.appendChild(tip);
-      }
-
-      let hideTimer = null;
-      let lastAnchor = null;
-      const HIDE_DELAY_MS = 280;
-
-      function clearHideTimer() {
-        if (hideTimer) {
-          clearTimeout(hideTimer);
-          hideTimer = null;
-        }
-      }
-
-      function parseEvents(btn) {
-        const raw = btn.getAttribute("data-tip-events");
-        if (!raw) return null;
-        try {
-          return JSON.parse(raw);
-        } catch (e) {
-          return null;
-        }
-      }
-
-      function isMissBall(btn) {
-        const s = btn.getAttribute("data-state") || "";
-        return s === "miss_hard" || s === "miss_soft";
-      }
-
-      function hideTipNow() {
-        clearHideTimer();
-        tip.hidden = true;
-        tip.classList.remove("rack-tooltip--visible");
-        tip.replaceChildren();
-        lastAnchor = null;
-      }
-
-      function fillTip(btn) {
-        tip.replaceChildren();
-        const surface = document.createElement("div");
-        surface.className = "rack-tooltip__surface";
-
-        const ball = btn.getAttribute("data-ball") || "";
-        const events = parseEvents(btn) || [];
-
-        const title = document.createElement("div");
-        title.className = "rack-tooltip__title";
-        title.textContent = "Ball " + ball + " - Miss";
-        surface.appendChild(title);
-
-        if (events.length) {
-          function addLabeledField(container, labelText, valueText) {
-            const wrap = document.createElement("div");
-            wrap.className = "rack-tooltip__field";
-            const lab = document.createElement("div");
-            lab.className = "rack-tooltip__label";
-            lab.textContent = labelText;
-            const val = document.createElement("div");
-            val.className = "rack-tooltip__value";
-            val.textContent = valueText;
-            wrap.appendChild(lab);
-            wrap.appendChild(val);
-            container.appendChild(wrap);
-          }
-          events.forEach(function (ev, idx) {
-            const block = document.createElement("div");
-            block.className = "rack-tooltip__section";
-            if (events.length > 1) {
-              const k = document.createElement("div");
-              k.className = "rack-tooltip__kicker";
-              k.textContent = "Miss " + (idx + 1);
-              block.appendChild(k);
-            }
-            addLabeledField(block, "Types", ev.types || "—");
-            addLabeledField(block, "Outcome", ev.outcome_label || "—");
-            surface.appendChild(block);
-          });
-        } else {
-          const p = document.createElement("p");
-          p.className = "rack-tooltip__body";
-          p.textContent = "Miss logged (no type details).";
-          surface.appendChild(p);
-        }
-
-        tip.appendChild(surface);
-      }
-
-      function positionTip(anchor) {
-        const rect = anchor.getBoundingClientRect();
-        const margin = 6;
-        tip.style.position = "fixed";
-        tip.style.left = "0px";
-        tip.style.top = "0px";
-        tip.style.zIndex = "2000";
-        tip.hidden = false;
-        tip.style.visibility = "hidden";
-        const tw = tip.offsetWidth;
-        const th = tip.offsetHeight;
-        let left = rect.left + rect.width / 2 - tw / 2;
-        let top = rect.bottom + margin;
-        if (left + tw > window.innerWidth - 8) left = window.innerWidth - tw - 8;
-        if (left < 8) left = 8;
-        if (top + th > window.innerHeight - 8) top = rect.top - th - margin;
-        if (top < 8) top = 8;
-        tip.style.left = left + "px";
-        tip.style.top = top + "px";
-        tip.style.visibility = "visible";
-      }
-
-      function showFor(btn) {
-        if (!isMissBall(btn)) {
-          hideTipNow();
-          return;
-        }
-        clearHideTimer();
-        lastAnchor = btn;
-        fillTip(btn);
-        tip.classList.add("rack-tooltip--visible");
-        positionTip(btn);
-      }
-
-      function scheduleHide() {
-        clearHideTimer();
-        hideTimer = setTimeout(function () {
-          hideTipNow();
-        }, HIDE_DELAY_MS);
-      }
-
-      tip.addEventListener("mouseenter", function () {
-        clearHideTimer();
-      });
-      tip.addEventListener("mouseleave", function () {
-        scheduleHide();
-      });
-
-      document.querySelectorAll(".rack-timeline").forEach(function (row) {
-        row.addEventListener(
-          "focusin",
-          function (e) {
-            const btn = e.target.closest(".rack-ball");
-            if (!btn || !row.contains(btn)) return;
-            showFor(btn);
-          },
-          true
-        );
-        row.addEventListener(
-          "focusout",
-          function () {
-            scheduleHide();
-          },
-          true
-        );
-        row.addEventListener("mouseover", function (e) {
-          const btn = e.target.closest(".rack-ball");
-          if (!btn || !row.contains(btn)) return;
-          showFor(btn);
-        });
-        row.addEventListener("mouseleave", function () {
-          scheduleHide();
-        });
-        row.addEventListener("mousemove", function (e) {
-          const btn = e.target.closest(".rack-ball");
-          if (!btn || !row.contains(btn) || tip.hidden) return;
-          if (!isMissBall(btn)) return;
-          positionTip(btn);
-        });
-      });
-
-      document.addEventListener("keydown", function (e) {
-        if (e.key === "Escape" && !tip.hidden) {
-          hideTipNow();
-        }
-      });
-
-      window.addEventListener(
-        "scroll",
-        function () {
-          if (tip.hidden || !lastAnchor || !isMissBall(lastAnchor)) return;
-          positionTip(lastAnchor);
-        },
-        true
-      );
-    })();
-  </script>
+  <script src="{{ url_for('static', path='js/reports/report.js') }}?v=1.0" defer></script>
   <script src="{{ url_for('static', path='js/reports/pool_coach.js') }}?v=3" defer></script>
 {% endblock %}

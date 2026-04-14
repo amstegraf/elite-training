@@ -1,475 +1,160 @@
 {% extends "settings/_layout.html" %}
 {% block settings_title %}Training tiers{% endblock %}
 {% block settings_body %}
-<section>
-  <header class="page__header" style="margin-bottom: 0;">
+<section class="tiers-page">
+  <header class="page__header settings-page-header">
     <div>
-      <h1 style="margin: 0 0 0.35rem;">Training tiers</h1>
-      <p class="lede" style="margin: 0;">Weighted composite of potting, position outcome, and rack conversion scores.
-        See <span class="mono">docs/matrix-calculation-of-tier.md</span>. Values are saved to <span
-          class="mono">data/tier_settings.json</span> and drive the dashboard badge and session report.</p>
+      <h1 class="settings-page-title">Training tiers</h1>
+      <p class="lede settings-page-lede">Weighted composite of potting, position outcome, and rack conversion scores. See <span class="mono">docs/matrix-calculation-of-tier.md</span>. Values are saved to <span class="mono">data/tier_settings.json</span> and drive the dashboard badge and session report.</p>
     </div>
     <a class="btn btn--ghost" href="/">Dashboard</a>
   </header>
 
   {% if request.query_params.get('saved') == '1' %}
-  <p class="banner" style="margin-top: 1rem;">Settings saved.</p>
+  <p class="banner settings-banner-spaced">Settings saved.</p>
   {% endif %}
   {% if save_error %}
-  <p class="banner banner--warn" style="margin-top: 1rem;">Could not save: {{ save_error }}</p>
+  <p class="banner banner--warn settings-banner-spaced">Could not save: {{ save_error }}</p>
   {% endif %}
 
   {% set ts = tier_settings %}
 
-  <article class="card card--wide"
-    style="margin-top: 1.5rem; background: var(--surface); border: 2px solid var(--border);">
-    <h2 style="margin: 0 0 1rem; font-size: 1.15rem;">Live Tier Sandbox</h2>
-    <p class="muted" style="font-size: 0.9rem; margin-top: 0; margin-bottom: 1.5rem;">Adjust these mock session stats to
-      immediately see how the Configuration Rules below rate your performance. Scores move continuously inside each
-      configured percentage band.</p>
+  <article class="card card--wide settings-card-block tiers-sandbox-card">
+    <h2 class="settings-card-heading">Live Tier Sandbox</h2>
+    <p class="muted tiers-copy">Adjust these mock session stats to immediately see how the Configuration Rules below rate your performance. Scores move continuously inside each configured percentage band.</p>
 
-    <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
-      <!-- Sandbox Inputs -->
-      <div style="flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 1rem;">
-        <label style="display: flex; align-items: center; gap: 1rem;">
-          <div style="width: 100px; font-weight: 500;">Potting %</div>
-          <input type="range" id="mock_pot" min="0" max="100" step="0.1" value="94"
-            style="flex-grow: 1; accent-color: var(--text);">
-          <div id="mock_pot_val" class="mono" style="width: 40px; text-align: right;">94%</div>
+    <div class="tiers-sandbox-grid">
+      <div class="tiers-sandbox-inputs">
+        <label class="tiers-control-row">
+          <div class="tiers-control-label">Potting %</div>
+          <input type="range" id="mock_pot" min="0" max="100" step="0.1" value="94" class="tiers-range tiers-range--sandbox">
+          <div id="mock_pot_val" class="mono tiers-value-pill">94%</div>
         </label>
-        <label style="display: flex; align-items: center; gap: 1rem;">
-          <div style="width: 100px; font-weight: 500;">Position %</div>
-          <input type="range" id="mock_pos" min="0" max="100" step="0.1" value="58"
-            style="flex-grow: 1; accent-color: var(--text);">
-          <div id="mock_pos_val" class="mono" style="width: 40px; text-align: right;">58%</div>
+        <label class="tiers-control-row">
+          <div class="tiers-control-label">Position %</div>
+          <input type="range" id="mock_pos" min="0" max="100" step="0.1" value="58" class="tiers-range tiers-range--sandbox">
+          <div id="mock_pos_val" class="mono tiers-value-pill">58%</div>
         </label>
-        <label style="display: flex; align-items: center; gap: 1rem;">
-          <div style="width: 100px; font-weight: 500;">Convers. %</div>
-          <input type="range" id="mock_conv" min="0" max="100" step="0.1" value="22"
-            style="flex-grow: 1; accent-color: var(--text);">
-          <div id="mock_conv_val" class="mono" style="width: 40px; text-align: right;">22%</div>
+        <label class="tiers-control-row">
+          <div class="tiers-control-label">Convers. %</div>
+          <input type="range" id="mock_conv" min="0" max="100" step="0.1" value="22" class="tiers-range tiers-range--sandbox">
+          <div id="mock_conv_val" class="mono tiers-value-pill">22%</div>
         </label>
       </div>
 
-      <!-- Sandbox Output -->
-      <div
-        style="flex: 1; min-width: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.03); border-radius: var(--radius); padding: 1.5rem;">
-        <div
-          style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; color: var(--muted); font-weight: 600;">
-          Resulting Tier</div>
-        <div id="sandbox_tier" style="font-size: 1.5rem; font-weight: 700; color: var(--accent-brand);">Loading...</div>
-        <div id="sandbox_tp" class="mono"
-          style="margin-top: 0.35rem; font-size: 1.1rem; font-weight: 600; color: var(--text);">0 tier pts</div>
-        <div id="sandbox_note" class="muted small" style="margin-top: 0.45rem; text-align: center;">Label is gated by
-          KPI minima.</div>
+      <div class="tiers-sandbox-output">
+        <div class="tiers-sandbox-kicker">Resulting Tier</div>
+        <div id="sandbox_tier" class="tiers-sandbox-tier">Loading...</div>
+        <div id="sandbox_tp" class="mono tiers-sandbox-points">0 tier pts</div>
+        <div id="sandbox_note" class="muted small tiers-sandbox-note">Label is gated by KPI minima.</div>
       </div>
     </div>
   </article>
 
-  <script>
-    const TIER_NAMES = {{ tier_names | tojson }};
-    function tierPointsCeilingFromScale(scale) {
-      return Math.max(200, scale * 4);
-    }
-    function syncCompPtSliderMaxes() {
-      const scaleEl = document.querySelector('[name=points_scale]');
-      if (!scaleEl) return;
-      const scale = parseInt(scaleEl.value, 10) || 1000;
-      const cap = tierPointsCeilingFromScale(scale);
-      for (let i = 0; i < 5; i++) {
-        const r = document.querySelector('[data-comp-pt-range="' + i + '"]');
-        if (r) {
-          r.max = String(Math.max(cap - 1, 10));
-        }
-      }
-    }
-    function updateSandbox() {
-      const pot = parseFloat(document.getElementById('mock_pot').value);
-      const pos = parseFloat(document.getElementById('mock_pos').value);
-      const conv = parseFloat(document.getElementById('mock_conv').value);
-      document.getElementById('mock_pot_val').innerText = pot + '%';
-      document.getElementById('mock_pos_val').innerText = pos + '%';
-      document.getElementById('mock_conv_val').innerText = conv + '%';
-      try {
-        const potBounds = [
-          parseFloat(document.querySelector('[name=pot_b0]').value) || 0,
-          parseFloat(document.querySelector('[name=pot_b1]').value) || 0,
-          parseFloat(document.querySelector('[name=pot_b2]').value) || 0,
-          parseFloat(document.querySelector('[name=pot_b3]').value) || 0
-        ];
-        const posBounds = [
-          parseFloat(document.querySelector('[name=pos_b0]').value) || 0,
-          parseFloat(document.querySelector('[name=pos_b1]').value) || 0,
-          parseFloat(document.querySelector('[name=pos_b2]').value) || 0,
-          parseFloat(document.querySelector('[name=pos_b3]').value) || 0
-        ];
-        const convBounds = [
-          parseFloat(document.querySelector('[name=conv_b0]').value) || 0,
-          parseFloat(document.querySelector('[name=conv_b1]').value) || 0,
-          parseFloat(document.querySelector('[name=conv_b2]').value) || 0,
-          parseFloat(document.querySelector('[name=conv_b3]').value) || 0
-        ];
-        const getContinuousScore = (val, bounds) => {
-          const [b0, b1, b2, b3] = bounds;
-          if (val < b0) {
-            if (b0 <= 0) return 0;
-            return Math.max(0, Math.min(1, val / b0));
-          }
-          if (val < b1) return b1 > b0 ? (1 + ((val - b0) / (b1 - b0))) : 1;
-          if (val < b2) return b2 > b1 ? (2 + ((val - b1) / (b2 - b1))) : 2;
-          if (val < b3) return 3;
-          const topAnchor = Math.max(100, b3);
-          if (val < topAnchor) {
-            const span = topAnchor - b3;
-            if (span <= 1e-9) return 4;
-            return 3 + ((val - b3) / span);
-          }
-          return 4;
-        };
-        const wPos = parseFloat(document.querySelector('[name=w_pos]').value) || 0;
-        const wConv = parseFloat(document.querySelector('[name=w_conv]').value) || 0;
-        const wPot = parseFloat(document.querySelector('[name=w_pot]').value) || 0;
-        const penaltyFactor = parseFloat(document.querySelector('[name=penalty_factor]').value) || 0;
-        const sPos = getContinuousScore(pos, posBounds);
-        const sConv = getContinuousScore(conv, convBounds);
-        const sPot = getContinuousScore(pot, potBounds);
-        const comp =
-          (sPos * wPos) +
-          (sConv * wConv) +
-          (sPot * wPot);
-        const imbalance = Math.max(sPos, sConv, sPot) - Math.min(sPos, sConv, sPot);
-        const compAdjusted = Math.max(0, Math.min(4, comp - (imbalance * penaltyFactor)));
-        const scale = parseInt(document.querySelector('[name=points_scale]').value, 10) || 1000;
-        const tp = Math.round(compAdjusted * scale);
-        const cuts = [];
-        for (let i = 0; i < 5; i++) {
-          const el = document.querySelector('[name=comp_pt_' + i + ']');
-          cuts.push(el ? (parseInt(el.value, 10) || 0) : 0);
-        }
-        let pointsTierIdx = cuts.length;
-        for (let i = 0; i < cuts.length; i++) {
-          if (tp < cuts[i]) {
-            pointsTierIdx = i;
-            break;
-          }
-        }
-        const gateTierIdx = (() => {
-          if (pot >= potBounds[3] && pos >= posBounds[3] && conv >= convBounds[3]) return 4;
-          if (pot >= potBounds[2] && pos >= posBounds[2] && conv >= convBounds[2]) return 3;
-          if (pot >= potBounds[1] && pos >= posBounds[1] && conv >= convBounds[1]) return 2;
-          if (pot >= potBounds[0] && pos >= posBounds[0] && conv >= convBounds[0]) return 1;
-          return 0;
-        })();
-        const effectiveTierIdx = (pointsTierIdx >= TIER_NAMES.length - 1 && gateTierIdx >= TIER_NAMES.length - 2)
-          ? TIER_NAMES.length - 1
-          : Math.min(pointsTierIdx, gateTierIdx);
-        const tier = TIER_NAMES[effectiveTierIdx];
-        document.getElementById('sandbox_tier').innerText = tier;
-        document.getElementById('sandbox_tp').innerText = tp + " tier pts";
-        const note = document.getElementById('sandbox_note');
-        if (note) {
-          note.innerText = (effectiveTierIdx < pointsTierIdx)
-            ? ("Points band suggests " + TIER_NAMES[pointsTierIdx] + ", but KPI minima \n gate label to " + tier + ".")
-            : "Label and points band are aligned.";
-        }
-      } catch (e) {
-        console.warn("Sandbox data parsing error", e);
-      }
-    }
-    document.addEventListener("DOMContentLoaded", () => {
-      document.querySelectorAll('input').forEach(input => {
-        input.addEventListener('input', () => {
-          syncCompPtSliderMaxes();
-          updateSandbox();
-        });
-      });
-      syncCompPtSliderMaxes();
-      updateSandbox();
-    });
-  </script>
+  <div id="tiers-config" data-tier-names='{{ tier_names | tojson }}' hidden></div>
 
-  <form method="post" action="/settings/tiers" class="form-grid"
-    style="max-width: 52rem; display: flex; flex-direction: column; gap: 1.5rem;">
+  <form method="post" action="/settings/tiers" class="form-grid tiers-form">
+    <article class="card card--wide settings-card-block">
+      <h2 class="settings-card-heading settings-card-heading-tight">Tier Baselines</h2>
+      <p class="muted tiers-copy">Five rows for <strong>Amateur</strong> through <strong>Elite</strong>. <strong>Beginner</strong> is everything below the Amateur minima on each KPI (weaker on a stat than the Amateur row for that stat).</p>
 
-    <article class="card card--wide" style="margin-top: 1.5rem;">
-      <h2 style="margin: 0 0 0.5rem; font-size: 1.15rem;">Tier Baselines</h2>
-      <p class="muted" style="font-size: 0.85rem; margin: 0 0 1rem;">Five rows for <strong>Amateur</strong> through
-        <strong>Elite</strong>. <strong>Beginner</strong> is everything below the Amateur minima on each KPI (weaker on
-        a stat than the Amateur row for that stat).</p>
-      <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-        <fieldset
-          style="border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin: 0; background: var(--surface);">
-          <legend class="muted" style="font-size: 0.9rem; font-weight: 600; padding: 0 0.5rem;">Amateur</legend>
-          <div style="display: flex; flex-direction: column; gap: 1rem;">
-            <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
-              <div style="width: 140px; font-weight: 500;">Potting <span class="muted" style="font-size: 0.85rem;">(Min
-                  %)</span></div>
-              <input type="range" min="0" max="100" step="0.1" value="{{ ts.pot_pct_lower_bounds[0] }}"
-                oninput="this.nextElementSibling.value=this.value"
-                style="flex-grow: 1; accent-color: var(--accent-brand); margin: 0;">
-              <input name="pot_b0" type="number" step="0.1" required value="{{ ts.pot_pct_lower_bounds[0] }}"
-                oninput="this.previousElementSibling.value=this.value" style="width: 80px; margin: 0;">
+      <div class="tiers-fieldset-stack">
+        {% set rows = [("Amateur", 0), ("Strong Amateur", 1), ("Advanced", 2), ("Semi-pro", 3)] %}
+        {% for label, idx in rows %}
+        <fieldset class="tiers-fieldset">
+          <legend class="muted tiers-legend">{{ label }}</legend>
+          <div class="tiers-fieldset-rows">
+            <div class="tiers-control-row">
+              <div class="tiers-control-label tiers-control-label--wide">Potting <span class="muted tiers-unit">(Min %)</span></div>
+              <input type="range" min="0" max="100" step="0.1" value="{{ ts.pot_pct_lower_bounds[idx] }}" class="tiers-range">
+              <input name="pot_b{{ idx }}" type="number" step="0.1" required value="{{ ts.pot_pct_lower_bounds[idx] }}" class="tiers-number-input">
             </div>
-            <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
-              <div style="width: 140px; font-weight: 500;">Position <span class="muted" style="font-size: 0.85rem;">(Min
-                  %)</span></div>
-              <input type="range" min="0" max="100" step="0.1" value="{{ ts.pos_pct_lower_bounds[0] }}"
-                oninput="this.nextElementSibling.value=this.value"
-                style="flex-grow: 1; accent-color: var(--accent-brand); margin: 0;">
-              <input name="pos_b0" type="number" step="0.1" required value="{{ ts.pos_pct_lower_bounds[0] }}"
-                oninput="this.previousElementSibling.value=this.value" style="width: 80px; margin: 0;">
+            <div class="tiers-control-row">
+              <div class="tiers-control-label tiers-control-label--wide">Position <span class="muted tiers-unit">(Min %)</span></div>
+              <input type="range" min="0" max="100" step="0.1" value="{{ ts.pos_pct_lower_bounds[idx] }}" class="tiers-range">
+              <input name="pos_b{{ idx }}" type="number" step="0.1" required value="{{ ts.pos_pct_lower_bounds[idx] }}" class="tiers-number-input">
             </div>
-            <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
-              <div style="width: 140px; font-weight: 500;">Conversion <span class="muted"
-                  style="font-size: 0.85rem;">(Min %)</span></div>
-              <input type="range" min="0" max="100" step="0.1" value="{{ ts.conv_pct_lower_bounds[0] }}"
-                oninput="this.nextElementSibling.value=this.value"
-                style="flex-grow: 1; accent-color: var(--accent-brand); margin: 0;">
-              <input name="conv_b0" type="number" step="0.1" required value="{{ ts.conv_pct_lower_bounds[0] }}"
-                oninput="this.previousElementSibling.value=this.value" style="width: 80px; margin: 0;">
+            <div class="tiers-control-row">
+              <div class="tiers-control-label tiers-control-label--wide">Conversion <span class="muted tiers-unit">(Min %)</span></div>
+              <input type="range" min="0" max="100" step="0.1" value="{{ ts.conv_pct_lower_bounds[idx] }}" class="tiers-range">
+              <input name="conv_b{{ idx }}" type="number" step="0.1" required value="{{ ts.conv_pct_lower_bounds[idx] }}" class="tiers-number-input">
             </div>
           </div>
         </fieldset>
+        {% endfor %}
 
-        <fieldset
-          style="border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin: 0; background: var(--surface);">
-          <legend class="muted" style="font-size: 0.9rem; font-weight: 600; padding: 0 0.5rem;">Strong Amateur</legend>
-          <div style="display: flex; flex-direction: column; gap: 1rem;">
-            <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
-              <div style="width: 140px; font-weight: 500;">Potting <span class="muted" style="font-size: 0.85rem;">(Min
-                  %)</span></div>
-              <input type="range" min="0" max="100" step="0.1" value="{{ ts.pot_pct_lower_bounds[1] }}"
-                oninput="this.nextElementSibling.value=this.value"
-                style="flex-grow: 1; accent-color: var(--accent-brand); margin: 0;">
-              <input name="pot_b1" type="number" step="0.1" required value="{{ ts.pot_pct_lower_bounds[1] }}"
-                oninput="this.previousElementSibling.value=this.value" style="width: 80px; margin: 0;">
-            </div>
-            <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
-              <div style="width: 140px; font-weight: 500;">Position <span class="muted" style="font-size: 0.85rem;">(Min
-                  %)</span></div>
-              <input type="range" min="0" max="100" step="0.1" value="{{ ts.pos_pct_lower_bounds[1] }}"
-                oninput="this.nextElementSibling.value=this.value"
-                style="flex-grow: 1; accent-color: var(--accent-brand); margin: 0;">
-              <input name="pos_b1" type="number" step="0.1" required value="{{ ts.pos_pct_lower_bounds[1] }}"
-                oninput="this.previousElementSibling.value=this.value" style="width: 80px; margin: 0;">
-            </div>
-            <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
-              <div style="width: 140px; font-weight: 500;">Conversion <span class="muted"
-                  style="font-size: 0.85rem;">(Min %)</span></div>
-              <input type="range" min="0" max="100" step="0.1" value="{{ ts.conv_pct_lower_bounds[1] }}"
-                oninput="this.nextElementSibling.value=this.value"
-                style="flex-grow: 1; accent-color: var(--accent-brand); margin: 0;">
-              <input name="conv_b1" type="number" step="0.1" required value="{{ ts.conv_pct_lower_bounds[1] }}"
-                oninput="this.previousElementSibling.value=this.value" style="width: 80px; margin: 0;">
-            </div>
-          </div>
-        </fieldset>
-
-        <fieldset
-          style="border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin: 0; background: var(--surface);">
-          <legend class="muted" style="font-size: 0.9rem; font-weight: 600; padding: 0 0.5rem;">Advanced</legend>
-          <div style="display: flex; flex-direction: column; gap: 1rem;">
-            <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
-              <div style="width: 140px; font-weight: 500;">Potting <span class="muted" style="font-size: 0.85rem;">(Min
-                  %)</span></div>
-              <input type="range" min="0" max="100" step="0.1" value="{{ ts.pot_pct_lower_bounds[2] }}"
-                oninput="this.nextElementSibling.value=this.value"
-                style="flex-grow: 1; accent-color: var(--accent-brand); margin: 0;">
-              <input name="pot_b2" type="number" step="0.1" required value="{{ ts.pot_pct_lower_bounds[2] }}"
-                oninput="this.previousElementSibling.value=this.value" style="width: 80px; margin: 0;">
-            </div>
-            <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
-              <div style="width: 140px; font-weight: 500;">Position <span class="muted" style="font-size: 0.85rem;">(Min
-                  %)</span></div>
-              <input type="range" min="0" max="100" step="0.1" value="{{ ts.pos_pct_lower_bounds[2] }}"
-                oninput="this.nextElementSibling.value=this.value"
-                style="flex-grow: 1; accent-color: var(--accent-brand); margin: 0;">
-              <input name="pos_b2" type="number" step="0.1" required value="{{ ts.pos_pct_lower_bounds[2] }}"
-                oninput="this.previousElementSibling.value=this.value" style="width: 80px; margin: 0;">
-            </div>
-            <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
-              <div style="width: 140px; font-weight: 500;">Conversion <span class="muted"
-                  style="font-size: 0.85rem;">(Min %)</span></div>
-              <input type="range" min="0" max="100" step="0.1" value="{{ ts.conv_pct_lower_bounds[2] }}"
-                oninput="this.nextElementSibling.value=this.value"
-                style="flex-grow: 1; accent-color: var(--accent-brand); margin: 0;">
-              <input name="conv_b2" type="number" step="0.1" required value="{{ ts.conv_pct_lower_bounds[2] }}"
-                oninput="this.previousElementSibling.value=this.value" style="width: 80px; margin: 0;">
-            </div>
-          </div>
-        </fieldset>
-
-        <fieldset
-          style="border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin: 0; background: var(--surface);">
-          <legend class="muted" style="font-size: 0.9rem; font-weight: 600; padding: 0 0.5rem;">Semi-pro</legend>
-          <div style="display: flex; flex-direction: column; gap: 1rem;">
-            <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
-              <div style="width: 140px; font-weight: 500;">Potting <span class="muted" style="font-size: 0.85rem;">(Min
-                  %)</span></div>
-              <input type="range" min="0" max="100" step="0.1" value="{{ ts.pot_pct_lower_bounds[3] }}"
-                oninput="this.nextElementSibling.value=this.value"
-                style="flex-grow: 1; accent-color: var(--accent-brand); margin: 0;">
-              <input name="pot_b3" type="number" step="0.1" required value="{{ ts.pot_pct_lower_bounds[3] }}"
-                oninput="this.previousElementSibling.value=this.value" style="width: 80px; margin: 0;">
-            </div>
-            <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
-              <div style="width: 140px; font-weight: 500;">Position <span class="muted" style="font-size: 0.85rem;">(Min
-                  %)</span></div>
-              <input type="range" min="0" max="100" step="0.1" value="{{ ts.pos_pct_lower_bounds[3] }}"
-                oninput="this.nextElementSibling.value=this.value"
-                style="flex-grow: 1; accent-color: var(--accent-brand); margin: 0;">
-              <input name="pos_b3" type="number" step="0.1" required value="{{ ts.pos_pct_lower_bounds[3] }}"
-                oninput="this.previousElementSibling.value=this.value" style="width: 80px; margin: 0;">
-            </div>
-            <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
-              <div style="width: 140px; font-weight: 500;">Conversion <span class="muted"
-                  style="font-size: 0.85rem;">(Min %)</span></div>
-              <input type="range" min="0" max="100" step="0.1" value="{{ ts.conv_pct_lower_bounds[3] }}"
-                oninput="this.nextElementSibling.value=this.value"
-                style="flex-grow: 1; accent-color: var(--accent-brand); margin: 0;">
-              <input name="conv_b3" type="number" step="0.1" required value="{{ ts.conv_pct_lower_bounds[3] }}"
-                oninput="this.previousElementSibling.value=this.value" style="width: 80px; margin: 0;">
-            </div>
-          </div>
-        </fieldset>
-
-        <fieldset
-          style="border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin: 0; background: var(--surface);">
-          <legend class="muted" style="font-size: 0.9rem; font-weight: 600; padding: 0 0.5rem;">Elite</legend>
-          <p class="muted" style="font-size: 0.85rem; margin-top: 0; margin-bottom: 0;">There is no extra percentage
-            row: once every KPI is in the Semi-pro band (at or above the Semi-pro minima), you are already at the top
-            KPI band. <strong>Elite</strong> vs <strong>Semi-pro</strong> on the dashboard is decided by <strong>tier
-              points</strong> and the <em>Tier point cuts</em> below (same composite formula, higher points → Elite).
-          </p>
+        <fieldset class="tiers-fieldset">
+          <legend class="muted tiers-legend">Elite</legend>
+          <p class="muted tiers-copy tiers-copy-compact">There is no extra percentage row: once every KPI is in the Semi-pro band (at or above the Semi-pro minima), you are already at the top KPI band. <strong>Elite</strong> vs <strong>Semi-pro</strong> on the dashboard is decided by <strong>tier points</strong> and the <em>Tier point cuts</em> below (same composite formula, higher points → Elite).</p>
         </fieldset>
       </div>
     </article>
 
-    <article class="card card--wide" style="margin-top: 0.5rem;">
-      <h2 style="margin: 0 0 1rem; font-size: 1.15rem;">Calculation Rules</h2>
-      <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-
-        <fieldset
-          style="border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin: 0; background: var(--surface);">
-          <legend class="muted" style="font-size: 0.9rem; font-weight: 600; padding: 0 0.5rem;">Score weights</legend>
-          <p class="muted" style="font-size: 0.85rem; margin-top: 0; margin-bottom: 1rem;">POS / CONV / POT weights must
-            sum to 1.00 (within 0.01). Imbalance penalty reduces inflated scores when one KPI is much higher than the
-            others.</p>
-          <div style="display: flex; flex-direction: column; gap: 1rem;">
-            <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
-              <div style="width: 140px; font-weight: 500;">Position</div>
-              <input type="range" min="0" max="1" step="0.01" value="{{ ts.weight_pos }}"
-                oninput="this.nextElementSibling.value=this.value"
-                style="flex-grow: 1; accent-color: var(--accent-brand); margin: 0;">
-              <input name="w_pos" type="number" step="0.01" required value="{{ ts.weight_pos }}"
-                oninput="this.previousElementSibling.value=this.value" style="width: 80px; margin: 0;">
+    <article class="card card--wide settings-card-block settings-card-top-narrow">
+      <h2 class="settings-card-heading">Calculation Rules</h2>
+      <div class="tiers-fieldset-stack">
+        <fieldset class="tiers-fieldset">
+          <legend class="muted tiers-legend">Score weights</legend>
+          <p class="muted tiers-copy">POS / CONV / POT weights must sum to 1.00 (within 0.01). Imbalance penalty reduces inflated scores when one KPI is much higher than the others.</p>
+          <div class="tiers-fieldset-rows">
+            <div class="tiers-control-row">
+              <div class="tiers-control-label tiers-control-label--wide">Position</div>
+              <input type="range" min="0" max="1" step="0.01" value="{{ ts.weight_pos }}" class="tiers-range">
+              <input name="w_pos" type="number" step="0.01" required value="{{ ts.weight_pos }}" class="tiers-number-input">
             </div>
-            <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
-              <div style="width: 140px; font-weight: 500;">Conversion</div>
-              <input type="range" min="0" max="1" step="0.01" value="{{ ts.weight_conv }}"
-                oninput="this.nextElementSibling.value=this.value"
-                style="flex-grow: 1; accent-color: var(--accent-brand); margin: 0;">
-              <input name="w_conv" type="number" step="0.01" required value="{{ ts.weight_conv }}"
-                oninput="this.previousElementSibling.value=this.value" style="width: 80px; margin: 0;">
+            <div class="tiers-control-row">
+              <div class="tiers-control-label tiers-control-label--wide">Conversion</div>
+              <input type="range" min="0" max="1" step="0.01" value="{{ ts.weight_conv }}" class="tiers-range">
+              <input name="w_conv" type="number" step="0.01" required value="{{ ts.weight_conv }}" class="tiers-number-input">
             </div>
-            <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
-              <div style="width: 140px; font-weight: 500;">Potting</div>
-              <input type="range" min="0" max="1" step="0.01" value="{{ ts.weight_pot }}"
-                oninput="this.nextElementSibling.value=this.value"
-                style="flex-grow: 1; accent-color: var(--accent-brand); margin: 0;">
-              <input name="w_pot" type="number" step="0.01" required value="{{ ts.weight_pot }}"
-                oninput="this.previousElementSibling.value=this.value" style="width: 80px; margin: 0;">
+            <div class="tiers-control-row">
+              <div class="tiers-control-label tiers-control-label--wide">Potting</div>
+              <input type="range" min="0" max="1" step="0.01" value="{{ ts.weight_pot }}" class="tiers-range">
+              <input name="w_pot" type="number" step="0.01" required value="{{ ts.weight_pot }}" class="tiers-number-input">
             </div>
-            <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
-              <div style="width: 140px; font-weight: 500;">Penalty factor</div>
-              <input type="range" min="0" max="1" step="0.01" value="{{ ts.penalty_factor }}"
-                oninput="this.nextElementSibling.value=this.value"
-                style="flex-grow: 1; accent-color: var(--accent-brand); margin: 0;">
-              <input name="penalty_factor" type="number" step="0.01" min="0" max="1" required
-                value="{{ ts.penalty_factor }}" oninput="this.previousElementSibling.value=this.value"
-                style="width: 80px; margin: 0;">
+            <div class="tiers-control-row">
+              <div class="tiers-control-label tiers-control-label--wide">Penalty factor</div>
+              <input type="range" min="0" max="1" step="0.01" value="{{ ts.penalty_factor }}" class="tiers-range">
+              <input name="penalty_factor" type="number" step="0.01" min="0" max="1" required value="{{ ts.penalty_factor }}" class="tiers-number-input">
             </div>
           </div>
         </fieldset>
 
-        <fieldset
-          style="border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin: 0; background: var(--surface);">
-          <legend class="muted" style="font-size: 0.9rem; font-weight: 600; padding: 0 0.5rem;">Tier points scale
-          </legend>
-          <p class="muted" style="font-size: 0.85rem; margin-top: 0; margin-bottom: 1rem;">Adjusted composite (0–4) is
-            multiplied by this value for <strong>tier points</strong> (dashboard, sandbox). KPI scores are interpolated
-            continuously between your percentage thresholds, then imbalance penalty is applied before scaling. Elite
-            spans from the last cut up to <span class="mono">4 × scale</span> (e.g. 4000 when scale is 1000).</p>
-          <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
-            <div style="width: 140px; font-weight: 500;">Scale</div>
-            <input type="range" id="points_scale_range" min="100" max="8000" step="50"
-              value="{{ ts.composite_points_scale }}"
-              oninput="document.getElementById('points_scale_num').value=this.value"
-              style="flex-grow: 1; accent-color: var(--accent-brand); margin: 0;">
-            <input name="points_scale" id="points_scale_num" type="number" min="50" max="50000" required
-              value="{{ ts.composite_points_scale }}"
-              oninput="document.getElementById('points_scale_range').value=this.value" style="width: 90px; margin: 0;">
+        <fieldset class="tiers-fieldset">
+          <legend class="muted tiers-legend">Tier points scale</legend>
+          <p class="muted tiers-copy">Adjusted composite (0-4) is multiplied by this value for <strong>tier points</strong> (dashboard, sandbox). KPI scores are interpolated continuously between your percentage thresholds, then imbalance penalty is applied before scaling. Elite spans from the last cut up to <span class="mono">4 × scale</span> (e.g. 4000 when scale is 1000).</p>
+          <div class="tiers-control-row">
+            <div class="tiers-control-label tiers-control-label--wide">Scale</div>
+            <input type="range" id="points_scale_range" min="100" max="8000" step="50" value="{{ ts.composite_points_scale }}" class="tiers-range">
+            <input name="points_scale" id="points_scale_num" type="number" min="50" max="50000" required value="{{ ts.composite_points_scale }}" class="tiers-number-input tiers-number-input--wide">
           </div>
         </fieldset>
 
-        <fieldset
-          style="border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin: 0; background: var(--surface);">
-          <legend class="muted" style="font-size: 0.9rem; font-weight: 600; padding: 0 0.5rem;">Tier point cuts</legend>
-          <p class="muted" style="font-size: 0.85rem; margin-top: 0; margin-bottom: 1rem;">Five ascending
-            <strong>exclusive</strong> upper limits on tier points (six tiers: Beginner if tier pts &lt; first cut, then
-            Amateur, Strong Amateur, Advanced, Semi-pro; Elite from the last cut up to <span class="mono">4 ×
-              scale</span>). Sliders cap when scale changes.</p>
-          <div style="display: flex; flex-direction: column; gap: 1rem;">
-            <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
-              <div style="width: 200px; font-weight: 500;">→ Amateur <span class="muted"
-                  style="font-size: 0.8rem;">(Beginner: tier pts &lt;)</span></div>
-              <input type="range" data-comp-pt-range="0" min="1" max="{{ tier_points_ceiling - 1 }}" step="5"
-                value="{{ ts.composite_points_upper_bounds[0] }}" oninput="this.nextElementSibling.value=this.value"
-                style="flex-grow: 1; accent-color: var(--accent-brand); margin: 0;">
-              <input name="comp_pt_0" type="number" min="1" required value="{{ ts.composite_points_upper_bounds[0] }}"
-                oninput="this.previousElementSibling.value=this.value" style="width: 90px; margin: 0;">
+        <fieldset class="tiers-fieldset">
+          <legend class="muted tiers-legend">Tier point cuts</legend>
+          <p class="muted tiers-copy">Five ascending <strong>exclusive</strong> upper limits on tier points (six tiers: Beginner if tier pts &lt; first cut, then Amateur, Strong Amateur, Advanced, Semi-pro; Elite from the last cut up to <span class="mono">4 × scale</span>). Sliders cap when scale changes.</p>
+          <div class="tiers-fieldset-rows">
+            {% set cut_rows = [("Amateur", "(Beginner: tier pts <)"), ("Strong Amateur", ""), ("Advanced", ""), ("Semi-pro", ""), ("Elite", "(Semi-pro: tier pts <)")] %}
+            {% for cut_label, cut_note in cut_rows %}
+            <div class="tiers-control-row">
+              <div class="tiers-control-label tiers-control-label--cut">
+                → {{ cut_label }}{% if cut_note %} <span class="muted tiers-unit tiers-unit-small">{{ cut_note }}</span>{% endif %}
+              </div>
+              <input type="range" data-comp-pt-range="{{ loop.index0 }}" min="1" max="{{ tier_points_ceiling - 1 }}" step="5" value="{{ ts.composite_points_upper_bounds[loop.index0] }}" class="tiers-range">
+              <input name="comp_pt_{{ loop.index0 }}" type="number" min="1" required value="{{ ts.composite_points_upper_bounds[loop.index0] }}" class="tiers-number-input tiers-number-input--wide">
             </div>
-            <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
-              <div style="width: 200px; font-weight: 500;">→ Strong Amateur</div>
-              <input type="range" data-comp-pt-range="1" min="1" max="{{ tier_points_ceiling - 1 }}" step="5"
-                value="{{ ts.composite_points_upper_bounds[1] }}" oninput="this.nextElementSibling.value=this.value"
-                style="flex-grow: 1; accent-color: var(--accent-brand); margin: 0;">
-              <input name="comp_pt_1" type="number" min="1" required value="{{ ts.composite_points_upper_bounds[1] }}"
-                oninput="this.previousElementSibling.value=this.value" style="width: 90px; margin: 0;">
-            </div>
-            <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
-              <div style="width: 200px; font-weight: 500;">→ Advanced</div>
-              <input type="range" data-comp-pt-range="2" min="1" max="{{ tier_points_ceiling - 1 }}" step="5"
-                value="{{ ts.composite_points_upper_bounds[2] }}" oninput="this.nextElementSibling.value=this.value"
-                style="flex-grow: 1; accent-color: var(--accent-brand); margin: 0;">
-              <input name="comp_pt_2" type="number" min="1" required value="{{ ts.composite_points_upper_bounds[2] }}"
-                oninput="this.previousElementSibling.value=this.value" style="width: 90px; margin: 0;">
-            </div>
-            <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
-              <div style="width: 200px; font-weight: 500;">→ Semi-pro</div>
-              <input type="range" data-comp-pt-range="3" min="1" max="{{ tier_points_ceiling - 1 }}" step="5"
-                value="{{ ts.composite_points_upper_bounds[3] }}" oninput="this.nextElementSibling.value=this.value"
-                style="flex-grow: 1; accent-color: var(--accent-brand); margin: 0;">
-              <input name="comp_pt_3" type="number" min="1" required value="{{ ts.composite_points_upper_bounds[3] }}"
-                oninput="this.previousElementSibling.value=this.value" style="width: 90px; margin: 0;">
-            </div>
-            <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
-              <div style="width: 200px; font-weight: 500;">→ Elite <span class="muted"
-                  style="font-size: 0.8rem;">(Semi-pro: tier pts &lt;)</span></div>
-              <input type="range" data-comp-pt-range="4" min="1" max="{{ tier_points_ceiling - 1 }}" step="5"
-                value="{{ ts.composite_points_upper_bounds[4] }}" oninput="this.nextElementSibling.value=this.value"
-                style="flex-grow: 1; accent-color: var(--accent-brand); margin: 0;">
-              <input name="comp_pt_4" type="number" min="1" required value="{{ ts.composite_points_upper_bounds[4] }}"
-                oninput="this.previousElementSibling.value=this.value" style="width: 90px; margin: 0;">
-            </div>
+            {% endfor %}
           </div>
         </fieldset>
       </div>
     </article>
 
-    <div class="row" style="margin-top: 0.5rem;">
+    <div class="row settings-card-top-narrow">
       <button type="submit" class="btn btn--pr">Save tier settings</button>
     </div>
   </form>
 </section>
+{% endblock %}
+{% block settings_scripts %}
+<script src="{{ url_for('static', path='js/settings/tiers.js') }}?v=1.0" defer></script>
 {% endblock %}

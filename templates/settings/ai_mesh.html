@@ -2,10 +2,10 @@
 {% block settings_title %}AI coach / mesh{% endblock %}
 {% block settings_body %}
 <section>
-  <header class="page__header" style="margin-bottom: 0;">
+  <header class="page__header settings-page-header">
     <div>
-      <h1 style="margin: 0 0 0.35rem;">AI coach / mesh</h1>
-      <p class="lede" style="margin: 0;">Connect to the Pondicular-style mesh host: <span class="mono">GET /health</span>,
+      <h1 class="settings-page-title">AI coach / mesh</h1>
+      <p class="lede settings-page-lede">Connect to the Pondicular-style mesh host: <span class="mono">GET /health</span>,
         <span class="mono">GET /instructions</span> (baseline prompt), <span class="mono">POST /run</span> (coach).
         URL is saved to <span class="mono">data/mesh_settings.json</span>. Override
         <span class="mono">ELITE_MESH_BASE_URL</span> in the environment for deployments.
@@ -16,113 +16,63 @@
   </header>
 
   {% if request.query_params.get('saved') == '1' %}
-  <p class="banner" style="margin-top: 1rem;">Settings saved. Use <strong>Regenerate</strong> on a session or progress report if you want a new coach answer using updated instructions.</p>
+  <p class="banner settings-banner-spaced">Settings saved. Use <strong>Regenerate</strong> on a session or progress report if you want a new coach answer using updated instructions.</p>
   {% endif %}
   {% if instructions_reset %}
-  <p class="banner" style="margin-top: 1rem;">Instruction override cleared. The mesh will use its default agent instructions until you set an override again.</p>
+  <p class="banner settings-banner-spaced">Instruction override cleared. The mesh will use its default agent instructions until you set an override again.</p>
   {% endif %}
   {% if save_error %}
-  <p class="banner banner--warn" style="margin-top: 1rem;">{{ save_error }}</p>
+  <p class="banner banner--warn settings-banner-spaced">{{ save_error }}</p>
   {% endif %}
 
-  <form method="post" action="/settings/ai-mesh" class="modal-form" style="margin-top: 1.5rem;">
-    <article class="card card--wide" style="margin-bottom: 1.5rem;">
-      <h2 style="margin: 0 0 0.75rem; font-size: 1.15rem;">Mesh base URL</h2>
+  <form method="post" action="/settings/ai-mesh" class="modal-form settings-form-stack">
+    <article class="card card--wide settings-card-block settings-card-bottom-gap">
+      <h2 class="settings-card-heading settings-card-heading-wide-gap">Mesh base URL</h2>
       <label class="modal-label">URL
         <input type="url" name="baseUrl" class="modal-input" required maxlength="500"
           value="{{ mesh_base_url }}" placeholder="http://127.0.0.1:8090" autocomplete="off">
       </label>
-      <p class="muted small" style="margin: 0.5rem 0 0;">Host root only (no path). Example:
+      <p class="muted small settings-small-top-note">Host root only (no path). Example:
         <span class="mono">https://mesh.example.com</span></p>
     </article>
 
-    <article class="card card--wide" style="margin-bottom: 1.5rem;">
-      <h2 style="margin: 0 0 0.5rem; font-size: 1.15rem;">Baseline instructions from mesh</h2>
-      <p class="muted small" style="margin: 0 0 0.75rem;">Read-only copy of what the host exposes at
+    <article class="card card--wide settings-card-block settings-card-bottom-gap">
+      <h2 class="settings-card-heading">Baseline instructions from mesh</h2>
+      <p class="muted small settings-small-bottom-note">Read-only copy of what the host exposes at
         <span class="mono">GET /instructions?agent_name={{ pool_coach_agent }}</span> (file-backed on the mesh). This is
         <strong>not</strong> editable here; it updates when the mesh or its instruction files change.</p>
-      <pre id="mesh-baseline-instructions"
-        style="margin: 0; padding: 1rem; background: var(--surface2, #f4f4f5); border-radius: var(--radius, 8px); border: 1px solid var(--border); max-height: 22rem; overflow: auto; white-space: pre-wrap; font-size: 0.9rem; line-height: 1.55; font-family: var(--font, 'Outfit', system-ui, sans-serif);">Loading…</pre>
-      <p id="mesh-baseline-instructions-err" class="muted small" style="margin: 0.5rem 0 0; display: none;"></p>
+      <pre id="mesh-baseline-instructions" class="settings-mesh-baseline">Loading…</pre>
+      <p id="mesh-baseline-instructions-err" class="muted small is-hidden settings-small-top-note"></p>
     </article>
 
-    <article class="card card--wide" style="margin-bottom: 1.5rem;">
-      <h2 style="margin: 0 0 0.5rem; font-size: 1.15rem;">Your system instruction override</h2>
-      <p class="muted small" style="margin: 0 0 0.75rem;">
+    <article class="card card--wide settings-card-block settings-card-bottom-gap">
+      <h2 class="settings-card-heading">Your system instruction override</h2>
+      <p class="muted small settings-small-bottom-note">
         <strong>These are not the mesh agent’s default settings.</strong> Anything you save below is stored only in this app’s
         <span class="mono">mesh_settings.json</span> and sent on each coach call as top-level
         <span class="mono">system_instruction</span> on <span class="mono">POST /run</span>, per the mesh HTTP API.
         The runtime must allow instruction overrides (<span class="mono">allow_instruction_override</span>); otherwise the mesh may ignore this field.
       </p>
-      <label class="modal-label" style="margin-top: 0.5rem;">Override (markdown or plain text; leave empty to use mesh defaults only)
-        <textarea name="systemInstructionOverride" class="modal-input" rows="14" maxlength="120000"
-          style="min-height: 12rem; resize: vertical; font-family: inherit;">{{ instruction_override }}</textarea>
+      <label class="modal-label settings-modal-label-spaced">Override (markdown or plain text; leave empty to use mesh defaults only)
+        <textarea name="systemInstructionOverride" class="modal-input settings-mesh-override" rows="14" maxlength="120000">{{ instruction_override }}</textarea>
       </label>
-      <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; margin-top: 1rem;">
+      <div class="settings-inline-actions">
         <button type="submit" class="btn">Save URL &amp; instructions</button>
         <button type="button" class="btn btn--ghost" id="btn-mesh-test">Test connection</button>
-        <span id="mesh-test-result" class="muted small" style="min-height: 1.25em;"></span>
+        <span id="mesh-test-result" class="muted small settings-mesh-test-result"></span>
       </div>
     </article>
   </form>
 
-  <article class="card card--wide" style="margin-bottom: 1rem;">
-    <h2 style="margin: 0 0 0.5rem; font-size: 1.15rem;">Reset override</h2>
-    <p class="muted small" style="margin: 0 0 0.75rem;">Clears only the saved override above. Your mesh URL is unchanged. The coach will use the mesh’s default instructions again.</p>
-    <form method="post" action="/settings/ai-mesh/reset-instructions" onsubmit="return confirm('Clear the saved instruction override?');">
-      <button type="submit" class="btn btn--ghost" style="border: 1px solid var(--border);">Reset instruction override to default</button>
+  <article class="card card--wide settings-card-block settings-card-bottom-narrow">
+    <h2 class="settings-card-heading">Reset override</h2>
+    <p class="muted small settings-small-bottom-note">Clears only the saved override above. Your mesh URL is unchanged. The coach will use the mesh’s default instructions again.</p>
+    <form method="post" action="/settings/ai-mesh/reset-instructions" data-confirm-message="Clear the saved instruction override?">
+      <button type="submit" class="btn btn--ghost settings-btn-bordered">Reset instruction override to default</button>
     </form>
   </article>
 </section>
-<script>
-  (function () {
-    const btn = document.getElementById("btn-mesh-test");
-    const out = document.getElementById("mesh-test-result");
-    if (btn && out) {
-      btn.addEventListener("click", async function () {
-        out.textContent = "Checking…";
-        try {
-          const r = await fetch("/api/ai/mesh-health", { credentials: "same-origin" });
-          const data = await r.json().catch(function () { return {}; });
-          if (data.reachable) {
-            out.textContent = "Reachable.";
-            out.style.color = "var(--pr, #16a34a)";
-          } else {
-            out.textContent = data.detail || "Not reachable.";
-            out.style.color = "var(--warn, #b45309)";
-          }
-        } catch (e) {
-          out.textContent = "Request failed.";
-          out.style.color = "var(--warn, #b45309)";
-        }
-      });
-    }
-    const pre = document.getElementById("mesh-baseline-instructions");
-    const errEl = document.getElementById("mesh-baseline-instructions-err");
-    if (pre) {
-      fetch("/api/ai/mesh-instructions", { credentials: "same-origin" })
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          if (data.ok) {
-            pre.textContent = data.content !== undefined && data.content !== null && data.content !== ""
-              ? data.content
-              : "(Empty response from mesh.)";
-          } else {
-            pre.textContent = "(Could not load baseline from mesh.)";
-            if (errEl) {
-              errEl.style.display = "block";
-              errEl.textContent = data.detail || "Unknown error.";
-            }
-          }
-        })
-        .catch(function () {
-          pre.textContent = "(Request failed.)";
-          if (errEl) {
-            errEl.style.display = "block";
-            errEl.textContent = "Network error while calling /api/ai/mesh-instructions.";
-          }
-        });
-    }
-  })();
-</script>
+{% endblock %}
+{% block settings_scripts %}
+<script src="{{ url_for('static', path='js/settings/ai_mesh.js') }}?v=1.0" defer></script>
 {% endblock %}
