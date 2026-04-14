@@ -247,7 +247,7 @@ def api_end_session(request: Request, session_id: str) -> dict:
 
 @router.post("/{session_id}/racks")
 def api_start_rack(request: Request, session_id: str) -> dict:
-    _guard_session(request, session_id)
+    _guard_mobile_or_desktop_session(request, session_id)
     try:
         s = start_rack(session_id)
         return {"session": s.model_dump(by_alias=True)}

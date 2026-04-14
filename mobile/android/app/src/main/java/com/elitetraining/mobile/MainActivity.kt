@@ -164,7 +164,6 @@ private fun MissControlScreen(connection: ConnectionInfo, onDisconnect: () -> Un
     var ball by remember { mutableStateOf(1) }
     var types by remember { mutableStateOf(setOf<String>()) }
     var outcome by remember { mutableStateOf("playable") }
-    var status by remember { mutableStateOf("Ready.") }
     var isSending by remember { mutableStateOf(false) }
     var liveState by remember { mutableStateOf<ApiClient.LiveState?>(null) }
     var currentDurationSeconds by remember { mutableStateOf(0) }
@@ -190,7 +189,7 @@ private fun MissControlScreen(connection: ConnectionInfo, onDisconnect: () -> Un
         scope.launch {
             val result = ApiClient.fetchLiveState(connection)
             if (!result.ok || result.state == null) {
-                status = "Error: ${result.message}"
+                Toast.makeText(context, result.message, Toast.LENGTH_LONG).show()
                 return@launch
             }
             liveState = result.state
@@ -240,42 +239,67 @@ private fun MissControlScreen(connection: ConnectionInfo, onDisconnect: () -> Un
             style = MaterialTheme.typography.bodySmall,
             color = sectionTitle
         )
-        Row(
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                "Session time ${formatDuration(currentDurationSeconds)}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = primaryText,
-                fontWeight = FontWeight.Bold
+                formatDuration(currentDurationSeconds),
+                style = MaterialTheme.typography.headlineLarge,
+                color = primaryText
             )
-            TextButton(onClick = {
+            Button(
+                onClick = {
                 scope.launch {
                     val next = !isPaused
                     val result = ApiClient.togglePause(connection, next)
                     if (!result.ok) {
-                        status = "Error: ${result.message}"
+                        Toast.makeText(context, result.message, Toast.LENGTH_LONG).show()
                     } else {
                         isPaused = next
-                        status = if (next) "Timer paused." else "Timer resumed."
+                        Toast.makeText(
+                            context,
+                            if (next) "Timer paused" else "Timer resumed",
+                            Toast.LENGTH_SHORT
+                        ).show()
                         refreshLive()
                     }
                 }
-            }) {
-                Text(if (isPaused) "Resume" else "Pause", color = primaryText)
+            },
+                shape = RoundedCornerShape(999.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFECEFF4),
+                    contentColor = primaryText
+                ),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 18.dp, vertical = 8.dp)
+            ) {
+                Text(
+                    if (isPaused) "▷ Resume timing" else "❚❚ Pause timing",
+                    color = primaryText,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
-        TextButton(onClick = { refreshLive() }) {
-            Text("Refresh session", color = primaryText)
-        }
-        if (status != "Ready.") {
-            Text(
-                status,
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (status.startsWith("Error")) Color(0xFFB3261E) else primaryText
-            )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(
+                onClick = { refreshLive() },
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFE3E8F1),
+                    contentColor = primaryText
+                )
+            ) { Text("Refresh") }
+            Button(
+                onClick = onDisconnect,
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFE3E8F1),
+                    contentColor = primaryText
+                )
+            ) { Text("Disconnect") }
         }
 
         Text(
@@ -351,35 +375,40 @@ private fun MissControlScreen(connection: ConnectionInfo, onDisconnect: () -> Un
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            TextButton(onClick = onDisconnect) {
-                Text("Cancel", color = primaryText, fontWeight = FontWeight.Bold)
-            }
             TextButton(
-                enabled = !isSending && !liveState?.currentRackId.isNullOrBlank(),
+                enabled = !isSending,
                 onClick = {
                     if (isSending) return@TextButton
                     scope.launch {
                         val state = liveState
                         val rackId = state?.currentRackId
-                        if (rackId.isNullOrBlank()) {
-                            status = "Error: No open rack to end"
-                            return@launch
-                        }
                         isSending = true
-                        val result = ApiClient.endRack(connection, rackId)
-                        if (result.ok) {
-                            Toast.makeText(context, "Rack ended", Toast.LENGTH_SHORT).show()
-                            status = "Rack ended."
-                            refreshLive()
+                        if (rackId.isNullOrBlank()) {
+                            val result = ApiClient.startRack(connection)
+                            if (result.ok) {
+                                Toast.makeText(context, "Rack started", Toast.LENGTH_SHORT).show()
+                                refreshLive()
+                            } else {
+                                Toast.makeText(context, result.message, Toast.LENGTH_LONG).show()
+                            }
                         } else {
-                            status = "Error: ${result.message}"
-                            Toast.makeText(context, result.message, Toast.LENGTH_LONG).show()
+                            val result = ApiClient.endRack(connection, rackId)
+                            if (result.ok) {
+                                Toast.makeText(context, "Rack ended", Toast.LENGTH_SHORT).show()
+                                refreshLive()
+                            } else {
+                                Toast.makeText(context, result.message, Toast.LENGTH_LONG).show()
+                            }
                         }
                         isSending = false
                     }
                 }
             ) {
-                Text("End rack", color = primaryText, fontWeight = FontWeight.Bold)
+                Text(
+                    if (liveState?.currentRackId.isNullOrBlank()) "Start rack" else "End rack",
+                    color = primaryText,
+                    fontWeight = FontWeight.Bold
+                )
             }
             Button(
                 onClick = {
@@ -388,11 +417,10 @@ private fun MissControlScreen(connection: ConnectionInfo, onDisconnect: () -> Un
                     val state = liveState
                     val rackId = state?.currentRackId
                     if (rackId.isNullOrBlank()) {
-                        status = "Error: No open rack in session"
+                        Toast.makeText(context, "No open rack in session", Toast.LENGTH_LONG).show()
                         return@launch
                     }
                     isSending = true
-                    status = "Sending miss..."
                     val result = ApiClient.submitMiss(
                         connection = connection,
                         rackId = rackId,
@@ -400,7 +428,6 @@ private fun MissControlScreen(connection: ConnectionInfo, onDisconnect: () -> Un
                         types = types.toList(),
                         outcome = outcome
                     )
-                    status = if (result.ok) "Ready." else "Error: ${result.message}"
                     if (result.ok) {
                         Toast.makeText(context, "Miss logged", Toast.LENGTH_SHORT).show()
                         types = emptySet()
@@ -746,6 +773,7 @@ private object ApiClient {
     data class SubmitResult(val ok: Boolean, val message: String = "")
     data class PauseResult(val ok: Boolean, val message: String = "")
     data class EndRackResult(val ok: Boolean, val message: String = "")
+    data class StartRackResult(val ok: Boolean, val message: String = "")
 
     suspend fun fetchLiveState(connection: ConnectionInfo): LiveFetchResult = withContext(Dispatchers.IO) {
         try {
@@ -908,6 +936,31 @@ private object ApiClient {
                 else -> e.message ?: "Request failed"
             }
             EndRackResult(false, msg)
+        }
+    }
+
+    suspend fun startRack(connection: ConnectionInfo): StartRackResult = withContext(Dispatchers.IO) {
+        try {
+            val req = authedRequest(
+                "${connection.baseUrl}/api/sessions/${connection.sessionId}/racks",
+                connection
+            ).newBuilder()
+                .post("".toRequestBody(null))
+                .build()
+            val res = client.newCall(req).execute()
+            if (!res.isSuccessful) {
+                return@withContext StartRackResult(false, "Could not start rack (${res.code})")
+            }
+            StartRackResult(true)
+        } catch (e: Exception) {
+            val msg = when (e) {
+                is SocketTimeoutException ->
+                    "Could not reach desktop app (timeout). Check same Wi-Fi and firewall."
+                is ConnectException, is UnknownHostException ->
+                    "Desktop app is unreachable. Check same Wi-Fi and allow app through firewall."
+                else -> e.message ?: "Request failed"
+            }
+            StartRackResult(false, msg)
         }
     }
 

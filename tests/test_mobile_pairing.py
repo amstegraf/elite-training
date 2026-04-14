@@ -82,3 +82,18 @@ def test_mobile_live_and_miss_requires_token(client) -> None:
     )
     assert paused.status_code == 200
     assert paused.json()["session"]["isPaused"] is True
+
+    ended = client.post(
+        f"/api/sessions/{sid}/racks/{rack_id}/end",
+        json={},
+        headers=headers,
+    )
+    assert ended.status_code == 200
+    assert ended.json()["session"]["currentRackId"] is None
+
+    started = client.post(
+        f"/api/sessions/{sid}/racks",
+        headers=headers,
+    )
+    assert started.status_code == 200
+    assert started.json()["session"]["currentRackId"]
