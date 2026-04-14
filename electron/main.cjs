@@ -1,11 +1,13 @@
 /**
  * Elite Training desktop shell: starts the local FastAPI server, then opens it in a window.
  */
-const { app, BrowserWindow, Menu, dialog, shell } = require('electron');
+const { app, BrowserWindow, Menu, dialog, shell, crashReporter } = require('electron');
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
+const os = require('os');
+const crypto = require('crypto');
 
 const PROJECT_ROOT = app.isPackaged
   ? path.join(process.resourcesPath, 'elite-training')
@@ -15,6 +17,35 @@ const WINDOW_ICON = path.join(__dirname, 'icon.png');
 const DEFAULT_PORT = process.env.ELITE_TRAINING_PORT
   ? parseInt(process.env.ELITE_TRAINING_PORT, 10)
   : 8765;
+const LAN_ENABLED = process.env.ELITE_TRAINING_LAN !== '0';
+
+function isPrivateIpv4(ip) {
+  return (
+    ip.startsWith('10.') ||
+    ip.startsWith('192.168.') ||
+    /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(ip)
+  );
+}
+
+function preferredLanAddress() {
+  const nets = os.networkInterfaces();
+  const candidates = [];
+  for (const rows of Object.values(nets)) {
+    for (const row of rows || []) {
+      if (!row || row.internal || row.family !== 'IPv4') continue;
+      candidates.push(row.address);
+    }
+  }
+  const privateCandidate = candidates.find((ip) => isPrivateIpv4(ip));
+  return privateCandidate || candidates[0] || null;
+}
+
+function resolvePublicBaseUrl(port) {
+  if (!LAN_ENABLED) return `http://127.0.0.1:${port}`;
+  const ip = preferredLanAddress();
+  if (!ip) return `http://127.0.0.1:${port}`;
+  return `http://${ip}:${port}`;
+}
 
 /** Prefer the bundled tree (packaged) over any other ``app`` on PYTHONPATH / site-packages. */
 function pythonProcessEnv() {
@@ -29,6 +60,7 @@ function pythonProcessEnv() {
   if (userPrecisionDataDir) {
     env.ELITE_TRAINING_DATA_DIR = userPrecisionDataDir;
   }
+  env.ELITE_TRAINING_PUBLIC_BASE_URL = resolvePublicBaseUrl(DEFAULT_PORT);
   return env;
 }
 
@@ -36,6 +68,65 @@ let serverProcess = null;
 let mainWindow = null;
 /** Packaged installs: sessions + programs.json live here (survives reinstall). */
 let userPrecisionDataDir = null;
+let lastServerStderr = '';
+/** Packaged installs: resolved python inside runtime venv after bootstrap. */
+let runtimePythonPath = null;
+
+const singleInstanceLock = app.requestSingleInstanceLock();
+if (!singleInstanceLock) {
+  app.quit();
+}
+let logFilePath = null;
+
+function nowIso() {
+  return new Date().toISOString();
+}
+
+function appendLog(level, message) {
+  if (!logFilePath) return;
+  try {
+    fs.appendFileSync(logFilePath, `[${nowIso()}] [${level}] ${String(message)}\n`, 'utf8');
+  } catch (_) {
+    /* ignore logging errors */
+  }
+}
+
+function initLogging() {
+  const logDir = path.join(app.getPath('userData'), 'logs');
+  fs.mkdirSync(logDir, { recursive: true });
+  logFilePath = path.join(logDir, 'desktop-latest.log');
+
+  const origLog = console.log.bind(console);
+  const origWarn = console.warn.bind(console);
+  const origErr = console.error.bind(console);
+  console.log = (...args) => {
+    origLog(...args);
+    appendLog('INFO', args.join(' '));
+  };
+  console.warn = (...args) => {
+    origWarn(...args);
+    appendLog('WARN', args.join(' '));
+  };
+  console.error = (...args) => {
+    origErr(...args);
+    appendLog('ERROR', args.join(' '));
+  };
+
+  process.on('uncaughtException', (err) => {
+    appendLog('FATAL', `uncaughtException: ${err && err.stack ? err.stack : String(err)}`);
+  });
+  process.on('unhandledRejection', (reason) => {
+    appendLog('FATAL', `unhandledRejection: ${String(reason)}`);
+  });
+
+  crashReporter.start({
+    uploadToServer: false,
+    compress: true,
+    crashesDirectory: path.join(app.getPath('userData'), 'crashes'),
+  });
+
+  appendLog('INFO', `Desktop startup. appVersion=${app.getVersion()} packaged=${app.isPackaged}`);
+}
 
 function readDesktopPackageJson() {
   try {
@@ -376,15 +467,87 @@ function resolvePythonExecutable() {
   return 'python3';
 }
 
+function runtimePaths() {
+  const runtimeDir = path.join(app.getPath('userData'), 'python-runtime');
+  const venvDir = path.join(runtimeDir, '.venv');
+  const venvPython =
+    process.platform === 'win32'
+      ? path.join(venvDir, 'Scripts', 'python.exe')
+      : path.join(venvDir, 'bin', 'python');
+  const stampPath = path.join(runtimeDir, '.requirements-stamp');
+  return { runtimeDir, venvDir, venvPython, stampPath };
+}
+
+function requirementsFingerprint() {
+  const pkg = readDesktopPackageJson();
+  const reqPath = path.join(PROJECT_ROOT, 'requirements.txt');
+  const req = fs.existsSync(reqPath) ? fs.readFileSync(reqPath, 'utf8') : '';
+  return crypto.createHash('sha256').update(String(pkg.version)).update('\n').update(req).digest('hex');
+}
+
+function runSyncOrThrow(command, args, opts) {
+  const res = require('child_process').spawnSync(command, args, {
+    windowsHide: true,
+    encoding: 'utf8',
+    ...opts,
+  });
+  if (res.status === 0) return;
+  const detail = [
+    `Command: ${command} ${args.join(' ')}`,
+    res.stdout ? `stdout:\n${res.stdout}` : '',
+    res.stderr ? `stderr:\n${res.stderr}` : '',
+    res.error ? `error: ${res.error.message}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n\n');
+  throw new Error(detail || `Command failed: ${command}`);
+}
+
+function ensurePackagedRuntimePython() {
+  if (!app.isPackaged) return null;
+  const { runtimeDir, venvDir, venvPython, stampPath } = runtimePaths();
+  fs.mkdirSync(runtimeDir, { recursive: true });
+
+  const expected = requirementsFingerprint();
+  const current = fs.existsSync(stampPath) ? fs.readFileSync(stampPath, 'utf8').trim() : '';
+  if (fs.existsSync(venvPython) && current === expected) {
+    return venvPython;
+  }
+
+  const bootstrapPython = resolvePythonExecutable();
+  if (!fs.existsSync(venvPython)) {
+    runSyncOrThrow(bootstrapPython, ['-m', 'venv', venvDir], { cwd: PROJECT_ROOT });
+  }
+
+  const reqPath = path.join(PROJECT_ROOT, 'requirements.txt');
+  runSyncOrThrow(
+    venvPython,
+    ['-m', 'pip', 'install', '--disable-pip-version-check', '-r', reqPath],
+    { cwd: PROJECT_ROOT },
+  );
+
+  fs.writeFileSync(stampPath, expected, 'utf8');
+  return venvPython;
+}
+
+function packagedRuntimeNeedsBootstrap() {
+  if (!app.isPackaged) return false;
+  const { venvPython, stampPath } = runtimePaths();
+  const expected = requirementsFingerprint();
+  const current = fs.existsSync(stampPath) ? fs.readFileSync(stampPath, 'utf8').trim() : '';
+  return !(fs.existsSync(venvPython) && current === expected);
+}
+
 function startServer(port) {
-  const python = resolvePythonExecutable();
+  const bindHost = LAN_ENABLED ? '0.0.0.0' : '127.0.0.1';
+  const python = runtimePythonPath || resolvePythonExecutable();
   const args = [
     '-m',
     'uvicorn',
     'app.factory:create_app',
     '--factory',
     '--host',
-    '127.0.0.1',
+    bindHost,
     '--port',
     String(port),
   ];
@@ -396,7 +559,10 @@ function startServer(port) {
   });
   serverProcess.stderr?.on('data', (buf) => {
     const line = buf.toString().trim();
-    if (line) console.error('[server]', line);
+    if (line) {
+      lastServerStderr = line;
+      console.error('[server]', line);
+    }
   });
   serverProcess.stdout?.on('data', (buf) => {
     const line = buf.toString().trim();
@@ -466,9 +632,39 @@ function createWindow(port) {
 }
 
 app.whenReady().then(async () => {
+  initLogging();
+
   if (app.isPackaged) {
     userPrecisionDataDir = path.join(app.getPath('userData'), 'precision-data');
     fs.mkdirSync(path.join(userPrecisionDataDir, 'sessions'), { recursive: true });
+    if (packagedRuntimeNeedsBootstrap()) {
+      await dialog.showMessageBox({
+        type: 'info',
+        title: 'Elite Training',
+        message: 'Preparing desktop runtime (first launch).',
+        detail:
+          'We are installing required app dependencies in a private runtime. ' +
+          'This can take a few minutes and requires internet access.\n\n' +
+          (logFilePath ? `Logs: ${logFilePath}` : ''),
+      });
+    }
+    try {
+      runtimePythonPath = ensurePackagedRuntimePython();
+    } catch (e) {
+      const python = resolvePythonExecutable();
+      await dialog.showMessageBox({
+        type: 'error',
+        title: 'Elite Training',
+        message: 'Could not prepare desktop runtime dependencies.',
+        detail:
+          `Tried Python: ${python}\n` +
+          'The installer auto-creates a private runtime on first launch, but this step failed.\n\n' +
+          String(e && e.message ? e.message : e) +
+          (logFilePath ? `\n\nLogs: ${logFilePath}` : ''),
+      });
+      app.quit();
+      return;
+    }
   }
 
   const pkg = readDesktopPackageJson();
@@ -491,7 +687,9 @@ app.whenReady().then(async () => {
       message: 'Could not start the app server.',
       detail:
         `Tried Python: ${python}\n` +
-        'Use a venv with dependencies installed (pip install -e .), or set ELITE_TRAINING_PORT if the port is busy.',
+        (lastServerStderr ? `Last server error: ${lastServerStderr}\n` : '') +
+        'Use a venv with dependencies installed (pip install -r requirements.txt), or set ELITE_TRAINING_PORT if the port is busy.' +
+        (logFilePath ? `\n\nLogs: ${logFilePath}` : ''),
     });
     app.quit();
     return;
@@ -513,4 +711,11 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0 && serverProcess) {
     createWindow(DEFAULT_PORT);
   }
+});
+
+app.on('second-instance', () => {
+  if (!mainWindow) return;
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.show();
+  mainWindow.focus();
 });

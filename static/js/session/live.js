@@ -20,6 +20,14 @@
   const rulesBanner = document.getElementById("rules-banner");
   const rackHint = document.getElementById("rack-state-hint");
   const missFeed = document.getElementById("miss-feed");
+  const btnConnectPhone = document.getElementById("btn-connect-phone");
+  const btnRefreshConnect = document.getElementById("btn-refresh-connect");
+  const btnCopyConnectUrl = document.getElementById("btn-copy-connect-url");
+  const connectPanel = document.getElementById("mobile-connect-panel");
+  const connectQr = document.getElementById("mobile-connect-qr");
+  const connectUrl = document.getElementById("mobile-connect-url");
+  const connectExpiry = document.getElementById("mobile-connect-expiry");
+  const connectManual = document.getElementById("mobile-connect-manual");
 
   const btnPause = document.getElementById("btn-pause");
   const iconPause = document.getElementById("icon-pause");
@@ -38,8 +46,50 @@
   });
 
   let live = null;
+  let connectInfo = null;
   let currentDurationSeconds = 0;
   let timerInterval = null;
+  let syncInterval = null;
+
+  function setConnectStatus(text, isError) {
+    if (!connectExpiry) return;
+    connectExpiry.textContent = text;
+    connectExpiry.style.color = isError ? "var(--danger)" : "";
+  }
+
+  function renderQrValue(value) {
+    if (!connectQr) return;
+    if (!value) {
+      connectQr.removeAttribute("src");
+      if (connectManual) connectManual.open = true;
+      setConnectStatus("QR image unavailable. Use manual URL.", true);
+      return;
+    }
+    connectQr.src = value;
+    if (connectManual) connectManual.open = false;
+  }
+
+  function renderConnectInfo() {
+    if (!connectInfo) return;
+    if (connectUrl) {
+      connectUrl.textContent = connectInfo.connectUrl || "Not available";
+    }
+    const expires = new Date(connectInfo.expiresAt);
+    const stamp = Number.isNaN(expires.getTime()) ? "soon" : expires.toLocaleTimeString();
+    setConnectStatus(`Token expires at ${stamp}.`, false);
+    renderQrValue(connectInfo.qrDataUrl);
+  }
+
+  async function refreshConnectInfo() {
+    const res = await fetch(`/api/sessions/${sessionId}/mobile/connect`, { method: "POST" });
+    if (!res.ok) {
+      const msg = (await res.json().catch(() => ({}))).detail || "Could not generate connect QR";
+      setConnectStatus(msg, true);
+      return;
+    }
+    connectInfo = await res.json();
+    renderConnectInfo();
+  }
 
   function formatTime(totalSeconds) {
     const hrs = Math.floor(totalSeconds / 3600);
@@ -174,6 +224,20 @@
     render();
   }
 
+  async function refreshSilent() {
+    if (document.hidden) return;
+    const res = await fetch(`/api/sessions/${sessionId}/live`);
+    if (!res.ok) return;
+    const next = await res.json();
+    const prevMisses = live?.session?.totalMisses ?? 0;
+    live = next;
+    currentDurationSeconds = live.effectiveDuration || 0;
+    render();
+    if (window.showToast && (live.session.totalMisses ?? 0) > prevMisses) {
+      window.showToast("Session updated");
+    }
+  }
+
   if (btnPause) {
     btnPause.addEventListener("click", async () => {
       if (!live) return;
@@ -199,6 +263,32 @@
   btnMiss.addEventListener("click", () => {
     if (dialog) dialog.showModal();
   });
+
+  if (btnConnectPhone && connectPanel) {
+    btnConnectPhone.addEventListener("click", async () => {
+      const willShow = connectPanel.hidden;
+      connectPanel.hidden = !willShow;
+      if (willShow && !connectInfo) {
+        await refreshConnectInfo();
+      }
+    });
+  }
+  if (btnRefreshConnect) {
+    btnRefreshConnect.addEventListener("click", async () => {
+      await refreshConnectInfo();
+    });
+  }
+  if (btnCopyConnectUrl) {
+    btnCopyConnectUrl.addEventListener("click", async () => {
+      if (!connectInfo || !connectInfo.connectUrl) return;
+      try {
+        await navigator.clipboard.writeText(connectInfo.connectUrl);
+        if (window.showToast) window.showToast("Connect URL copied");
+      } catch (_) {
+        if (window.showToast) window.showToast("Could not copy connect URL", true);
+      }
+    });
+  }
   missCancel.addEventListener("click", () => dialog.close());
   rackCancel.addEventListener("click", () => rackDialog.close());
 
@@ -308,4 +398,8 @@
   });
 
   refresh();
+  if (syncInterval) clearInterval(syncInterval);
+  syncInterval = setInterval(() => {
+    refreshSilent().catch(() => {});
+  }, 2500);
 })();

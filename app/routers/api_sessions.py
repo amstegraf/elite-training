@@ -12,6 +12,11 @@ from app.models import (
     TableType,
 )
 from app.services import profiles_repo
+from app.services.mobile_pairing import (
+    build_connect_payload,
+    issue_pair_token,
+    validate_pair_token,
+)
 from app.services.session_service import (
     BadRequestError,
     SessionNotFoundError,
@@ -83,6 +88,40 @@ def _handle(exc: Exception) -> None:
     if isinstance(exc, BadRequestError):
         raise HTTPException(status_code=400, detail=exc.message) from exc
     raise exc
+
+
+def _bearer_token(request: Request) -> str | None:
+    auth = request.headers.get("authorization", "").strip()
+    if not auth:
+        return None
+    parts = auth.split(" ", 1)
+    if len(parts) != 2:
+        return None
+    if parts[0].lower() != "bearer":
+        return None
+    return parts[1].strip() or None
+
+
+def _is_mobile_request(request: Request) -> bool:
+    if "/mobile/" in request.url.path:
+        return True
+    if request.headers.get("x-elite-mobile-client", "").strip():
+        return True
+    return _bearer_token(request) is not None
+
+
+def _guard_mobile_or_desktop_session(request: Request, session_id: str) -> PrecisionSession:
+    if not _is_mobile_request(request):
+        return _guard_session(request, session_id)
+    token = _bearer_token(request)
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing mobile pairing token")
+    if not validate_pair_token(token, session_id=session_id):
+        raise HTTPException(status_code=401, detail="Invalid or expired mobile pairing token")
+    s = load_session(session_id)
+    if not s:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return s
 
 
 @router.get("")
@@ -158,7 +197,11 @@ def api_get_session(request: Request, session_id: str) -> dict:
 
 @router.get("/{session_id}/live")
 def api_live(request: Request, session_id: str) -> dict:
-    active, needs = _profile_ctx(request)
+    if _is_mobile_request(request):
+        _guard_mobile_or_desktop_session(request, session_id)
+        active, needs = (None, False)
+    else:
+        active, needs = _profile_ctx(request)
     try:
         return get_live_context(
             session_id,
@@ -216,7 +259,7 @@ def api_start_rack(request: Request, session_id: str) -> dict:
 def api_end_rack(
     request: Request, session_id: str, rack_id: str, body: EndRackBody | None = None
 ) -> dict:
-    _guard_session(request, session_id)
+    _guard_mobile_or_desktop_session(request, session_id)
     try:
         s = end_rack(
             session_id,
@@ -232,7 +275,7 @@ def api_end_rack(
 def api_add_miss(
     request: Request, session_id: str, rack_id: str, body: AddMissBody
 ) -> dict:
-    _guard_session(request, session_id)
+    _guard_mobile_or_desktop_session(request, session_id)
     try:
         s = add_miss(
             session_id,
@@ -244,6 +287,58 @@ def api_add_miss(
         return {"session": s.model_dump(by_alias=True)}
     except (SessionNotFoundError, BadRequestError) as e:
         _handle(e)
+
+
+@router.post("/{session_id}/mobile/connect")
+def api_mobile_connect(request: Request, session_id: str) -> dict:
+    s = _guard_session(request, session_id)
+    rec = issue_pair_token(session_id=session_id, profile_id=s.profile_id)
+    return build_connect_payload(request, rec)
+
+
+@router.get("/{session_id}/mobile/live")
+def api_mobile_live(request: Request, session_id: str) -> dict:
+    _guard_mobile_or_desktop_session(request, session_id)
+    context = get_live_context(session_id, active_profile_id=None, needs_first_profile=False)
+    session = context["session"]
+    rack_id = session["currentRackId"]
+    racks = session.get("racks", [])
+    rack = next((r for r in racks if r.get("id") == rack_id), None)
+    current_rack_misses = rack.get("misses", []) if rack else []
+
+    played: set[int] = set()
+    suggested = context.get("suggestedNextBall")
+    if isinstance(suggested, int) and suggested > 1:
+        played.update(range(1, min(10, suggested)))
+    for m in current_rack_misses:
+        b = m.get("ballNumber")
+        if isinstance(b, int) and 1 <= b <= 9:
+            played.add(b)
+
+    recent: list[dict] = []
+    for r in racks:
+        rack_number = r.get("rackNumber")
+        for m in r.get("misses", []):
+            recent.append(
+                {
+                    "rackNumber": rack_number,
+                    "ballNumber": m.get("ballNumber"),
+                    "types": m.get("types", []),
+                    "outcome": m.get("outcome"),
+                    "createdAt": m.get("createdAt"),
+                }
+            )
+    recent.sort(key=lambda x: x.get("createdAt") or "", reverse=True)
+    return {
+        "sessionId": session["id"],
+        "status": session["status"],
+        "isPaused": session.get("isPaused", False),
+        "currentRackId": rack_id,
+        "suggestedNextBall": suggested,
+        "effectiveDuration": context.get("effectiveDuration"),
+        "playedBallNumbers": sorted(played),
+        "recentMisses": recent[:20],
+    }
 
 
 @router.delete("/{session_id}")
@@ -264,7 +359,7 @@ def api_pause_session(
 ) -> dict:
     from app.services.session_service import toggle_session_pause
 
-    _guard_session(request, session_id)
+    _guard_mobile_or_desktop_session(request, session_id)
     try:
         s = toggle_session_pause(session_id, body.pause)
         return {"session": s.model_dump(by_alias=True)}

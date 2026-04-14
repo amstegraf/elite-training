@@ -29,6 +29,22 @@ from app.services.sessions_repo import list_sessions
 router = APIRouter()
 
 
+@router.get("/mobile/connect")
+async def mobile_connect_page(
+    request: Request, baseUrl: str = "", sessionId: str = "", token: str = ""
+) -> object:
+    templates = get_templates()
+    return templates.TemplateResponse(
+        request,
+        "session/mobile_connect.html",
+        {
+            "base_url": baseUrl,
+            "session_id": sessionId,
+            "token": token,
+        },
+    )
+
+
 @router.get("/session/{session_id}")
 async def session_live_page(request: Request, session_id: str) -> object:
     active = getattr(request.state, "active_profile_id", None)

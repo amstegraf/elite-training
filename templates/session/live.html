@@ -59,10 +59,38 @@
       <p class="muted small" id="rack-state-hint" style="margin-top: 1rem;"></p>
     </article>
 
-    <article class="card">
-      <h2>Latest misses</h2>
-      <ul id="miss-feed" class="list list--feed"></ul>
-    </article>
+    <div class="session-side-stack">
+      <article class="card mobile-connect-card">
+        <div class="row row--spread">
+          <h2>Connect app</h2>
+          <button type="button" class="btn btn--ghost btn--sm" id="btn-connect-phone">Show QR</button>
+        </div>
+        <section id="mobile-connect-panel" class="mobile-connect-panel" hidden>
+          <div class="row row--spread">
+            <p class="muted small" id="mobile-connect-expiry">Generate a QR to pair your phone.</p>
+            <button type="button" class="btn btn--ghost btn--sm" id="btn-refresh-connect">Refresh QR</button>
+          </div>
+          <div class="mobile-connect-panel__content">
+            <img id="mobile-connect-qr" width="150" height="150" alt="Session connect QR" />
+            <div class="mobile-connect-panel__details">
+              <p class="muted small">Scan in the Android app.</p>
+              <details id="mobile-connect-manual" class="mobile-connect-manual">
+                <summary>Manual URL fallback</summary>
+                <p id="mobile-connect-url" class="mono small">Not generated yet.</p>
+                <div class="row-actions">
+                  <button type="button" class="btn btn--ghost btn--sm" id="btn-copy-connect-url">Copy URL</button>
+                </div>
+              </details>
+            </div>
+          </div>
+        </section>
+      </article>
+
+      <article class="card">
+        <h2>Latest misses</h2>
+        <ul id="miss-feed" class="list list--feed"></ul>
+      </article>
+    </div>
   </div>
 </section>
 
