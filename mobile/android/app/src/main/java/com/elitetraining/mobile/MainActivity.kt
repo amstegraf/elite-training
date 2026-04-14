@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -564,23 +565,39 @@ private fun BallChip(
         6 -> Color(0xFF33D17A)
         7 -> Color(0xFF8F5C38)
         8 -> Color(0xFF242424)
+        9 -> Color(0xFFFFFFFF) // striped 9: white + yellow band (desktop rack-ball--n9)
         else -> Color(0xFFF6D32D)
     }
     val finalBg = if (muted) mutedColor else bg
     val text = if (number == 1 || number == 9 || muted) Color(0xFF1F2937) else Color.White
+    val edge = when {
+        selected -> Color(0xFFFF694B)
+        !muted && number == 9 -> Color(0xFFD0D7E2) // keep white 9 visible on light panel
+        else -> Color.Transparent
+    }
+    val edgeW = when {
+        selected -> 3.dp
+        !muted && number == 9 -> 1.dp
+        else -> 0.dp
+    }
     Box(
         modifier = Modifier
             .size(52.dp)
             .clip(CircleShape)
             .background(finalBg)
-            .border(
-                width = if (selected) 3.dp else 0.dp,
-                color = if (selected) Color(0xFFFF694B) else Color.Transparent,
-                shape = CircleShape
-            )
+            .border(width = edgeW, color = edge, shape = CircleShape)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
+        if (!muted && number == 9) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.44f)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(Color(0xFFFACC15)) // #facc15 band like desktop
+            )
+        }
         Text(number.toString(), color = text, fontWeight = FontWeight.Bold)
     }
 }
@@ -733,6 +750,7 @@ private fun MiniBall(number: Int) {
         6 -> Color(0xFF33D17A)
         7 -> Color(0xFF8F5C38)
         8 -> Color(0xFF242424)
+        9 -> Color(0xFFFFFFFF)
         else -> Color(0xFFF6D32D)
     }
     val text = if (number == 1 || number == 9) Color(0xFF1F2937) else Color.White
@@ -740,9 +758,25 @@ private fun MiniBall(number: Int) {
         modifier = Modifier
             .size(28.dp)
             .clip(CircleShape)
-            .background(bg),
+            .background(bg)
+            .then(
+                if (number == 9) {
+                    Modifier.border(1.dp, Color(0xFFD0D7E2), CircleShape)
+                } else {
+                    Modifier
+                }
+            ),
         contentAlignment = Alignment.Center
     ) {
+        if (number == 9) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.46f)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(Color(0xFFFACC15))
+            )
+        }
         Text(number.toString(), color = text, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
     }
 }
