@@ -185,6 +185,13 @@ private fun MissControlScreen(connection: ConnectionInfo, onDisconnect: () -> Un
         return (1..9).firstOrNull { !state.playedBallNumbers.contains(it) } ?: 1
     }
 
+    fun applyLiveState(state: ApiClient.LiveState) {
+        liveState = state
+        currentDurationSeconds = state.effectiveDuration
+        isPaused = state.isPaused
+        ball = pickNextBall(state)
+    }
+
     fun refreshLive() {
         scope.launch {
             val result = ApiClient.fetchLiveState(connection)
@@ -192,10 +199,7 @@ private fun MissControlScreen(connection: ConnectionInfo, onDisconnect: () -> Un
                 Toast.makeText(context, result.message, Toast.LENGTH_LONG).show()
                 return@launch
             }
-            liveState = result.state
-            currentDurationSeconds = result.state.effectiveDuration
-            isPaused = result.state.isPaused
-            ball = pickNextBall(result.state)
+            applyLiveState(result.state)
         }
     }
 
@@ -375,10 +379,10 @@ private fun MissControlScreen(connection: ConnectionInfo, onDisconnect: () -> Un
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            TextButton(
+            Button(
                 enabled = !isSending,
                 onClick = {
-                    if (isSending) return@TextButton
+                    if (isSending) return@Button
                     scope.launch {
                         val state = liveState
                         val rackId = state?.currentRackId
@@ -387,7 +391,8 @@ private fun MissControlScreen(connection: ConnectionInfo, onDisconnect: () -> Un
                             val result = ApiClient.startRack(connection)
                             if (result.ok) {
                                 Toast.makeText(context, "Rack started", Toast.LENGTH_SHORT).show()
-                                refreshLive()
+                                val live = ApiClient.fetchLiveState(connection)
+                                if (live.ok && live.state != null) applyLiveState(live.state)
                             } else {
                                 Toast.makeText(context, result.message, Toast.LENGTH_LONG).show()
                             }
@@ -395,14 +400,21 @@ private fun MissControlScreen(connection: ConnectionInfo, onDisconnect: () -> Un
                             val result = ApiClient.endRack(connection, rackId)
                             if (result.ok) {
                                 Toast.makeText(context, "Rack ended", Toast.LENGTH_SHORT).show()
-                                refreshLive()
+                                val live = ApiClient.fetchLiveState(connection)
+                                if (live.ok && live.state != null) applyLiveState(live.state)
                             } else {
                                 Toast.makeText(context, result.message, Toast.LENGTH_LONG).show()
                             }
                         }
                         isSending = false
                     }
-                }
+                },
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFE3E8F1),
+                    contentColor = primaryText
+                ),
+                modifier = Modifier.width(120.dp)
             ) {
                 Text(
                     if (liveState?.currentRackId.isNullOrBlank()) "Start rack" else "End rack",
@@ -414,10 +426,15 @@ private fun MissControlScreen(connection: ConnectionInfo, onDisconnect: () -> Un
                 onClick = {
                 if (isSending) return@Button
                 scope.launch {
-                    val state = liveState
-                    val rackId = state?.currentRackId
+                    val latest = ApiClient.fetchLiveState(connection)
+                    if (!latest.ok || latest.state == null) {
+                        Toast.makeText(context, latest.message, Toast.LENGTH_LONG).show()
+                        return@launch
+                    }
+                    applyLiveState(latest.state)
+                    val rackId = latest.state.currentRackId
                     if (rackId.isNullOrBlank()) {
-                        Toast.makeText(context, "No open rack in session", Toast.LENGTH_LONG).show()
+                        Toast.makeText(context, "No open rack. Tap Start rack first.", Toast.LENGTH_LONG).show()
                         return@launch
                     }
                     isSending = true
@@ -434,8 +451,7 @@ private fun MissControlScreen(connection: ConnectionInfo, onDisconnect: () -> Un
                         outcome = "playable"
                         val live = ApiClient.fetchLiveState(connection)
                         if (live.ok && live.state != null) {
-                            liveState = live.state
-                            ball = pickNextBall(live.state)
+                            applyLiveState(live.state)
                         }
                     } else {
                         Toast.makeText(context, result.message, Toast.LENGTH_LONG).show()
@@ -464,7 +480,16 @@ private fun MissControlScreen(connection: ConnectionInfo, onDisconnect: () -> Un
                 color = sectionTitle,
                 fontWeight = FontWeight.Bold
             )
-            liveState?.recentMisses?.take(8)?.forEach { miss ->
+            val items = liveState?.recentMisses?.take(12).orEmpty()
+            items.forEachIndexed { idx, miss ->
+                if (idx > 0 && items[idx - 1].rackNumber != miss.rackNumber) {
+                    Text(
+                        "— Rack ${miss.rackNumber} —",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = sectionTitle,
+                        modifier = Modifier.padding(top = 2.dp, bottom = 2.dp)
+                    )
+                }
                 LatestMissItem(miss = miss, bg = cardBg, textColor = primaryText)
             }
         }
@@ -787,7 +812,11 @@ private object ApiClient {
             }
             val liveBody = liveResp.body?.string().orEmpty()
             val liveJson = JSONObject(liveBody)
-            val rackId = liveJson.optString("currentRackId").ifBlank { null }
+            val rackRaw = liveJson.opt("currentRackId")
+            val rackId = when (rackRaw) {
+                null, JSONObject.NULL -> null
+                else -> rackRaw.toString().takeIf { it.isNotBlank() && it.lowercase() != "null" }
+            }
             val suggested = liveJson.optInt("suggestedNextBall", 0).takeIf { it in 1..9 }
             val effectiveDuration = liveJson.optInt("effectiveDuration", 0).coerceAtLeast(0)
             val isPaused = liveJson.optBoolean("isPaused", false)
