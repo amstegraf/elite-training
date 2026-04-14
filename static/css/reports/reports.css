@@ -1100,6 +1100,33 @@
 }
 
 @media (max-width: 768px) {
+  .report-grid-main {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .report-stack--performance,
+  .report-stack--consistency {
+    display: contents;
+  }
+
+  .report-rack-consistency {
+    order: 0;
+  }
+
+  .report-kpi-triple {
+    order: 1;
+  }
+
+  .report-stack--performance > .reports__kpi-grid:first-child {
+    order: 2;
+  }
+
+  .report-stack--performance > .reports__kpi-grid:last-child {
+    order: 3;
+  }
+
   .report-consistency-grid {
     grid-template-columns: 1fr;
   }
