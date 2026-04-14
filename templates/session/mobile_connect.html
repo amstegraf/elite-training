@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Connect mobile · Elite Training{% endblock %}
+{% block content %}
+<section class="page">
+  <header class="page__header">
+    <div>
+      <p class="eyebrow">Mobile pairing</p>
+      <h1>Open in Android app</h1>
+    </div>
+  </header>
+  <article class="card">
+    <p>This link is meant for the Elite Training Android app.</p>
+    <p class="muted small">If you opened this in a browser, return to the app and use the QR scanner.</p>
+    <dl>
+      <dt>Server</dt>
+      <dd class="mono">{{ base_url }}</dd>
+      <dt>Session</dt>
+      <dd class="mono">{{ session_id }}</dd>
+      <dt>Token</dt>
+      <dd class="mono">{{ token }}</dd>
+    </dl>
+  </article>
+</section>
+{% endblock %}

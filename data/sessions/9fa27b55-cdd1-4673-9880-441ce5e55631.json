@@ -13,10 +13,10 @@
   "mode": "rack",
   "ruleOverrides": null,
   "totalRacks": 0,
-  "totalMisses": 0,
+  "totalMisses": 1,
   "avgBallsClearedPerRack": null,
   "bestRunBalls": 0,
-  "trueMissCount": 0,
+  "trueMissCount": 1,
   "trainingMissCount": 0,
   "avgBallsBeforeTrueMiss": null,
   "totalBallsCleared": 0,
@@ -24,10 +24,10 @@
   "trueMissRate": null,
   "racksCompleted": 0,
   "rackConversionRate": null,
-  "potMissShotCount": 0,
-  "potAttempts": 0,
-  "potSuccessRate": null,
-  "positionRelatedMissCount": 0,
+  "potMissShotCount": 1,
+  "potAttempts": 1,
+  "potSuccessRate": 0.0,
+  "positionRelatedMissCount": 1,
   "positionSuccessRate": null,
   "worstRackBallsCleared": null,
   "bestRackBallsCleared": null,
@@ -37,7 +37,7 @@
   "failedRecoveryRate": null,
   "noShotPositionCount": 0,
   "missTypeCounts": {
-    "position": 0,
+    "position": 1,
     "alignment": 0,
     "delivery": 0,
     "speed": 0
@@ -49,7 +49,18 @@
       "startedAt": "2026-04-13T07:57:30.573273+00:00",
       "endedAt": null,
       "ballsCleared": null,
-      "misses": []
+      "misses": [
+        {
+          "id": "7cdf75be-b540-4388-985f-85f57f15395c",
+          "ballNumber": 1,
+          "types": [
+            "position"
+          ],
+          "outcome": "pot_miss",
+          "endsRun": null,
+          "createdAt": "2026-04-14T10:45:55.655033+00:00"
+        }
+      ]
     }
   ],
   "currentRackId": "51bc947c-a0f2-4c13-8f1d-4bdaa44f8892",
