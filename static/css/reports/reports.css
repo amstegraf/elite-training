@@ -208,3 +208,347 @@
   margin-bottom: 1rem;
   font-size: 1.25rem;
 }
+
+/* Session report: rack ball run (pool colors) + custom tooltip */
+.rack-timeline {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.35rem;
+  width: max-content;
+  max-width: 100%;
+}
+
+.rack-ball {
+  position: relative;
+  flex: 0 0 auto;
+  width: 2.05rem;
+  height: 2.05rem;
+  min-width: 2.05rem;
+  min-height: 2.05rem;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 50%;
+  cursor: default;
+  background: transparent;
+  transition: transform 0.14s ease, filter 0.14s ease;
+}
+
+.rack-ball:hover:not(:disabled) {
+  transform: scale(1.06);
+}
+
+.rack-ball--miss_hard,
+.rack-ball--miss_soft {
+  cursor: help;
+}
+
+.rack-ball__face {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18), 0 1px 2px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.rack-ball__n {
+  position: relative;
+  z-index: 1;
+  font-family: "Outfit", "Inter", ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+/* Pool ball palette (1–9), aligned with training miss dialog */
+.rack-ball--n1 .rack-ball__face {
+  background: #facc15;
+}
+.rack-ball--n1 .rack-ball__n {
+  color: #1a1b1f;
+}
+
+.rack-ball--n2 .rack-ball__face {
+  background: #1d4ed8;
+}
+.rack-ball--n2 .rack-ball__n {
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.rack-ball--n3 .rack-ball__face {
+  background: #dc2626;
+}
+.rack-ball--n3 .rack-ball__n {
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.rack-ball--n4 .rack-ball__face {
+  background: #7c3aed;
+}
+.rack-ball--n4 .rack-ball__n {
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.rack-ball--n5 .rack-ball__face {
+  background: #ea580c;
+}
+.rack-ball--n5 .rack-ball__n {
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.rack-ball--n6 .rack-ball__face {
+  background: #16a34a;
+}
+.rack-ball--n6 .rack-ball__n {
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.rack-ball--n7 .rack-ball__face {
+  background: #92400e;
+}
+.rack-ball--n7 .rack-ball__n {
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.rack-ball--n8 .rack-ball__face {
+  background: #0a0a0a;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.rack-ball--n8 .rack-ball__n {
+  color: #fff;
+}
+
+.rack-ball--n9 .rack-ball__face {
+  background:
+    linear-gradient(
+      105deg,
+      #ffffff 38%,
+      #facc15 38%,
+      #facc15 52%,
+      #ffffff 52%
+    );
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+.rack-ball--n9 .rack-ball__n {
+  color: #1a1b1f;
+}
+
+/* Only unplayed balls are greyed; potted and missed keep full color */
+.rack-ball--unplayed {
+  filter: grayscale(1);
+  opacity: 0.48;
+}
+.rack-ball--unplayed .rack-ball__face {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.rack-ball__badge {
+  position: absolute;
+  right: -0.12rem;
+  bottom: -0.08rem;
+  z-index: 3;
+  width: 0.95rem;
+  height: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+.rack-ball__badge svg {
+  display: block;
+}
+
+.rack-ball__more {
+  position: absolute;
+  left: -0.05rem;
+  top: -0.05rem;
+  z-index: 4;
+  font-size: 0.48rem;
+  font-weight: 800;
+  line-height: 1;
+  padding: 0.1rem 0.18rem;
+  border-radius: 5px;
+  background: rgba(26, 27, 31, 0.9);
+  color: #fff;
+  font-family: ui-monospace, "Cascadia Code", monospace;
+}
+
+.rack-ball:focus-visible {
+  outline: 2px solid var(--accent-brand);
+  outline-offset: 3px;
+  border-radius: 50%;
+}
+
+/* Run-out: all nine balls cleared (no logged misses on timeline) */
+.rack-run-cup {
+  flex: 0 0 auto;
+  width: 2.05rem;
+  height: 2.05rem;
+  margin-left: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 2px 5px rgba(120, 53, 15, 0.4)) drop-shadow(0 1px 0 rgba(255, 255, 255, 0.35));
+}
+
+.rack-run-cup__svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.rack-tooltip {
+  --rack-tip-size: min(11rem, calc(100vw - 1.25rem), calc(100vh - 5rem));
+  width: var(--rack-tip-size);
+  height: var(--rack-tip-size);
+  max-width: var(--rack-tip-size);
+  max-height: var(--rack-tip-size);
+  padding: 0;
+  box-sizing: border-box;
+  border-radius: 8px;
+  background: rgba(26, 27, 31, 0.94);
+  color: #f4f4f5;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  font-family: "Outfit", "Inter", system-ui, sans-serif;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.14s ease, transform 0.14s ease;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.rack-tooltip__surface {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem 0.65rem 0.45rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.rack-tooltip--visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rack-tooltip,
+  .rack-tooltip--visible {
+    transition: none;
+  }
+}
+
+.rack-tooltip__title {
+  font-weight: 700;
+  font-size: 0.86rem;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.2rem;
+  padding-bottom: 0.28rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  flex-shrink: 0;
+  line-height: 1.2;
+}
+
+.rack-tooltip__body {
+  margin: 0;
+  color: #c4c6ce;
+  font-size: 0.76rem;
+}
+
+.rack-tooltip__section {
+  margin-top: 0.38rem;
+  padding-top: 0.38rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.rack-tooltip__section:first-of-type {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.rack-tooltip__kicker {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8e9199;
+  margin-bottom: 0.22rem;
+}
+
+.rack-tooltip__field {
+  margin-top: 0.32rem;
+}
+
+.rack-tooltip__field:first-of-type {
+  margin-top: 0;
+}
+
+.rack-tooltip__field .rack-tooltip__label {
+  display: block;
+  color: #8e9199;
+  font-size: 0.65rem;
+  font-weight: 600;
+  margin-bottom: 0.12rem;
+  letter-spacing: 0.02em;
+}
+
+.rack-tooltip__field .rack-tooltip__value {
+  display: block;
+  text-align: left;
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: #f4f4f8;
+  line-height: 1.28;
+}
+
+.rack-tooltip__row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 0.25rem;
+}
+
+.rack-tooltip__label {
+  flex-shrink: 0;
+  color: #8e9199;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.rack-tooltip__value {
+  text-align: right;
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 0.78rem;
+  color: #eef0f4;
+}
+
+.rack-tooltip__muted {
+  margin-top: 0.35rem;
+  font-size: 0.76rem;
+  color: #a1a4ad;
+  line-height: 1.35;
+}

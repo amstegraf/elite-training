@@ -1,0 +1,35 @@
+<button
+  type="button"
+  class="rack-ball rack-ball--n{{ cell.ball }} rack-ball--{{ cell.state }}"
+  {% if cell.tip_events %}data-tip-events='{{ cell.tip_events | tojson }}'{% endif %}
+  data-ball="{{ cell.ball }}"
+  data-state="{{ cell.state }}"
+  aria-label="{% if cell.state == 'potted' %}Ball {{ cell.ball }}, cleared{% elif cell.state == 'unplayed' %}Ball {{ cell.ball }}, not played{% elif cell.state == 'miss_hard' %}Ball {{ cell.ball }}, run-ending miss{% else %}Ball {{ cell.ball }}, training miss{% endif %}"
+>
+  <span class="rack-ball__face"><span class="rack-ball__n">{{ cell.ball }}</span></span>
+  {% if cell.overlay == 'hard_x' %}
+  <span class="rack-ball__badge rack-ball__badge--hard" aria-hidden="true">
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="6" cy="6" r="5.5" fill="#ffedd5" stroke="#ea580c" stroke-width="0.75"/>
+      <path d="M3.5 3.5l5 5M8.5 3.5l-5 5" stroke="#c2410c" stroke-width="1.15" stroke-linecap="round"/>
+    </svg>
+  </span>
+  {% elif cell.overlay == 'playable' %}
+  <span class="rack-ball__badge rack-ball__badge--playable" aria-hidden="true">
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="6" cy="6" r="5.5" fill="#dcfce7" stroke="#16a34a" stroke-width="0.75"/>
+      <path d="M3.2 6.1l2.1 2.1L8.9 3.6" stroke="#15803d" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </span>
+  {% elif cell.overlay == 'no_shot' %}
+  <span class="rack-ball__badge rack-ball__badge--no_shot" aria-hidden="true">
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="6" cy="6" r="5.25" fill="#fee2e2" stroke="#dc2626" stroke-width="0.75"/>
+      <path d="M3.2 3.2l5.6 5.6" stroke="#b91c1c" stroke-width="1.15" stroke-linecap="round"/>
+    </svg>
+  </span>
+  {% endif %}
+  {% if cell.extra_type_count > 0 %}
+  <span class="rack-ball__more" aria-hidden="true">+{{ cell.extra_type_count }}</span>
+  {% endif %}
+</button>
