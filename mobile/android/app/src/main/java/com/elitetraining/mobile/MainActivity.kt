@@ -426,12 +426,15 @@ private fun MissControlScreen(connection: ConnectionInfo, onDisconnect: () -> Un
                 onClick = {
                 if (isSending) return@Button
                 scope.launch {
+                    val selectedBall = ball
                     val latest = ApiClient.fetchLiveState(connection)
                     if (!latest.ok || latest.state == null) {
                         Toast.makeText(context, latest.message, Toast.LENGTH_LONG).show()
                         return@launch
                     }
-                    applyLiveState(latest.state)
+                    liveState = latest.state
+                    currentDurationSeconds = latest.state.effectiveDuration
+                    isPaused = latest.state.isPaused
                     val rackId = latest.state.currentRackId
                     if (rackId.isNullOrBlank()) {
                         Toast.makeText(context, "No open rack. Tap Start rack first.", Toast.LENGTH_LONG).show()
@@ -441,7 +444,7 @@ private fun MissControlScreen(connection: ConnectionInfo, onDisconnect: () -> Un
                     val result = ApiClient.submitMiss(
                         connection = connection,
                         rackId = rackId,
-                        ball = ball,
+                        ball = selectedBall,
                         types = types.toList(),
                         outcome = outcome
                     )
