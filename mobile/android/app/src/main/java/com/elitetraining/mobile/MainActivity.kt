@@ -676,44 +676,48 @@ private fun LatestMissItem(
 ) {
     val outcomeLabel = miss.outcome.replace('_', ' ')
     val typesLabel = if (miss.types.isEmpty()) "No tags" else miss.types.joinToString(", ")
-    Row(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(bg)
-            .padding(horizontal = 10.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
     ) {
-        Box {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(bg)
+                .padding(horizontal = 10.dp, vertical = 8.dp)
+                .padding(end = if (showUndo) 40.dp else 0.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             MiniBall(number = miss.ballNumber)
-            if (showUndo) {
-                TextButton(
-                    onClick = onUndo,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .offset(x = 10.dp, y = (-10).dp)
-                        .size(24.dp)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(Color(0xFFFFE5E0)),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
-                ) {
-                    Text("↺", color = Color(0xFFFF694B), style = MaterialTheme.typography.bodySmall)
-                }
+            Spacer(modifier = Modifier.width(10.dp))
+            Column {
+                Text(
+                    "Rack ${miss.rackNumber} · ${outcomeLabel.replaceFirstChar { it.uppercase() }}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = textColor,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    typesLabel,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF7E8CA5)
+                )
             }
         }
-        Spacer(modifier = Modifier.width(10.dp))
-        Column {
-            Text(
-                "Rack ${miss.rackNumber} · ${outcomeLabel.replaceFirstChar { it.uppercase() }}",
-                style = MaterialTheme.typography.bodySmall,
-                color = textColor,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                typesLabel,
-                style = MaterialTheme.typography.bodySmall,
-                color = Color(0xFF7E8CA5)
-            )
+        if (showUndo) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 10.dp)
+                    .size(24.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0xFFFF694B))
+                    .clickable(onClick = onUndo),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("↺", color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
+            }
         }
     }
 }
