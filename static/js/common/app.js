@@ -15,6 +15,11 @@ function formatDurationMs(ms) {
 }
 
 window.formatDurationMs = formatDurationMs;
+if (!window.showToast && window.showAppToast) {
+  window.showToast = function (message, asError) {
+    window.showAppToast(message, { error: !!asError });
+  };
+}
 
 (function () {
   const firstForm = document.getElementById("first-profile-form");
@@ -49,6 +54,13 @@ window.formatDurationMs = formatDurationMs;
     if (addModal) addModal.hidden = true;
   }
 
+  function wireModalRootClose(modal, onClose) {
+    if (!modal) return;
+    modal.addEventListener("click", function (e) {
+      if (e.target === modal && onClose) onClose();
+    });
+  }
+
   if (addOpen) {
     addOpen.addEventListener("click", function (e) {
       e.preventDefault();
@@ -56,6 +68,7 @@ window.formatDurationMs = formatDurationMs;
     });
   }
   if (addCancel) addCancel.addEventListener("click", closeAdd);
+  wireModalRootClose(addModal, closeAdd);
 
   if (addForm) {
     addForm.addEventListener("submit", async function (e) {
@@ -71,4 +84,9 @@ window.formatDurationMs = formatDurationMs;
       if (r.ok) window.location.reload();
     });
   }
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+    if (addModal && !addModal.hidden) closeAdd();
+  });
 })();

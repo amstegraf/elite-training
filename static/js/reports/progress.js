@@ -55,6 +55,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const frColor = '#ff8b9b'; 
     const frColorLight = 'rgba(255, 139, 155, 0.2)';
     const darkAcc = '#1a1b1f';
+    const isCompact = window.matchMedia('(max-width: 768px)').matches;
+    const isPhone = window.matchMedia('(max-width: 480px)').matches;
 
     // Shared options for secondary line charts (clean sparkline-esque with axes)
     const commonLineOptions = {
@@ -76,12 +78,18 @@ document.addEventListener('DOMContentLoaded', () => {
             y: {
                 beginAtZero: true,
                 border: { display: false },
-                grid: { display: false } // removed for cleaner look
+                grid: { display: false }, // removed for cleaner look
+                ticks: {
+                    maxTicksLimit: isCompact ? 5 : 10
+                }
             },
             x: {
                 grid: { display: false },
                 border: { display: false },
-                ticks: { color: 'rgba(142, 145, 153, 0.6)' } // Faded bottom labels
+                ticks: {
+                    color: 'rgba(142, 145, 153, 0.6)', // Faded bottom labels
+                    maxTicksLimit: isPhone ? 4 : (isCompact ? 6 : 12)
+                }
             }
         },
         interaction: { mode: 'nearest', axis: 'x', intersect: false },
@@ -226,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (ctxRec && data.recovery_pct) {
         setMetricFromLastSession('metric-recovery', data.recovery_pct, '%');
         const recOpt = cloneObj(commonLineOptions);
-        recOpt.plugins.legend = { display: true, position: 'top' };
+        recOpt.plugins.legend = { display: true, position: isCompact ? 'bottom' : 'top' };
         recOpt.scales.y.max = 100;
         new Chart(ctxRec, {
             type: 'line',
@@ -263,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
     while (spdPctBad.length < labelsGran.length) spdPctBad.push(null);
     if (ctxPosSpdGran && (posPctBad.some(v => v != null) || spdPctBad.some(v => v != null))) {
         const granOpt = cloneObj(commonLineOptions);
-        granOpt.plugins.legend = { display: true, position: 'top' };
+        granOpt.plugins.legend = { display: true, position: isCompact ? 'bottom' : 'top' };
         granOpt.scales.y.max = 100;
         new Chart(ctxPosSpdGran, {
             type: 'line',
@@ -516,7 +524,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const ctxMisses = document.getElementById('chart-misses-rack');
     if (ctxMisses) {
         const missOpt = cloneObj(commonLineOptions);
-        missOpt.plugins.legend = { display: true, position: 'top' };
+        missOpt.plugins.legend = { display: true, position: isCompact ? 'bottom' : 'top' };
         const truePer = data.true_misses_per_rack || data.misses_per_rack;
         const trainPer = data.training_logs_per_rack || [];
         new Chart(ctxMisses, {
@@ -549,7 +557,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const ctxSpread = document.getElementById('chart-rack-spread');
     if (ctxSpread && data.labels && data.avg_rack_balls) {
         const spreadOpt = cloneObj(commonLineOptions);
-        spreadOpt.plugins.legend = { display: true, position: 'top' };
+        spreadOpt.plugins.legend = { display: true, position: isCompact ? 'bottom' : 'top' };
         spreadOpt.scales.y.max = 9;
         new Chart(ctxSpread, {
             type: 'line',
@@ -650,7 +658,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { display: true, position: 'top', labels: { usePointStyle: true, boxWidth: 8 } },
+                    legend: { display: true, position: isCompact ? 'bottom' : 'top', labels: { usePointStyle: true, boxWidth: 8 } },
                     tooltip: {
                         backgroundColor: 'rgba(26, 27, 31, 0.9)',
                         titleFont: { size: 13, family: '"Outfit"' },

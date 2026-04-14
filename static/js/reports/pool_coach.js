@@ -9,6 +9,7 @@
 
   var coachState = { scope: null, sessionId: "" };
   var meshReachable = false;
+  var lastOpenButton = null;
 
   function ensureAiButtonUiStyles() {
     if (document.getElementById("ai-button-ui-styles")) return;
@@ -266,6 +267,11 @@
     dlg.addEventListener("click", function (ev) {
       if (ev.target === dlg) close();
     });
+    dlg.addEventListener("close", function () {
+      if (lastOpenButton && typeof lastOpenButton.focus === "function") {
+        lastOpenButton.focus();
+      }
+    });
 
     var regenBtn = document.getElementById("pool-coach-regenerate");
     if (regenBtn) {
@@ -283,6 +289,8 @@
     coachState.sessionId = sessionId || "";
     try {
       dlg.showModal();
+      var dismissBtn = document.getElementById("pool-coach-dismiss");
+      if (dismissBtn && typeof dismissBtn.focus === "function") dismissBtn.focus();
     } catch (e) {}
     runCoach(scope, coachState.sessionId, false);
   }
@@ -313,6 +321,7 @@
       buttons.forEach(function (btn) {
         btn.addEventListener("click", function () {
           if (btn.disabled) return;
+          lastOpenButton = btn;
           var sc = btn.getAttribute("data-pool-coach-scope");
           if (!sc) return;
           var sid = btn.getAttribute("data-session-id") || "";

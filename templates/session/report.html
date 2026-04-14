@@ -261,9 +261,9 @@
         </thead>
         <tbody>
           {% for r in session.racks %}
-          <tr>
-            <td>{{ r.rack_number }}</td>
-            <td>
+          <tr class="report-rack-row">
+            <td data-label="#">{{ r.rack_number }}</td>
+            <td data-label="Run">
               {% set cells = r | rack_ball_timeline %}
               <div class="rack-timeline" role="group" aria-label="Rack {{ r.rack_number }} balls 1–9">
                 {% for cell in cells %}{% include "partials/rack_ball_cell.html" %}{% endfor %}
@@ -274,9 +274,9 @@
                 {% endif %}
               </div>
             </td>
-            <td>{% if r.balls_cleared is not none %}{{ r.balls_cleared }}{% else %}—{% endif %}</td>
-            <td>{{ r.misses|length }}</td>
-            <td class="muted">{% if r.ended_at %}<span class="local-rack-ended" data-session-start="{{ session.started_at }}" data-rack-started="{{ r.started_at }}" data-rack-ended="{{ r.ended_at }}"></span>{% else %}Open{% endif %}</td>
+            <td data-label="Balls cleared">{% if r.balls_cleared is not none %}{{ r.balls_cleared }}{% else %}—{% endif %}</td>
+            <td data-label="Misses">{{ r.misses|length }}</td>
+            <td class="muted" data-label="Ended">{% if r.ended_at %}<span class="local-rack-ended" data-session-start="{{ session.started_at }}" data-rack-started="{{ r.started_at }}" data-rack-ended="{{ r.ended_at }}"></span>{% else %}Open{% endif %}</td>
           </tr>
           {% endfor %}
         </tbody>

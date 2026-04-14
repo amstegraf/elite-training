@@ -304,7 +304,11 @@
 /* Miss Modal Redesign */
 .miss-modal {
   padding: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  max-height: calc(100dvh - 2rem);
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   background: white;
   min-width: 360px;
 }
@@ -325,6 +329,8 @@
 
 .miss-modal__content {
   padding: 1.5rem 2rem 2rem;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .miss-section-title {
@@ -545,6 +551,10 @@
   justify-content: space-between;
   align-items: center;
   margin-top: 1.5rem;
+  position: sticky;
+  bottom: 0;
+  background: white;
+  padding-top: 0.75rem;
 }
 
 .btn-cancel-action {
@@ -893,3 +903,88 @@
 }
 
 /* Removed miss-modal border */
+
+@media (max-width: 768px) {
+  .session-duration-display {
+    font-size: clamp(2.2rem, 8vw, 3.1rem);
+    letter-spacing: -0.04em;
+  }
+
+  .btn-log-massive {
+    height: 96px;
+    font-size: clamp(1.4rem, 6vw, 1.8rem);
+    border-radius: 18px;
+  }
+
+  .mobile-connect-panel__details {
+    min-width: 0;
+  }
+
+  .miss-modal {
+    min-width: 0;
+  }
+
+  .miss-modal__header {
+    padding: 1rem 1.1rem;
+  }
+
+  .miss-modal__content {
+    padding: 1rem 1.1rem 1.1rem;
+  }
+
+  .session-dialog-close-btn {
+    top: 0.6rem;
+    right: 0.6rem;
+    width: 2rem;
+    height: 2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.18);
+  }
+
+  .miss-reasons-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .outcome-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .miss-modal__actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .btn-save-action {
+    width: 100%;
+  }
+
+  .btn-cancel-action {
+    width: 100%;
+    border-radius: 12px;
+    background: var(--surface2);
+    padding: 0.75rem 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .session-live .row-actions {
+    width: 100%;
+  }
+
+  .session-live .row-actions > .btn,
+  .session-live .row-actions > a {
+    flex: 1;
+  }
+
+  .ball-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .session-ball-grid-new {
+    max-width: none;
+  }
+}

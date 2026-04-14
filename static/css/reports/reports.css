@@ -1098,3 +1098,132 @@
   animation: ai-spin 1s linear infinite;
   stroke: #7c3aed;
 }
+
+@media (max-width: 768px) {
+  .report-consistency-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .report-kpi-triple {
+    grid-template-columns: 1fr;
+  }
+
+  .report-details-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .bar-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .bar-label,
+  .bar-val {
+    width: auto;
+    text-align: left;
+  }
+
+  .report-chart-wrap {
+    height: 230px;
+  }
+
+  .progress-chart-tall {
+    height: 320px;
+  }
+
+  .progress-chart-mid {
+    height: 260px;
+  }
+
+  .progress-metric-head {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .progress-metric-copy {
+    max-width: 100%;
+  }
+
+  #pool-coach-dialog {
+    width: calc(100vw - 1rem);
+    max-width: calc(100vw - 1rem);
+    max-height: calc(100dvh - 1rem);
+    margin: 0;
+  }
+
+  .pool-coach-modal__body {
+    padding: 1rem;
+  }
+
+  .pool-coach-modal__close {
+    position: static;
+    margin-left: auto;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 999px;
+    background: var(--surface2);
+  }
+
+  #pool-coach-body {
+    max-height: 50dvh;
+    font-size: 0.98rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .progress-hero-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-card {
+    padding: 1rem;
+  }
+
+  .progress-section-heading {
+    font-size: 1.2rem;
+  }
+
+  .progress-section-subheading {
+    display: block;
+    margin-left: 0;
+  }
+
+  .rack-ball {
+    width: 1.85rem;
+    height: 1.85rem;
+    min-width: 1.85rem;
+    min-height: 1.85rem;
+  }
+
+  .report-rack-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.3rem;
+    border-bottom: 1px solid var(--border);
+    padding: 0.45rem 0;
+  }
+
+  .report-rack-row td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.6rem;
+    border: 0;
+    padding: 0.25rem 0.1rem;
+  }
+
+  .report-rack-row td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+  }
+
+  .report-rack-row .rack-timeline {
+    margin-left: auto;
+  }
+}

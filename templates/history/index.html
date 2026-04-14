@@ -26,13 +26,13 @@
       </thead>
       <tbody>
         {% for s in sessions %}
-        <tr data-session-id="{{ s.id }}">
-          <td class="mono"><span class="local-session-range local-session-range--friendly" data-start="{{ s.started_at }}" data-end=""></span></td>
-          <td>{{ plan_labels.get(s.plan_id, s.plan_id) }}</td>
-          <td>{{ s.status.value }}</td>
-          <td>{{ s.total_racks }}</td>
-          <td>{{ s.total_misses }}</td>
-          <td class="table-actions">
+        <tr data-session-id="{{ s.id }}" class="history-row">
+          <td class="mono" data-label="Started"><span class="local-session-range local-session-range--friendly" data-start="{{ s.started_at }}" data-end=""></span></td>
+          <td data-label="Plan">{{ plan_labels.get(s.plan_id, s.plan_id) }}</td>
+          <td data-label="Status">{{ s.status.value }}</td>
+          <td data-label="Racks">{{ s.total_racks }}</td>
+          <td data-label="Misses">{{ s.total_misses }}</td>
+          <td class="table-actions history-actions" data-label="Actions">
             {% if s.status.value == 'in_progress' %}
             <a class="btn btn--ghost btn--sm" href="/session/{{ s.id }}">Open</a>
             {% else %}

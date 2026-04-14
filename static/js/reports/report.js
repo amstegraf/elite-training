@@ -1,6 +1,7 @@
 (function () {
   const dataEl = document.getElementById("report-data");
   if (!dataEl) return;
+  const isCompact = window.matchMedia("(max-width: 768px)").matches;
 
   document.querySelectorAll(".bar-fill[data-width]").forEach((el) => {
     const width = parseFloat(el.dataset.width || "0");
@@ -73,8 +74,8 @@
           }
         },
         scales: {
-          y: { beginAtZero: true, border: { display: false }, max: 9 },
-          x: { grid: { display: false }, border: { display: false } }
+          y: { beginAtZero: true, border: { display: false }, max: 9, ticks: { maxTicksLimit: isCompact ? 5 : 10 } },
+          x: { grid: { display: false }, border: { display: false }, ticks: { maxTicksLimit: isCompact ? 6 : 12 } }
         },
         interaction: { mode: "nearest", axis: "x", intersect: false }
       }
@@ -128,7 +129,7 @@
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { display: true, position: "top" },
+          legend: { display: true, position: isCompact ? "bottom" : "top" },
           tooltip: {
             backgroundColor: "rgba(26, 27, 31, 0.9)",
             titleFont: { size: 13, family: '"Outfit"' },
@@ -138,8 +139,8 @@
           },
         },
         scales: {
-          y: { beginAtZero: true, ticks: { stepSize: 1 }, border: { display: false } },
-          x: { grid: { display: false }, border: { display: false } },
+          y: { beginAtZero: true, ticks: { stepSize: 1, maxTicksLimit: isCompact ? 5 : 10 }, border: { display: false } },
+          x: { grid: { display: false }, border: { display: false }, ticks: { maxTicksLimit: isCompact ? 6 : 12 } },
         },
         interaction: { mode: "index", axis: "x", intersect: false },
       },
@@ -150,6 +151,9 @@
 (function () {
   const tip = document.getElementById("session-rack-tooltip");
   if (!tip) return;
+  const isTouchDevice =
+    window.matchMedia("(hover: none), (pointer: coarse)").matches ||
+    "ontouchstart" in window;
 
   if (tip.parentElement !== document.body) {
     document.body.appendChild(tip);
@@ -270,6 +274,9 @@
     lastAnchor = btn;
     fillTip(btn);
     tip.classList.add("rack-tooltip--visible");
+    if (isTouchDevice) {
+      tip.style.pointerEvents = "auto";
+    }
     positionTip(btn);
   }
 
@@ -297,19 +304,41 @@
       scheduleHide();
     }, true);
     row.addEventListener("mouseover", function (e) {
+      if (isTouchDevice) return;
       const btn = e.target.closest(".rack-ball");
       if (!btn || !row.contains(btn)) return;
       showFor(btn);
     });
     row.addEventListener("mouseleave", function () {
+      if (isTouchDevice) return;
       scheduleHide();
     });
     row.addEventListener("mousemove", function (e) {
+      if (isTouchDevice) return;
       const btn = e.target.closest(".rack-ball");
       if (!btn || !row.contains(btn) || tip.hidden) return;
       if (!isMissBall(btn)) return;
       positionTip(btn);
     });
+    row.addEventListener("click", function (e) {
+      const btn = e.target.closest(".rack-ball");
+      if (!btn || !row.contains(btn) || !isMissBall(btn)) {
+        if (isTouchDevice) hideTipNow();
+        return;
+      }
+      if (isTouchDevice && lastAnchor === btn && !tip.hidden) {
+        hideTipNow();
+        return;
+      }
+      showFor(btn);
+    });
+  });
+
+  document.addEventListener("click", function (e) {
+    if (tip.hidden) return;
+    const onMissBall = e.target.closest(".rack-ball--miss_hard, .rack-ball--miss_soft");
+    if (onMissBall || tip.contains(e.target)) return;
+    hideTipNow();
   });
 
   document.addEventListener("keydown", function (e) {
