@@ -211,12 +211,13 @@
 
 /* Session report: rack ball run (pool colors) + custom tooltip */
 .rack-timeline {
+  --rack-gap: 0.35rem;
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
   align-items: center;
   justify-content: flex-start;
-  gap: 0.35rem;
+  gap: var(--rack-gap);
   width: max-content;
   max-width: 100%;
 }
@@ -396,13 +397,12 @@
 /* Run-out: all nine balls cleared (no logged misses on timeline) */
 .rack-run-cup {
   flex: 0 0 auto;
-  width: 2.05rem;
-  height: 2.05rem;
-  margin-left: 0.25rem;
+  width: 1.8rem;
+  height: 1.8rem;
+  margin-left: calc(var(--rack-gap) * -1.4);
   display: flex;
   align-items: center;
   justify-content: center;
-  filter: drop-shadow(0 2px 5px rgba(120, 53, 15, 0.4)) drop-shadow(0 1px 0 rgba(255, 255, 255, 0.35));
 }
 
 .rack-run-cup__svg {

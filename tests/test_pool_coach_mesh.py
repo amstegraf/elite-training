@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from unittest.mock import AsyncMock
 
@@ -98,7 +99,14 @@ def test_mesh_health_reachable(monkeypatch: pytest.MonkeyPatch) -> None:
         lambda: "http://mesh.test",
     )
 
-    class Resp:
+    class HealthResp:
+        status_code = 200
+
+        @staticmethod
+        def json() -> dict[str, object]:
+            return {"ok": True}
+
+    class InstructionsResp:
         status_code = 200
 
     class AC:
@@ -108,7 +116,7 @@ def test_mesh_health_reachable(monkeypatch: pytest.MonkeyPatch) -> None:
         async def __aexit__(self, *args: object) -> None:
             return None
 
-        get = AsyncMock(return_value=Resp())
+        get = AsyncMock(side_effect=[HealthResp(), InstructionsResp()])
 
     monkeypatch.setattr("app.routers.api_ai_coach.httpx.AsyncClient", lambda **kw: AC())
     client = TestClient(create_app())
@@ -135,9 +143,40 @@ def test_mesh_health_unreachable(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("app.routers.api_ai_coach.httpx.AsyncClient", lambda **kw: AC())
     client = TestClient(create_app())
     r = client.get("/api/ai/mesh-health")
-    assert r.status_code == 200
+    assert r.status_code == 503
     body = r.json()
     assert body["reachable"] is False
+
+
+def test_mesh_health_rejects_non_json_health_200(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "app.routers.api_ai_coach.resolve_mesh_base_url",
+        lambda: "http://mesh.test",
+    )
+
+    class HealthResp:
+        status_code = 200
+
+        @staticmethod
+        def json() -> dict[str, object]:
+            raise json.JSONDecodeError("bad", "<html>ok</html>", 0)
+
+    class AC:
+        async def __aenter__(self) -> AC:
+            return self
+
+        async def __aexit__(self, *args: object) -> None:
+            return None
+
+        get = AsyncMock(return_value=HealthResp())
+
+    monkeypatch.setattr("app.routers.api_ai_coach.httpx.AsyncClient", lambda **kw: AC())
+    client = TestClient(create_app())
+    r = client.get("/api/ai/mesh-health")
+    assert r.status_code == 503
+    body = r.json()
+    assert body["reachable"] is False
+    assert "valid JSON" in body["detail"]
 
 
 def test_mesh_settings_instruction_override_roundtrip(

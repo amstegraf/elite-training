@@ -4,7 +4,7 @@ import json
 from typing import Any, Literal
 
 import httpx
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, HTTPException, Query, Request, Response, status
 from pydantic import BaseModel, ConfigDict, Field
 
 import app.config as app_config
@@ -57,21 +57,59 @@ def _reference_session_id(request: Request) -> str | None:
 
 
 @router.get("/mesh-health")
-async def mesh_health() -> dict[str, Any]:
+async def mesh_health(response: Response) -> dict[str, Any]:
     base = resolve_mesh_base_url()
-    url = f"{base.rstrip('/')}/health"
+    health_url = f"{base.rstrip('/')}/health"
+    instr_url = f"{base.rstrip('/')}/instructions"
     try:
         async with httpx.AsyncClient(timeout=_MESH_HEALTH_TIMEOUT) as client:
-            r = await client.get(url)
+            r = await client.get(health_url)
+            # Basic contract check: /health must return JSON-ish data from mesh,
+            # not just any arbitrary 200 from another local service.
+            health_payload = r.json()
+            i = await client.get(
+                instr_url, params={"agent_name": app_config.POOL_COACH_AGENT_NAME}
+            )
     except httpx.TimeoutException:
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
         return {"reachable": False, "detail": "Mesh host did not respond in time."}
     except httpx.RequestError:
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
         return {"reachable": False, "detail": "Could not connect to mesh host."}
+    except (json.JSONDecodeError, TypeError, ValueError):
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+        return {
+            "reachable": False,
+            "detail": "Mesh /health did not return valid JSON.",
+        }
     reachable = 200 <= r.status_code < 300
     if not reachable:
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
         return {
             "reachable": False,
             "detail": f"Mesh /health returned HTTP {r.status_code}.",
+        }
+    if not isinstance(health_payload, dict):
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+        return {"reachable": False, "detail": "Mesh /health JSON shape is invalid."}
+    if health_payload.get("ok") is False or health_payload.get("reachable") is False:
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+        return {
+            "reachable": False,
+            "detail": "Mesh /health reports not ready.",
+        }
+    status_val = str(health_payload.get("status", "")).strip().lower()
+    if status_val in {"down", "error", "unhealthy", "not_ready"}:
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+        return {
+            "reachable": False,
+            "detail": f"Mesh /health status={status_val}.",
+        }
+    if i.status_code != 200:
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+        return {
+            "reachable": False,
+            "detail": f"Mesh /instructions returned HTTP {i.status_code}.",
         }
     return {"reachable": True}
 
