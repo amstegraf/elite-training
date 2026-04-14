@@ -27,6 +27,7 @@ from app.services.session_service import (
     load_session_for_profile,
     start_rack,
     start_session,
+    undo_last_miss,
 )
 from app.services.sessions_repo import delete_session, list_sessions, load_session, save_session
 
@@ -285,6 +286,25 @@ def api_add_miss(
             outcome=body.outcome,
         )
         return {"session": s.model_dump(by_alias=True)}
+    except (SessionNotFoundError, BadRequestError) as e:
+        _handle(e)
+
+
+@router.post("/{session_id}/undo-miss")
+def api_undo_miss(request: Request, session_id: str) -> dict:
+    _guard_mobile_or_desktop_session(request, session_id)
+    try:
+        s, rack, miss = undo_last_miss(session_id)
+        return {
+            "session": s.model_dump(by_alias=True),
+            "undone": {
+                "rackId": rack.id,
+                "rackNumber": rack.rack_number,
+                "missId": miss.id,
+                "ballNumber": miss.ball_number,
+                "outcome": miss.outcome.value,
+            },
+        }
     except (SessionNotFoundError, BadRequestError) as e:
         _handle(e)
 

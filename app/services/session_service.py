@@ -205,6 +205,33 @@ def add_miss(
     return session
 
 
+def undo_last_miss(session_id: str) -> tuple[PrecisionSession, RackRecord, MissEvent]:
+    session = load_session(session_id)
+    if not session:
+        raise SessionNotFoundError
+    if session.status != PrecisionSessionStatus.IN_PROGRESS:
+        raise BadRequestError("Session is not in progress")
+
+    latest_rack: RackRecord | None = None
+    latest_miss: MissEvent | None = None
+    latest_created_at = ""
+    for rack in session.racks:
+        for miss in rack.misses:
+            created = miss.created_at or ""
+            if created >= latest_created_at:
+                latest_created_at = created
+                latest_rack = rack
+                latest_miss = miss
+
+    if not latest_rack or not latest_miss:
+        raise BadRequestError("No miss to undo")
+
+    latest_rack.misses = [m for m in latest_rack.misses if m.id != latest_miss.id]
+    recompute_session_aggregates(session)
+    save_session(session)
+    return session, latest_rack, latest_miss
+
+
 def toggle_session_pause(session_id: str, pause: bool) -> PrecisionSession:
     session = load_session(session_id)
     if not session:

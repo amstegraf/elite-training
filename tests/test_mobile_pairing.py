@@ -75,6 +75,14 @@ def test_mobile_live_and_miss_requires_token(client) -> None:
     assert miss.status_code == 200
     assert miss.json()["session"]["totalMisses"] == 1
 
+    undo = client.post(
+        f"/api/sessions/{sid}/undo-miss",
+        headers=headers,
+    )
+    assert undo.status_code == 200
+    assert undo.json()["session"]["totalMisses"] == 0
+    assert undo.json()["undone"]["ballNumber"] == 3
+
     paused = client.post(
         f"/api/sessions/{sid}/pause",
         json={"pause": True},

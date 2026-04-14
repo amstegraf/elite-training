@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -34,6 +35,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
@@ -168,6 +170,7 @@ private fun MissControlScreen(connection: ConnectionInfo, onDisconnect: () -> Un
     var liveState by remember { mutableStateOf<ApiClient.LiveState?>(null) }
     var currentDurationSeconds by remember { mutableStateOf(0) }
     var isPaused by remember { mutableStateOf(false) }
+    var showUndoConfirm by remember { mutableStateOf(false) }
 
     val panelBg = Color(0xFFF2F4F7)
     val cardBg = Color(0xFFE6E9EF)
@@ -493,9 +496,54 @@ private fun MissControlScreen(connection: ConnectionInfo, onDisconnect: () -> Un
                         modifier = Modifier.padding(top = 2.dp, bottom = 2.dp)
                     )
                 }
-                LatestMissItem(miss = miss, bg = cardBg, textColor = primaryText)
+                LatestMissItem(
+                    miss = miss,
+                    bg = cardBg,
+                    textColor = primaryText,
+                    showUndo = idx == 0,
+                    onUndo = {
+                        if (!isSending) showUndoConfirm = true
+                    }
+                )
             }
         }
+    }
+
+    if (showUndoConfirm) {
+        AlertDialog(
+            onDismissRequest = { showUndoConfirm = false },
+            title = { Text("Undo miss") },
+            text = { Text("Undo the most recent miss?") },
+            dismissButton = {
+                TextButton(onClick = { showUndoConfirm = false }) {
+                    Text("Cancel")
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showUndoConfirm = false
+                        if (isSending) return@TextButton
+                        scope.launch {
+                            isSending = true
+                            val result = ApiClient.undoLastMiss(connection)
+                            if (result.ok) {
+                                Toast.makeText(context, "Miss undone", Toast.LENGTH_SHORT).show()
+                                val live = ApiClient.fetchLiveState(connection)
+                                if (live.ok && live.state != null) {
+                                    applyLiveState(live.state)
+                                }
+                            } else {
+                                Toast.makeText(context, result.message, Toast.LENGTH_LONG).show()
+                            }
+                            isSending = false
+                        }
+                    }
+                ) {
+                    Text("Undo")
+                }
+            }
+        )
     }
 }
 
@@ -622,7 +670,9 @@ private fun OutcomeCard(
 private fun LatestMissItem(
     miss: ApiClient.LiveMiss,
     bg: Color,
-    textColor: Color
+    textColor: Color,
+    showUndo: Boolean,
+    onUndo: () -> Unit
 ) {
     val outcomeLabel = miss.outcome.replace('_', ' ')
     val typesLabel = if (miss.types.isEmpty()) "No tags" else miss.types.joinToString(", ")
@@ -634,7 +684,23 @@ private fun LatestMissItem(
             .padding(horizontal = 10.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        MiniBall(number = miss.ballNumber)
+        Box {
+            MiniBall(number = miss.ballNumber)
+            if (showUndo) {
+                TextButton(
+                    onClick = onUndo,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .offset(x = 10.dp, y = (-10).dp)
+                        .size(24.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(Color(0xFFFFE5E0)),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+                ) {
+                    Text("↺", color = Color(0xFFFF694B), style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
         Spacer(modifier = Modifier.width(10.dp))
         Column {
             Text(
@@ -802,6 +868,7 @@ private object ApiClient {
     data class PauseResult(val ok: Boolean, val message: String = "")
     data class EndRackResult(val ok: Boolean, val message: String = "")
     data class StartRackResult(val ok: Boolean, val message: String = "")
+    data class UndoResult(val ok: Boolean, val message: String = "")
 
     suspend fun fetchLiveState(connection: ConnectionInfo): LiveFetchResult = withContext(Dispatchers.IO) {
         try {
@@ -993,6 +1060,31 @@ private object ApiClient {
                 else -> e.message ?: "Request failed"
             }
             StartRackResult(false, msg)
+        }
+    }
+
+    suspend fun undoLastMiss(connection: ConnectionInfo): UndoResult = withContext(Dispatchers.IO) {
+        try {
+            val req = authedRequest(
+                "${connection.baseUrl}/api/sessions/${connection.sessionId}/undo-miss",
+                connection
+            ).newBuilder()
+                .post("".toRequestBody(null))
+                .build()
+            val res = client.newCall(req).execute()
+            if (!res.isSuccessful) {
+                return@withContext UndoResult(false, "Could not undo miss (${res.code})")
+            }
+            UndoResult(true)
+        } catch (e: Exception) {
+            val msg = when (e) {
+                is SocketTimeoutException ->
+                    "Could not reach desktop app (timeout). Check same Wi-Fi and firewall."
+                is ConnectException, is UnknownHostException ->
+                    "Desktop app is unreachable. Check same Wi-Fi and allow app through firewall."
+                else -> e.message ?: "Request failed"
+            }
+            UndoResult(false, msg)
         }
     }
 

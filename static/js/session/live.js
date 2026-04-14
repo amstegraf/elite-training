@@ -9,6 +9,7 @@
   const btnEndRack = document.getElementById("btn-end-rack");
   const btnNewRack = document.getElementById("btn-new-rack");
   const btnEndSession = document.getElementById("btn-end-session");
+  const btnUndoMiss = document.getElementById("btn-undo-miss");
   const missForm = document.getElementById("miss-form");
   const rackForm = document.getElementById("rack-end-form");
   const missCancel = document.getElementById("miss-cancel");
@@ -55,6 +56,11 @@
     if (!connectExpiry) return;
     connectExpiry.textContent = text;
     connectExpiry.style.color = isError ? "var(--danger)" : "";
+  }
+
+  function syncConnectButtonLabel() {
+    if (!btnConnectPhone || !connectPanel) return;
+    btnConnectPhone.textContent = connectPanel.hidden ? "Show QR" : "Hide QR";
   }
 
   function renderQrValue(value) {
@@ -165,6 +171,9 @@
     const session = live.session;
     const rack = currentRack();
     missTotal.textContent = String(session.totalMisses ?? 0);
+    if (btnUndoMiss) {
+      btnUndoMiss.disabled = (session.totalMisses ?? 0) <= 0;
+    }
     if (rack) {
       rackLabel.textContent = `Rack ${rack.rackNumber}`;
       btnMiss.disabled = false;
@@ -263,11 +272,25 @@
   btnMiss.addEventListener("click", () => {
     if (dialog) dialog.showModal();
   });
+  if (btnUndoMiss) {
+    btnUndoMiss.addEventListener("click", async () => {
+      if (!confirm("Undo the most recent miss?")) return;
+      const res = await fetch(`/api/sessions/${sessionId}/undo-miss`, { method: "POST" });
+      if (!res.ok) {
+        const msg = (await res.json().catch(() => ({}))).detail || "Could not undo miss";
+        if (window.showToast) window.showToast(msg, true);
+        return;
+      }
+      if (window.showToast) window.showToast("Miss undone");
+      await refresh();
+    });
+  }
 
   if (btnConnectPhone && connectPanel) {
     btnConnectPhone.addEventListener("click", async () => {
       const willShow = connectPanel.hidden;
       connectPanel.hidden = !willShow;
+      syncConnectButtonLabel();
       if (willShow && !connectInfo) {
         await refreshConnectInfo();
       }
@@ -398,6 +421,7 @@
   });
 
   refresh();
+  syncConnectButtonLabel();
   if (syncInterval) clearInterval(syncInterval);
   syncInterval = setInterval(() => {
     refreshSilent().catch(() => {});
