@@ -35,6 +35,108 @@
     });
   }
 
+  const rackEditDialog = document.getElementById("rack-edit-dialog");
+  const rackEditForm = document.getElementById("rack-edit-form");
+  const rackEditBalls = document.getElementById("rack-edit-balls");
+  const rackEditCount = document.getElementById("rack-edit-count");
+  const rackEditCancel = document.getElementById("rack-edit-cancel");
+  const rackEditOpenBtns = Array.from(document.querySelectorAll(".rack-edit__open"));
+  let rackEditState = { rackId: "", rackNumber: "", selected: new Set() };
+
+  function buildRackEditBall(n, selectedSet) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = `rack-edit-ball rack-ball rack-ball--n${n}`;
+    btn.setAttribute("data-ball", String(n));
+    btn.setAttribute("aria-label", `Ball ${n}`);
+    btn.innerHTML =
+      `<span class="rack-ball__face"><span class="rack-ball__n">${n}</span></span>` +
+      `<span class="rack-edit-ball__check" aria-hidden="true">` +
+      `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">` +
+      `<circle cx="6" cy="6" r="5.5" fill="#dcfce7" stroke="#16a34a" stroke-width="0.75"/>` +
+      `<path d="M3.2 6.1l2.1 2.1L8.9 3.6" stroke="#15803d" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>` +
+      `</svg>` +
+      `</span>`;
+    if (selectedSet.has(n)) btn.classList.add("is-selected");
+    btn.addEventListener("click", () => {
+      if (selectedSet.has(n)) selectedSet.delete(n);
+      else selectedSet.add(n);
+      btn.classList.toggle("is-selected", selectedSet.has(n));
+      if (rackEditCount) rackEditCount.textContent = String(selectedSet.size);
+    });
+    return btn;
+  }
+
+  function openRackEditDialog(btn) {
+    if (!rackEditDialog || !rackEditForm || !rackEditBalls || !rackEditCount) return;
+    const rackId = btn.getAttribute("data-rack-id") || "";
+    const rackNumber = btn.getAttribute("data-rack-number") || "";
+    const cleared = Math.max(
+      0,
+      Math.min(9, parseInt(btn.getAttribute("data-balls-cleared") || "0", 10) || 0)
+    );
+    const selected = new Set();
+    for (let i = 1; i <= cleared; i++) selected.add(i);
+    rackEditState = { rackId, rackNumber, selected };
+
+    rackEditBalls.innerHTML = "";
+    for (let i = 1; i <= 9; i++) rackEditBalls.appendChild(buildRackEditBall(i, selected));
+    rackEditCount.textContent = String(selected.size);
+    rackEditDialog.showModal();
+  }
+
+  if (rackEditCancel && rackEditDialog) {
+    rackEditCancel.addEventListener("click", () => rackEditDialog.close());
+  }
+  rackEditOpenBtns.forEach((btn) => {
+    btn.addEventListener("click", () => openRackEditDialog(btn));
+  });
+
+  if (rackEditForm && rackEditDialog) {
+    rackEditForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const ballsCleared = rackEditState.selected.size;
+      const rackId = rackEditState.rackId;
+      if (!sessionId || !rackId) return;
+      const submitBtn = rackEditForm.querySelector(".btn-save-action");
+      const cancelBtn = rackEditForm.querySelector("#rack-edit-cancel");
+      if (submitBtn) submitBtn.disabled = true;
+      if (cancelBtn) cancelBtn.disabled = true;
+      try {
+        const res = await fetch(
+          `/api/sessions/${encodeURIComponent(sessionId)}/racks/${encodeURIComponent(
+            rackId
+          )}`,
+          {
+            method: "PATCH",
+            credentials: "same-origin",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ballsCleared }),
+          }
+        );
+        if (!res.ok) {
+          let detail = `Could not update rack${rackEditState.rackNumber ? " " + rackEditState.rackNumber : ""}.`;
+          try {
+            const body = await res.json();
+            if (body && typeof body.detail === "string") detail = body.detail;
+          } catch (err) {}
+          if (window.showToast) window.showToast(detail, true);
+          else alert(detail);
+          if (submitBtn) submitBtn.disabled = false;
+          if (cancelBtn) cancelBtn.disabled = false;
+          return;
+        }
+        rackEditDialog.close();
+        window.location.reload();
+      } catch (err) {
+        if (window.showToast) window.showToast("Network error while updating rack.", true);
+        else alert("Network error while updating rack.");
+        if (submitBtn) submitBtn.disabled = false;
+        if (cancelBtn) cancelBtn.disabled = false;
+      }
+    });
+  }
+
   const canvas = document.getElementById("chart-rack-runs");
   if (canvas && rawData.labels && rawData.labels.length > 0) {
     Chart.defaults.font.family = '"Outfit", "Inter", system-ui, sans-serif';

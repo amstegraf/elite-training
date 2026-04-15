@@ -581,7 +581,7 @@ input::placeholder, textarea::placeholder {
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
 }
 
-@media (max-width: 800px) {
+@media (max-width: 800px) and (any-hover: none) {
   .session-live__grid {
     grid-template-columns: 1fr;
   }

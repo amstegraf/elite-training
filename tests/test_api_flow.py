@@ -75,3 +75,40 @@ def test_import_session_via_api(client) -> None:
     imp3 = client.post("/api/sessions/import?overwrite=true", json=body)
     assert imp3.status_code == 200
     assert imp3.json()["id"] == sid
+
+
+def test_edit_rack_balls_cleared_from_report_flow(client) -> None:
+    r = client.post("/api/programs", json={"name": "P2", "durationDays": 30})
+    pid = r.json()["program"]["id"]
+    r2 = client.post(
+        f"/api/programs/{pid}/plans",
+        json={"name": "Plan B", "focusType": "mixed"},
+    )
+    plan_id = r2.json()["plan"]["id"]
+
+    start = client.post(
+        "/api/sessions",
+        json={"planId": plan_id, "tableType": "nine_ft", "mode": "rack"},
+    )
+    assert start.status_code == 200
+    session = start.json()["session"]
+    sid = session["id"]
+    rack_id = session["racks"][0]["id"]
+
+    end_r = client.post(
+        f"/api/sessions/{sid}/racks/{rack_id}/end",
+        json={"ballsCleared": 0},
+    )
+    assert end_r.status_code == 200
+
+    end_s = client.post(f"/api/sessions/{sid}/end")
+    assert end_s.status_code == 200
+    assert end_s.json()["session"]["status"] == "completed"
+
+    edit = client.patch(
+        f"/api/sessions/{sid}/racks/{rack_id}",
+        json={"ballsCleared": 4},
+    )
+    assert edit.status_code == 200
+    s_after = edit.json()["session"]
+    assert s_after["racks"][0]["ballsCleared"] == 4

@@ -904,7 +904,7 @@
 
 /* Removed miss-modal border */
 
-@media (max-width: 768px) {
+@media (max-width: 768px) and (any-hover: none) {
   .session-duration-display {
     font-size: clamp(2.2rem, 8vw, 3.1rem);
     letter-spacing: -0.04em;
@@ -970,7 +970,7 @@
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 480px) and (any-hover: none) {
   .session-live .row-actions {
     width: 100%;
   }

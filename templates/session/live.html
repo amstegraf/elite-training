@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Live session · Elite Training{% endblock %}
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', path='css/session/session.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', path='css/session/session.css') }}?v=1.1">
 {% endblock %}
 {% block content %}
 <section class="page session-live animate-in" data-session-id="{{ session.id }}">

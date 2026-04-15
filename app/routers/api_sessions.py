@@ -27,6 +27,7 @@ from app.services.session_service import (
     load_session_for_profile,
     start_rack,
     start_session,
+    update_rack_balls_cleared,
     undo_last_miss,
 )
 from app.services.sessions_repo import delete_session, list_sessions, load_session, save_session
@@ -55,6 +56,12 @@ class AddMissBody(BaseModel):
     ball_number: int = Field(ge=1, le=15, alias="ballNumber")
     types: list[MissType]
     outcome: MissOutcome
+
+
+class EditRackBody(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    balls_cleared: int = Field(ge=0, le=9, alias="ballsCleared")
 
 
 def _profile_ctx(request: Request) -> tuple[str | None, bool]:
@@ -284,6 +291,22 @@ def api_add_miss(
             ball_number=body.ball_number,
             types=body.types,
             outcome=body.outcome,
+        )
+        return {"session": s.model_dump(by_alias=True)}
+    except (SessionNotFoundError, BadRequestError) as e:
+        _handle(e)
+
+
+@router.patch("/{session_id}/racks/{rack_id}")
+def api_edit_rack(
+    request: Request, session_id: str, rack_id: str, body: EditRackBody
+) -> dict:
+    _guard_session(request, session_id)
+    try:
+        s = update_rack_balls_cleared(
+            session_id,
+            rack_id,
+            balls_cleared=body.balls_cleared,
         )
         return {"session": s.model_dump(by_alias=True)}
     except (SessionNotFoundError, BadRequestError) as e:

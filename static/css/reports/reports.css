@@ -624,6 +624,128 @@
   display: block;
 }
 
+/* Inline rack correction controls on session report */
+.rack-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 1.6rem;
+}
+
+.rack-edit__value {
+  min-width: 1ch;
+  font-variant-numeric: tabular-nums;
+}
+
+.rack-edit__open {
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1;
+  border-radius: 999px;
+  padding: 0.24rem 0.5rem;
+  cursor: pointer;
+}
+
+.rack-edit__open:hover {
+  color: var(--text);
+}
+
+.rack-edit-balls-grid {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 0.5rem;
+  justify-items: center;
+  padding-top: 0.25rem;
+}
+
+.rack-edit-ball {
+  position: relative;
+  width: 2.2rem;
+  height: 2.2rem;
+  min-width: 2.2rem;
+  min-height: 2.2rem;
+  opacity: 0.45;
+  filter: grayscale(1);
+  transition: transform 0.14s ease, opacity 0.14s ease, filter 0.14s ease;
+}
+
+.rack-edit-ball:hover {
+  transform: scale(1.06);
+}
+
+.rack-edit-ball.is-selected {
+  opacity: 1;
+  filter: none;
+}
+
+.rack-edit-ball__check {
+  position: absolute;
+  right: -0.15rem;
+  bottom: -0.1rem;
+  width: 1.02rem;
+  height: 1.02rem;
+  display: none;
+  z-index: 4;
+}
+
+.rack-edit-ball.is-selected .rack-edit-ball__check {
+  display: block;
+}
+
+#rack-edit-dialog .miss-modal__actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+#rack-edit-dialog .btn-cancel-action,
+#rack-edit-dialog .btn-save-action {
+  border: none;
+  border-radius: 12px;
+  padding: 0.7rem 1.15rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
+}
+
+#rack-edit-dialog .btn-cancel-action {
+  background: transparent;
+  color: var(--text);
+}
+
+#rack-edit-dialog .btn-cancel-action:hover {
+  background: var(--surface2);
+}
+
+#rack-edit-dialog .btn-save-action {
+  background: var(--accent-brand);
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(255, 105, 75, 0.24);
+}
+
+#rack-edit-dialog .btn-save-action:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(255, 105, 75, 0.3);
+}
+
+#rack-edit-dialog .btn-save-action:disabled,
+#rack-edit-dialog .btn-cancel-action:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .rack-edit-balls-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
 .rack-tooltip {
   --rack-tip-size: min(11rem, calc(100vw - 1.25rem), calc(100vh - 5rem));
   width: var(--rack-tip-size);

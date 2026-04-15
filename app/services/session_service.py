@@ -173,6 +173,26 @@ def end_rack(
     return session
 
 
+def update_rack_balls_cleared(
+    session_id: str,
+    rack_id: str,
+    *,
+    balls_cleared: int,
+) -> PrecisionSession:
+    session = load_session(session_id)
+    if not session:
+        raise SessionNotFoundError
+    rack = next((r for r in session.racks if r.id == rack_id), None)
+    if not rack:
+        raise BadRequestError("Unknown rack")
+    if not rack.ended_at:
+        raise BadRequestError("Rack is still open")
+    rack.balls_cleared = balls_cleared
+    recompute_session_aggregates(session)
+    save_session(session)
+    return session
+
+
 def add_miss(
     session_id: str,
     rack_id: str,

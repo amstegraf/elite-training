@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Session report · Elite Training{% endblock %}
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', path='css/reports/reports.css') }}?v=2.2">
+<link rel="stylesheet" href="{{ url_for('static', path='css/reports/reports.css') }}?v=2.4">
 {% endblock %}
 {% block content %}
 <section class="page animate-in">
@@ -274,7 +274,21 @@
                 {% endif %}
               </div>
             </td>
-            <td data-label="Balls cleared">{% if r.balls_cleared is not none %}{{ r.balls_cleared }}{% else %}—{% endif %}</td>
+            <td data-label="Balls cleared">
+              <div class="rack-edit">
+                <span class="rack-edit__value">{% if r.balls_cleared is not none %}{{ r.balls_cleared }}{% else %}—{% endif %}</span>
+                {% if r.ended_at %}
+                <button
+                  type="button"
+                  class="rack-edit__open"
+                  title="Edit potted balls"
+                  data-rack-id="{{ r.id }}"
+                  data-rack-number="{{ r.rack_number }}"
+                  data-balls-cleared="{% if r.balls_cleared is not none %}{{ r.balls_cleared }}{% else %}0{% endif %}"
+                >Edit</button>
+                {% endif %}
+              </div>
+            </td>
             <td data-label="Misses">{{ r.misses|length }}</td>
             <td class="muted" data-label="Ended">{% if r.ended_at %}<span class="local-rack-ended" data-session-start="{{ session.started_at }}" data-rack-started="{{ r.started_at }}" data-rack-ended="{{ r.ended_at }}"></span>{% else %}Open{% endif %}</td>
           </tr>
@@ -288,6 +302,27 @@
   </article>
 
   <div id="session-rack-tooltip" class="rack-tooltip" hidden role="tooltip"></div>
+  <dialog id="rack-edit-dialog" class="modal">
+    <form method="dialog" id="rack-edit-form" class="modal__body miss-modal">
+      <div class="miss-modal__header">
+        <h2>Edit rack</h2>
+        <p class="session-modal-subtle">Select the balls you successfully potted this rack.</p>
+      </div>
+      <div class="miss-modal__content">
+        <div class="miss-modal__group">
+          <span class="label-text session-label-center">Balls potted</span>
+          <div id="rack-edit-balls" class="rack-edit-balls-grid" role="group" aria-label="Balls potted"></div>
+        </div>
+        <div class="muted small session-end-rack-count-wrap">
+          <strong id="rack-edit-count" class="session-end-rack-count">0</strong> balls cleared
+        </div>
+        <div class="miss-modal__actions">
+          <button type="button" class="btn-cancel-action" id="rack-edit-cancel">Cancel</button>
+          <button type="submit" class="btn-save-action">Confirm</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
 
   <form class="inline-danger" method="dialog">
     <button type="button" class="btn btn--ghost" id="btn-delete-session">Delete session</button>
@@ -296,6 +331,6 @@
 {% include "partials/pool_coach_modal.html" %}
   <div id="report-data" data-chart='{{ chart_data_json|tojson }}' data-session-id="{{ session.id }}" hidden></div>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="{{ url_for('static', path='js/reports/report.js') }}?v=1.0" defer></script>
+  <script src="{{ url_for('static', path='js/reports/report.js') }}?v=1.1" defer></script>
   <script src="{{ url_for('static', path='js/reports/pool_coach.js') }}?v=3" defer></script>
 {% endblock %}
