@@ -4,25 +4,25 @@ overview: "Transform the current server-rendered web UI into a polished mobile-r
 todos:
   - id: mobile-foundation
     content: Refactor shared shell and navigation in base template/CSS for <=768 and <=480 breakpoints.
-    status: pending
+    status: completed
   - id: modal-standardization
     content: Unify modal sizing, close behavior, and viewport-safe scrolling across common/session/reports styles and JS.
-    status: pending
+    status: completed
   - id: screen-responsive-refactor
     content: Replace inline desktop layout styles in core templates with responsive class-based CSS.
-    status: pending
+    status: completed
   - id: chart-mobile-readability
     content: Apply mobile chart presets in report/progress JS and CSS for readability/performance.
-    status: pending
+    status: completed
   - id: dense-data-touch-ux
     content: Improve table/timeline mobile interaction and add tap-first tooltip/popover behavior.
-    status: pending
+    status: completed
   - id: settings-mobile-cleanup
     content: Adjust settings navigation/forms for phone-friendly layout and interaction.
-    status: pending
+    status: completed
   - id: qa-regression
     content: Run cross-viewport functional QA and fix mobile regressions while preserving desktop UX.
-    status: pending
+    status: completed
 isProject: false
 ---
 

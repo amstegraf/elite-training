@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -37,6 +36,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
@@ -51,9 +51,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -78,6 +83,41 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
+import kotlin.math.cos
+import kotlin.math.hypot
+import kotlin.math.sin
+
+/**
+ * Matches desktop `.rack-ball--n9`: `linear-gradient(105deg, #fff 38%, #facc15 38%, #facc15 52%, #fff 52%)`.
+ * Axis is offset so the yellow band midpoint (0.45 along stops) passes through the ball center — symmetric
+ * start/end would map the center to 0.50 and skew the stripe.
+ */
+private fun nineBallStripeBrush(width: Float, height: Float): Brush {
+    val white = Color.White
+    val yellow = Color(0xFFFACC15)
+    val deg = 105.0
+    val rad = Math.toRadians(deg)
+    val dirX = sin(rad).toFloat()
+    val dirY = (-cos(rad)).toFloat()
+    val axisLen = hypot(width.toDouble(), height.toDouble()).toFloat() * 0.95f
+    val cx = width * 0.5f
+    val cy = height * 0.5f
+    val yellowMidStop = (0.38f + 0.52f) * 0.5f
+    val tailStart = yellowMidStop
+    val tailEnd = 1f - yellowMidStop
+    return Brush.linearGradient(
+        colorStops = arrayOf(
+            0f to white,
+            0.38f to white,
+            0.38f to yellow,
+            0.52f to yellow,
+            0.52f to white,
+            1f to white
+        ),
+        start = Offset(cx - dirX * axisLen * tailStart, cy - dirY * axisLen * tailStart),
+        end = Offset(cx + dirX * axisLen * tailEnd, cy + dirY * axisLen * tailEnd)
+    )
+}
 
 class MainActivity : ComponentActivity() {
     private val requestCameraPermission =
@@ -401,7 +441,15 @@ private fun MissControlScreen(connection: ConnectionInfo, onDisconnect: () -> Un
                                 Toast.makeText(context, result.message, Toast.LENGTH_LONG).show()
                             }
                         } else {
-                            val result = ApiClient.endRack(connection, rackId)
+                            val inferredCleared = state.playedBallNumbers
+                                ?.maxOrNull()
+                                ?.minus(1)
+                                ?.coerceIn(0, 9)
+                            val result = ApiClient.endRack(
+                                connection = connection,
+                                rackId = rackId,
+                                ballsCleared = inferredCleared
+                            )
                             if (result.ok) {
                                 Toast.makeText(context, "Rack ended", Toast.LENGTH_SHORT).show()
                                 val live = ApiClient.fetchLiveState(connection)
@@ -584,21 +632,32 @@ private fun BallChip(
         modifier = Modifier
             .size(52.dp)
             .clip(CircleShape)
-            .background(finalBg)
+            .then(
+                if (!muted && number == 9) {
+                    Modifier.drawBehind {
+                        drawRect(brush = nineBallStripeBrush(size.width, size.height))
+                    }
+                } else {
+                    Modifier.background(finalBg)
+                }
+            )
             .border(width = edgeW, color = edge, shape = CircleShape)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        if (!muted && number == 9) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(0.44f)
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(Color(0xFFFACC15)) // #facc15 band like desktop
+        val nineStyle = LocalTextStyle.current.merge(
+            TextStyle(
+                textAlign = TextAlign.Center,
+                platformStyle = PlatformTextStyle(includeFontPadding = false)
             )
-        }
-        Text(number.toString(), color = text, fontWeight = FontWeight.Bold)
+        )
+        Text(
+            number.toString(),
+            color = text,
+            fontWeight = FontWeight.Bold,
+            style = if (number == 9) nineStyle else LocalTextStyle.current,
+            modifier = if (number == 9) Modifier.offset(x = (-0.5).dp) else Modifier
+        )
     }
 }
 
@@ -758,26 +817,32 @@ private fun MiniBall(number: Int) {
         modifier = Modifier
             .size(28.dp)
             .clip(CircleShape)
-            .background(bg)
             .then(
                 if (number == 9) {
-                    Modifier.border(1.dp, Color(0xFFD0D7E2), CircleShape)
-                } else {
                     Modifier
+                        .drawBehind {
+                            drawRect(brush = nineBallStripeBrush(size.width, size.height))
+                        }
+                        .border(1.dp, Color(0xFFD0D7E2), CircleShape)
+                } else {
+                    Modifier.background(bg)
                 }
             ),
         contentAlignment = Alignment.Center
     ) {
-        if (number == 9) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(0.46f)
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(Color(0xFFFACC15))
+        val nineStyle = MaterialTheme.typography.bodySmall.merge(
+            TextStyle(
+                textAlign = TextAlign.Center,
+                platformStyle = PlatformTextStyle(includeFontPadding = false)
             )
-        }
-        Text(number.toString(), color = text, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
+        )
+        Text(
+            number.toString(),
+            color = text,
+            fontWeight = FontWeight.Bold,
+            style = if (number == 9) nineStyle else MaterialTheme.typography.bodySmall,
+            modifier = if (number == 9) Modifier.offset(x = (-0.35).dp) else Modifier
+        )
     }
 }
 
@@ -1049,9 +1114,15 @@ private object ApiClient {
         }
     }
 
-    suspend fun endRack(connection: ConnectionInfo, rackId: String): EndRackResult = withContext(Dispatchers.IO) {
+    suspend fun endRack(
+        connection: ConnectionInfo,
+        rackId: String,
+        ballsCleared: Int? = null
+    ): EndRackResult = withContext(Dispatchers.IO) {
         try {
-            val payload = JSONObject()
+            val payload = JSONObject().apply {
+                if (ballsCleared != null) put("ballsCleared", ballsCleared)
+            }
             val req = authedRequest(
                 "${connection.baseUrl}/api/sessions/${connection.sessionId}/racks/$rackId/end",
                 connection
