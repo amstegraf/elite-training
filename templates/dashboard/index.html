@@ -16,7 +16,7 @@
             {% include 'partials/tier_badge.html' %}
           </div>
           {% if global_training_tier_meta %}
-          <div class="dashboard-tier-block__meta muted dashboard-tier-meta" title="Tier points = composite (0–4) × your settings scale. Progress within current band: {{ global_training_tier_meta.band_lo_pts }}–{{ global_training_tier_meta.band_hi_pts }} pts.">
+          <div class="dashboard-tier-block__meta muted dashboard-tier-meta" title="Tier points use a fixed 0–10000 scale derived from your baseline percentages. Progress within current band: {{ global_training_tier_meta.band_lo_pts }}–{{ global_training_tier_meta.band_hi_pts }} pts.">
             <div class="dashboard-tier-meta__row">
               <span class="mono dashboard-tier-meta__value">{{ global_training_tier_meta.tier_points }} <span class="dashboard-tier-meta__suffix">pts</span></span>
               {% if global_training_tier_meta.points_to_next is not none %}

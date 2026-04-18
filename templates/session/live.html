@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Live session · Elite Training{% endblock %}
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', path='css/session/session.css') }}?v=1.1">
+<link rel="stylesheet" href="{{ url_for('static', path='css/session/session.css') }}?v=1.2">
 {% endblock %}
 {% block content %}
 <section class="page session-live animate-in" data-session-id="{{ session.id }}">
@@ -74,7 +74,7 @@
             <button type="button" class="btn btn--ghost btn--sm" id="btn-refresh-connect">Refresh QR</button>
           </div>
           <div class="mobile-connect-panel__content">
-            <img id="mobile-connect-qr" width="150" height="150" alt="Session connect QR" />
+            <img id="mobile-connect-qr" alt="Session connect QR" decoding="async" />
             <div class="mobile-connect-panel__details">
               <p class="muted small">Scan in the Android app.</p>
               <details id="mobile-connect-manual" class="mobile-connect-manual">

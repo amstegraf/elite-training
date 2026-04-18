@@ -158,11 +158,9 @@ def _tiers_page_context(
     save_error: str | None = None,
 ) -> dict:
     ts = tier_settings
-    ceiling = ts.composite_points_scale * 4
     return {
         "settings_nav_active": "tiers",
         "tier_settings": ts,
-        "tier_points_ceiling": ceiling,
         "save_error": save_error,
         "tier_names": list(TIER_LABELS),
     }

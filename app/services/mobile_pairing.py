@@ -16,7 +16,7 @@ try:
 except ModuleNotFoundError:  # pragma: no cover - environment-dependent fallback
     qrcode = None
 
-DEFAULT_PAIR_TOKEN_TTL_SECONDS = 15 * 60
+DEFAULT_PAIR_TOKEN_TTL_SECONDS = 4 * 60 * 60
 
 
 @dataclass(slots=True)

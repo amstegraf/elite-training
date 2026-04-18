@@ -44,6 +44,16 @@ def test_mobile_pair_token_expiry(monkeypatch) -> None:
     assert not mobile_pairing.validate_pair_token(rec.token, session_id="session-exp")
 
 
+def test_mobile_pair_default_ttl_is_four_hours(monkeypatch) -> None:
+    mobile_pairing._TOKENS.clear()
+    mobile_pairing._SESSION_INDEX.clear()
+    monkeypatch.delenv("ELITE_TRAINING_PAIR_TOKEN_TTL_SECONDS", raising=False)
+    t0 = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    monkeypatch.setattr(mobile_pairing, "_utc_now", lambda: t0)
+    rec = mobile_pairing.issue_pair_token("session-ttl", "profile-ttl")
+    assert rec.expires_at - t0 == timedelta(hours=4)
+
+
 def test_mobile_live_and_miss_requires_token(client) -> None:
     sid, rack_id = _start_session(client)
 

@@ -46,10 +46,10 @@ def test_training_tier_dashboard_meta_doc_example() -> None:
     assert meta["imbalance"] == pytest.approx(1.3666666667, abs=1e-4)
     assert meta["penalty"] == pytest.approx(0.3416666667, abs=1e-4)
     assert meta["composite"] == pytest.approx(1.1483, abs=1e-4)
-    assert meta["tier_points"] == 1148
-    assert meta["points_to_next"] == 852
-    assert meta["band_lo_pts"] == 1000
-    assert meta["band_hi_pts"] == 2000
+    assert meta["tier_points"] == 2870
+    assert meta["points_to_next"] == 2130
+    assert meta["band_lo_pts"] == 2500
+    assert meta["band_hi_pts"] == 5000
 
 
 def test_training_tier_dashboard_meta_elite_no_gap() -> None:
@@ -60,10 +60,10 @@ def test_training_tier_dashboard_meta_elite_no_gap() -> None:
     assert meta["imbalance"] == pytest.approx(0.0)
     assert meta["penalty"] == pytest.approx(0.0)
     assert meta["composite"] == pytest.approx(4.0)
-    assert meta["tier_points"] == 4000
+    assert meta["tier_points"] == 10000
     assert meta["points_to_next"] is None
-    assert meta["band_lo_pts"] == 3500
-    assert meta["band_hi_pts"] == 4000
+    assert meta["band_lo_pts"] == 9500
+    assert meta["band_hi_pts"] == 10000
 
 
 def test_tier_settings_migrates_legacy_composite_bounds() -> None:
@@ -143,13 +143,13 @@ def test_continuous_score_clamps_at_extremes() -> None:
 
 def test_tier_index_alignment_with_point_cuts_continuous() -> None:
     cfg = TierSettings()
-    # Exactly at first anchors => each KPI score is 1.0 -> composite 1.0 -> 1000 points.
+    # Exactly at first anchors => each KPI score is 1.0 -> composite 1.0 -> 2500 points.
     m = training_tier_dashboard_meta(0.90, 0.55, 0.20, settings=cfg)
     assert m is not None
-    assert m["tier_points"] == 1000
-    assert m["band_lo_pts"] == 1000
-    assert m["band_hi_pts"] == 2000
-    assert m["next_tier_label"] == "Advanced"
+    assert m["tier_points"] == 2500
+    assert m["band_lo_pts"] == 2500
+    assert m["band_hi_pts"] == 5000
+    assert m["next_tier_label"] == "Strong Amateur"
 
 
 def test_imbalance_penalty_reduces_unbalanced_composite() -> None:
@@ -174,10 +174,10 @@ def test_penalty_factor_zero_disables_penalty_effect() -> None:
     assert meta is not None
     assert meta["penalty"] == pytest.approx(0.0)
     assert meta["composite"] == pytest.approx(meta["base_composite"])
-    assert meta["tier_points"] == 1490
+    assert meta["tier_points"] == 3724
 
 
-def test_b3_maps_to_score_three_and_keeps_elite_headroom() -> None:
+def test_b3_maps_to_score_three_point_five_and_keeps_elite_headroom() -> None:
     cfg = TierSettings(
         pot_pct_lower_bounds=(65.0, 82.0, 90.0, 94.0),
         pos_pct_lower_bounds=(30.0, 50.0, 65.0, 75.0),
@@ -187,13 +187,23 @@ def test_b3_maps_to_score_three_and_keeps_elite_headroom() -> None:
         weight_pot=0.2,
         penalty_factor=0.25,
     )
-    assert kpi_score_from_pct_continuous(94.0, cfg.pot_pct_lower_bounds) == pytest.approx(3.0)
-    assert kpi_score_from_pct_continuous(75.0, cfg.pos_pct_lower_bounds) == pytest.approx(3.0)
-    assert kpi_score_from_pct_continuous(50.0, cfg.conv_pct_lower_bounds) == pytest.approx(3.0)
+    assert kpi_score_from_pct_continuous(94.0, cfg.pot_pct_lower_bounds) == pytest.approx(3.5)
+    assert kpi_score_from_pct_continuous(75.0, cfg.pos_pct_lower_bounds) == pytest.approx(3.5)
+    assert kpi_score_from_pct_continuous(50.0, cfg.conv_pct_lower_bounds) == pytest.approx(3.5)
     meta = training_tier_dashboard_meta(0.94, 0.75, 0.50, settings=cfg)
     assert meta is not None
-    # Semi-pro minima now land around 3000, leaving room up to 4000 for Elite.
-    assert meta["tier_points"] == 3000
+    # Semi-pro minima now land around 8750 on the fixed 0-10000 scale.
+    assert meta["tier_points"] == 8750
+
+
+def test_points_to_next_never_zero_before_promotion() -> None:
+    cfg = TierSettings()
+    # Raw points can be high due strong POT/POS, but CONV gate can still hold tier down.
+    meta = training_tier_dashboard_meta(1.0, 1.0, 0.36, settings=cfg)
+    assert meta is not None
+    assert meta["next_tier_label"] is not None
+    assert meta["points_to_next"] is not None
+    assert meta["points_to_next"] >= 1
 
 
 def test_no_cliff_dive_at_b3_boundary() -> None:
@@ -202,8 +212,8 @@ def test_no_cliff_dive_at_b3_boundary() -> None:
     at = kpi_score_from_pct_continuous(60.0, bounds)
     above = kpi_score_from_pct_continuous(60.1, bounds)
     # No drop at b3: score should be continuous/non-decreasing.
-    assert below == pytest.approx(3.0)
-    assert at == pytest.approx(3.0)
+    assert below < at
+    assert at == pytest.approx(3.5)
     assert above > at
 
 

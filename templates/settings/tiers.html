@@ -5,7 +5,7 @@
   <header class="page__header settings-page-header">
     <div>
       <h1 class="settings-page-title">Training tiers</h1>
-      <p class="lede settings-page-lede">Weighted composite of potting, position outcome, and rack conversion scores. See <span class="mono">docs/matrix-calculation-of-tier.md</span>. Values are saved to <span class="mono">data/tier_settings.json</span> and drive the dashboard badge and session report.</p>
+      <p class="lede settings-page-lede">Weighted composite of potting, position outcome, and rack conversion scores. Tier points now use a fixed <span class="mono">0–10000</span> scale and are automatically derived from your baseline percentages so points and tiers stay aligned.</p>
     </div>
     <a class="btn btn--ghost" href="/">Dashboard</a>
   </header>
@@ -45,8 +45,8 @@
       <div class="tiers-sandbox-output">
         <div class="tiers-sandbox-kicker">Resulting Tier</div>
         <div id="sandbox_tier" class="tiers-sandbox-tier">Loading...</div>
-        <div id="sandbox_tp" class="mono tiers-sandbox-points">0 tier pts</div>
-        <div id="sandbox_note" class="muted small tiers-sandbox-note">Label is gated by KPI minima.</div>
+        <div id="sandbox_tp" class="mono tiers-sandbox-points">0 / 10000 pts</div>
+        <div id="sandbox_note" class="muted small tiers-sandbox-note">Points and tier are linked to the same percentage baselines.</div>
       </div>
     </div>
   </article>
@@ -85,7 +85,7 @@
 
         <fieldset class="tiers-fieldset">
           <legend class="muted tiers-legend">Elite</legend>
-          <p class="muted tiers-copy tiers-copy-compact">There is no extra percentage row: once every KPI is in the Semi-pro band (at or above the Semi-pro minima), you are already at the top KPI band. <strong>Elite</strong> vs <strong>Semi-pro</strong> on the dashboard is decided by <strong>tier points</strong> and the <em>Tier point cuts</em> below (same composite formula, higher points → Elite).</p>
+          <p class="muted tiers-copy tiers-copy-compact">There is no extra percentage row: once every KPI is in the Semi-pro band (at or above the Semi-pro minima), you are already at the top KPI band. <strong>Elite</strong> is reached by maintaining Semi-pro minima and pushing the adjusted composite higher on the fixed 0–10000 points scale.</p>
         </fieldset>
       </div>
     </article>
@@ -121,30 +121,8 @@
         </fieldset>
 
         <fieldset class="tiers-fieldset">
-          <legend class="muted tiers-legend">Tier points scale</legend>
-          <p class="muted tiers-copy">Adjusted composite (0-4) is multiplied by this value for <strong>tier points</strong> (dashboard, sandbox). KPI scores are interpolated continuously between your percentage thresholds, then imbalance penalty is applied before scaling. Elite spans from the last cut up to <span class="mono">4 × scale</span> (e.g. 4000 when scale is 1000).</p>
-          <div class="tiers-control-row">
-            <div class="tiers-control-label tiers-control-label--wide">Scale</div>
-            <input type="range" id="points_scale_range" min="100" max="8000" step="50" value="{{ ts.composite_points_scale }}" class="tiers-range">
-            <input name="points_scale" id="points_scale_num" type="number" min="50" max="50000" required value="{{ ts.composite_points_scale }}" class="tiers-number-input tiers-number-input--wide">
-          </div>
-        </fieldset>
-
-        <fieldset class="tiers-fieldset">
-          <legend class="muted tiers-legend">Tier point cuts</legend>
-          <p class="muted tiers-copy">Five ascending <strong>exclusive</strong> upper limits on tier points (six tiers: Beginner if tier pts &lt; first cut, then Amateur, Strong Amateur, Advanced, Semi-pro; Elite from the last cut up to <span class="mono">4 × scale</span>). Sliders cap when scale changes.</p>
-          <div class="tiers-fieldset-rows">
-            {% set cut_rows = [("Amateur", "(Beginner: tier pts <)"), ("Strong Amateur", ""), ("Advanced", ""), ("Semi-pro", ""), ("Elite", "(Semi-pro: tier pts <)")] %}
-            {% for cut_label, cut_note in cut_rows %}
-            <div class="tiers-control-row">
-              <div class="tiers-control-label tiers-control-label--cut">
-                → {{ cut_label }}{% if cut_note %} <span class="muted tiers-unit tiers-unit-small">{{ cut_note }}</span>{% endif %}
-              </div>
-              <input type="range" data-comp-pt-range="{{ loop.index0 }}" min="1" max="{{ tier_points_ceiling - 1 }}" step="5" value="{{ ts.composite_points_upper_bounds[loop.index0] }}" class="tiers-range">
-              <input name="comp_pt_{{ loop.index0 }}" type="number" min="1" required value="{{ ts.composite_points_upper_bounds[loop.index0] }}" class="tiers-number-input tiers-number-input--wide">
-            </div>
-            {% endfor %}
-          </div>
+          <legend class="muted tiers-legend">Tier points model</legend>
+          <p class="muted tiers-copy tiers-copy-compact">Tier points are fixed to <span class="mono">0–10000</span>. Point bands are auto-derived from your configured KPI baseline percentages, and dashboard points are constrained to the effective tier band so points and label cannot drift apart.</p>
         </fieldset>
       </div>
     </article>
@@ -156,5 +134,5 @@
 </section>
 {% endblock %}
 {% block settings_scripts %}
-<script src="{{ url_for('static', path='js/settings/tiers.js') }}?v=1.0" defer></script>
+<script src="{{ url_for('static', path='js/settings/tiers.js') }}?v=1.1" defer></script>
 {% endblock %}

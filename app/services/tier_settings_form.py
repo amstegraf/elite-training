@@ -14,12 +14,6 @@ def parse_tier_settings_form(form: Mapping[str, str]) -> TierSettings:
             raise ValueError(f"Missing field: {key}")
         return float(raw)
 
-    def req_int(key: str) -> int:
-        raw = str(form.get(key, "")).strip()
-        if raw == "":
-            raise ValueError(f"Missing field: {key}")
-        return int(round(float(raw)))
-
     return TierSettings(
         pot_pct_lower_bounds=(
             req_float("pot_b0"),
@@ -43,12 +37,4 @@ def parse_tier_settings_form(form: Mapping[str, str]) -> TierSettings:
         weight_conv=req_float("w_conv"),
         weight_pot=req_float("w_pot"),
         penalty_factor=req_float("penalty_factor"),
-        composite_points_scale=req_int("points_scale"),
-        composite_points_upper_bounds=(
-            req_int("comp_pt_0"),
-            req_int("comp_pt_1"),
-            req_int("comp_pt_2"),
-            req_int("comp_pt_3"),
-            req_int("comp_pt_4"),
-        ),
     )

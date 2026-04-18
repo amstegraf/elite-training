@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import math
 from typing import Any
 
 from app.models import TIER_LABELS, TierSettings
 from app.services.tier_settings_store import load_tier_settings
+
+MAX_TIER_POINTS = 10_000
+_ELITE_ENTRY_REMAINDER_FRACTION = 0.6
 
 
 def kpi_score_from_pct_continuous(
@@ -16,7 +20,7 @@ def kpi_score_from_pct_continuous(
     - score 1 at b0
     - score 2 at b1
     - score 3 at b2
-    - score 3 at b3 (Semi-pro minimum)
+    - score 3.5 at b3 (Semi-pro minimum)
     - score 4 at 100%
 
     Between anchors, score moves linearly. For values below b0, score moves from 0 up to
@@ -33,14 +37,16 @@ def kpi_score_from_pct_continuous(
     if x < b2:
         return 2.0 + (x - b1) / (b2 - b1)
     if x < b3:
-        # Keep a flat plateau across [b2, b3) so there is no cliff at b3.
-        return 3.0
+        span = b3 - b2
+        if span <= 1e-9:
+            return 3.5
+        return 3.0 + 0.5 * ((x - b2) / span)
     top_anchor = max(100.0, b3)
     if x < top_anchor:
         span = top_anchor - b3
         if span <= 1e-9:
             return 4.0
-        return 3.0 + (x - b3) / span
+        return 3.5 + 0.5 * ((x - b3) / span)
     return 4.0
 
 
@@ -80,11 +86,53 @@ def imbalance_penalty_adjusted_composite(
 
 
 def tier_points_from_composite(composite: float, settings: TierSettings) -> float:
-    return composite * float(settings.composite_points_scale)
+    _ = settings
+    c = max(0.0, min(4.0, float(composite)))
+    return (c / 4.0) * float(MAX_TIER_POINTS)
+
+
+def tier_point_cuts(settings: TierSettings) -> tuple[int, int, int, int, int]:
+    """Auto-derive fixed cuts from configured percentage baselines."""
+    minima_points: list[int] = []
+    for idx in range(4):
+        ps = kpi_score_from_pct_continuous(
+            settings.pot_pct_lower_bounds[idx], settings.pot_pct_lower_bounds
+        )
+        xs = kpi_score_from_pct_continuous(
+            settings.pos_pct_lower_bounds[idx], settings.pos_pct_lower_bounds
+        )
+        cs = kpi_score_from_pct_continuous(
+            settings.conv_pct_lower_bounds[idx], settings.conv_pct_lower_bounds
+        )
+        base = composite_score(xs, cs, ps, settings)
+        adjusted, _imbalance, _penalty = imbalance_penalty_adjusted_composite(
+            pos_score=xs,
+            conv_score=cs,
+            pot_score=ps,
+            base_composite=base,
+            settings=settings,
+        )
+        minima_points.append(int(round(tier_points_from_composite(adjusted, settings))))
+
+    # Force strict ascending cuts, even with unusual user configs.
+    strict: list[int] = []
+    prev = 0
+    for raw in minima_points:
+        v = max(raw, prev + 1)
+        v = min(v, MAX_TIER_POINTS - (4 - len(strict)))
+        strict.append(v)
+        prev = v
+
+    semi_cut = strict[3]
+    elite_cut = int(
+        round(semi_cut + (MAX_TIER_POINTS - semi_cut) * _ELITE_ENTRY_REMAINDER_FRACTION)
+    )
+    elite_cut = max(semi_cut + 1, min(elite_cut, MAX_TIER_POINTS - 1))
+    return strict[0], strict[1], strict[2], strict[3], elite_cut
 
 
 def tier_index_from_tier_points(tier_points: float, settings: TierSettings) -> int:
-    bounds = settings.composite_points_upper_bounds
+    bounds = tier_point_cuts(settings)
     for i, hi in enumerate(bounds):
         if tier_points < hi:
             return i
@@ -92,7 +140,8 @@ def tier_index_from_tier_points(tier_points: float, settings: TierSettings) -> i
 
 
 def max_tier_points(settings: TierSettings) -> int:
-    return settings.composite_points_scale * 4
+    _ = settings
+    return MAX_TIER_POINTS
 
 
 def threshold_gate_tier_index(
@@ -193,16 +242,24 @@ def training_tier_dashboard_meta(
     resolved = _resolve_training_tier(pot_rate, pos_rate, conv_rate, settings=settings)
     if resolved is None:
         return None
-    cfg, comp, idx, base_comp, imbalance, penalty, _pot_pct, _pos_pct, _conv_pct = resolved
-    scale = cfg.composite_points_scale
-    tp = tier_points_from_composite(comp, cfg)
+    cfg, comp, idx, base_comp, imbalance, penalty, pot_pct, pos_pct, conv_pct = resolved
+    raw_tp = tier_points_from_composite(comp, cfg)
+    points_idx = idx
+    cuts = tier_point_cuts(cfg)
+    gate_idx = threshold_gate_tier_index(
+        pot_pct=pot_pct, pos_pct=pos_pct, conv_pct=conv_pct, settings=cfg
+    )
+    effective_idx = semantic_tier_index_with_threshold_gate(
+        points_tier_index=points_idx, gate_tier_index=gate_idx
+    )
+    tp = raw_tp
+    if effective_idx < len(TIER_LABELS) - 1:
+        tp = min(tp, float(cuts[effective_idx]) - 1e-6)
     tier_pts = int(round(tp))
     ceiling = float(max_tier_points(cfg))
+    lo_pt = 0.0 if effective_idx == 0 else float(cuts[effective_idx - 1])
 
-    bounds = cfg.composite_points_upper_bounds
-    lo_pt = 0.0 if idx == 0 else float(bounds[idx - 1])
-
-    if idx >= len(TIER_LABELS) - 1:
+    if effective_idx >= len(TIER_LABELS) - 1:
         hi_pt = ceiling
         span = hi_pt - lo_pt
         pct = (
@@ -213,7 +270,7 @@ def training_tier_dashboard_meta(
             "base_composite": round(base_comp, 4),
             "imbalance": round(imbalance, 4),
             "penalty": round(penalty, 4),
-            "tier_points": tier_pts,
+            "tier_points": min(MAX_TIER_POINTS, tier_pts),
             "points_to_next": None,
             "next_tier_label": None,
             "progress_pct": round(pct, 1),
@@ -221,11 +278,14 @@ def training_tier_dashboard_meta(
             "band_hi_pts": int(ceiling),
         }
 
-    hi_pt = float(bounds[idx])
+    hi_pt = float(cuts[effective_idx])
+    # Keep visible points strictly within current non-elite band.
+    tier_pts = min(int(tp), int(hi_pt) - 1)
     span = hi_pt - lo_pt
     pct = max(0.0, min(100.0, ((tp - lo_pt) / span) * 100.0)) if span > 0 else 100.0
-    gap_pts = max(0, int(round(hi_pt - tp)))
-    next_label = TIER_LABELS[idx + 1]
+    # Never display a zero gap unless the tier actually advanced.
+    gap_pts = max(1, int(math.ceil(hi_pt - tp)))
+    next_label = TIER_LABELS[effective_idx + 1]
 
     return {
         "composite": round(comp, 4),
@@ -258,7 +318,7 @@ def kpi_score_bands_for_display(
 
 def composite_tier_bands_for_display(settings: TierSettings) -> list[dict[str, str | float | int | None]]:
     """Rows: tier label, tier-points interval (exclusive upper for lower tiers)."""
-    cuts = settings.composite_points_upper_bounds
+    cuts = tier_point_cuts(settings)
     ceiling = max_tier_points(settings)
     out: list[dict[str, str | float | int | None]] = []
     lo = 0
