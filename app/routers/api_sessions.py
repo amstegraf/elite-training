@@ -30,6 +30,7 @@ from app.services.session_service import (
     update_rack_balls_cleared,
     undo_last_miss,
 )
+from app.services.rack_timeline import rack_ball_timeline
 from app.services.sessions_repo import delete_session, list_sessions, load_session, save_session
 
 router = APIRouter(prefix="/api/sessions", tags=["sessions"])
@@ -341,12 +342,13 @@ def api_mobile_connect(request: Request, session_id: str) -> dict:
 
 @router.get("/{session_id}/mobile/live")
 def api_mobile_live(request: Request, session_id: str) -> dict:
-    _guard_mobile_or_desktop_session(request, session_id)
+    session_obj = _guard_mobile_or_desktop_session(request, session_id)
     context = get_live_context(session_id, active_profile_id=None, needs_first_profile=False)
     session = context["session"]
     rack_id = session["currentRackId"]
     racks = session.get("racks", [])
     rack = next((r for r in racks if r.get("id") == rack_id), None)
+    current_rack_obj = next((r for r in session_obj.racks if r.id == rack_id), None)
     current_rack_misses = rack.get("misses", []) if rack else []
 
     played: set[int] = set()
@@ -372,15 +374,42 @@ def api_mobile_live(request: Request, session_id: str) -> dict:
                 }
             )
     recent.sort(key=lambda x: x.get("createdAt") or "", reverse=True)
+
+    recent_racks: list[dict] = []
+    ended_racks = sorted(
+        [r for r in session_obj.racks if r.ended_at],
+        key=lambda r: (r.ended_at or "", r.rack_number),
+        reverse=True,
+    )
+    for r in ended_racks[:8]:
+        timeline = rack_ball_timeline(r)
+        recent_racks.append(
+            {
+                "rackNumber": r.rack_number,
+                "endedAt": r.ended_at,
+                "ballsCleared": r.balls_cleared,
+                "balls": [
+                    {
+                        "ballNumber": c["ball"],
+                        "state": c["state"],
+                        "overlay": c.get("overlay", ""),
+                    }
+                    for c in timeline
+                ],
+            }
+        )
+
     return {
         "sessionId": session["id"],
         "status": session["status"],
         "isPaused": session.get("isPaused", False),
         "currentRackId": rack_id,
+        "currentRackNumber": current_rack_obj.rack_number if current_rack_obj else None,
         "suggestedNextBall": suggested,
         "effectiveDuration": context.get("effectiveDuration"),
         "playedBallNumbers": sorted(played),
         "recentMisses": recent[:20],
+        "recentRacks": recent_racks,
     }
 
 

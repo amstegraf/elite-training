@@ -76,7 +76,7 @@ In the desktop app, use **File → Import sessions…** to send **v1** session *
 
 ### Windows installer (shortcut + 9-ball icon)
 
-The desktop icon matches **`static/favicon.svg`** (rasterized to **`electron/icon.png`**).
+The desktop icon matches **`static/favicon.png`** (rasterized to **`electron/icon.png`**).
 
 1. Ensure Python is installed on the machine (no manual `pip install` needed for players).
 2. From the project root:

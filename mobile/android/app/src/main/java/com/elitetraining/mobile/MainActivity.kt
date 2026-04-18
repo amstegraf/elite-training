@@ -31,6 +31,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
@@ -236,6 +237,21 @@ private fun MissControlScreen(connection: ConnectionInfo, onDisconnect: () -> Un
         ball = pickNextBall(state)
     }
 
+    fun inferBallsClearedOnRackEnd(state: ApiClient.LiveState?): Int? {
+        if (state == null) return null
+        val currentRackNumber = state.currentRackNumber ?: return null
+        val rackMisses = state.recentMisses.filter { it.rackNumber == currentRackNumber }
+        val breakingMissBalls = rackMisses
+            .filter { it.outcome == "pot_miss" || it.outcome == "both" }
+            .map { it.ballNumber }
+            .filter { it in 1..9 }
+        if (breakingMissBalls.isNotEmpty()) {
+            return (breakingMissBalls.minOrNull()!! - 1).coerceIn(0, 9)
+        }
+        // If user ends the rack without a run-breaking miss, treat it as a completed rack.
+        return 9
+    }
+
     fun refreshLive() {
         scope.launch {
             val result = ApiClient.fetchLiveState(connection)
@@ -287,6 +303,7 @@ private fun MissControlScreen(connection: ConnectionInfo, onDisconnect: () -> Un
             style = MaterialTheme.typography.bodySmall,
             color = sectionTitle
         )
+        val runningRackNumber = liveState?.currentRackNumber
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -441,10 +458,7 @@ private fun MissControlScreen(connection: ConnectionInfo, onDisconnect: () -> Un
                                 Toast.makeText(context, result.message, Toast.LENGTH_LONG).show()
                             }
                         } else {
-                            val inferredCleared = state.playedBallNumbers
-                                ?.maxOrNull()
-                                ?.minus(1)
-                                ?.coerceIn(0, 9)
+                            val inferredCleared = inferBallsClearedOnRackEnd(state)
                             val result = ApiClient.endRack(
                                 connection = connection,
                                 rackId = rackId,
@@ -473,6 +487,22 @@ private fun MissControlScreen(connection: ConnectionInfo, onDisconnect: () -> Un
                     color = primaryText,
                     fontWeight = FontWeight.Bold
                 )
+            }
+            if (runningRackNumber != null) {
+                Box(
+                    modifier = Modifier
+                        .size(26.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF15803D)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        runningRackNumber.toString(),
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
             }
             Button(
                 onClick = {
@@ -528,16 +558,32 @@ private fun MissControlScreen(connection: ConnectionInfo, onDisconnect: () -> Un
             }
         }
 
-        if ((liveState?.recentMisses?.isNotEmpty() == true)) {
+        val recentRacks = liveState?.recentRacks?.take(6).orEmpty()
+        val recentMisses = liveState?.recentMisses?.take(12).orEmpty()
+        if (recentRacks.isNotEmpty() || recentMisses.isNotEmpty()) {
             Text(
-                "LATEST MISSES",
+                "LATEST ACTIVITY",
                 style = MaterialTheme.typography.labelLarge,
                 color = sectionTitle,
                 fontWeight = FontWeight.Bold
             )
-            val items = liveState?.recentMisses?.take(12).orEmpty()
-            items.forEachIndexed { idx, miss ->
-                if (idx > 0 && items[idx - 1].rackNumber != miss.rackNumber) {
+            recentRacks.forEach { rackSummary ->
+                RackSummaryItem(
+                    rack = rackSummary,
+                    bg = cardBg,
+                    textColor = primaryText
+                )
+            }
+            if (recentMisses.isNotEmpty() && recentRacks.isNotEmpty()) {
+                Text(
+                    "Misses",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = sectionTitle,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+            recentMisses.forEachIndexed { idx, miss ->
+                if (idx > 0 && recentMisses[idx - 1].rackNumber != miss.rackNumber) {
                     Text(
                         "— Rack ${miss.rackNumber} —",
                         style = MaterialTheme.typography.bodySmall,
@@ -738,6 +784,107 @@ private fun OutcomeCard(
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(symbol, style = MaterialTheme.typography.headlineSmall, color = Color(0xFF1E293B))
             Text(label, color = Color(0xFF1E293B), fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+        }
+    }
+}
+
+@Composable
+private fun RackSummaryItem(
+    rack: ApiClient.LiveRackSummary,
+    bg: Color,
+    textColor: Color
+) {
+    val clearedLabel = rack.ballsCleared?.let { "$it cleared" } ?: "closed"
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(bg)
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            "Rack ${rack.rackNumber} • $clearedLabel",
+            style = MaterialTheme.typography.bodySmall,
+            color = textColor,
+            fontWeight = FontWeight.Bold
+        )
+        Row(
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            rack.balls.forEach { b ->
+                RackBallSummaryChip(ball = b)
+            }
+        }
+    }
+}
+
+@Composable
+private fun RackBallSummaryChip(ball: ApiClient.LiveRackBall) {
+    val unplayed = ball.state == "unplayed"
+    val base = when (ball.ballNumber) {
+        1 -> Color(0xFFF6D32D)
+        2 -> Color(0xFF3584E4)
+        3 -> Color(0xFFED333B)
+        4 -> Color(0xFF9141AC)
+        5 -> Color(0xFFFF7800)
+        6 -> Color(0xFF33D17A)
+        7 -> Color(0xFF8F5C38)
+        8 -> Color(0xFF242424)
+        9 -> Color(0xFFFFFFFF)
+        else -> Color(0xFFD1D5DB)
+    }
+    val textColor = when {
+        unplayed -> Color(0xFF94A3B8)
+        ball.ballNumber == 1 || ball.ballNumber == 9 -> Color(0xFF1F2937)
+        else -> Color.White
+    }
+    Box(modifier = Modifier.size(22.dp)) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(CircleShape)
+                .then(
+                    when {
+                        unplayed -> Modifier.background(Color(0xFFD1D5DB))
+                        ball.ballNumber == 9 -> Modifier.drawBehind {
+                            drawRect(brush = nineBallStripeBrush(size.width, size.height))
+                        }
+                        else -> Modifier.background(base)
+                    }
+                )
+                .then(
+                    if (ball.ballNumber == 9) {
+                        Modifier.border(1.dp, Color(0xFFD0D7E2), CircleShape)
+                    } else {
+                        Modifier
+                    }
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                ball.ballNumber.toString(),
+                color = textColor,
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.labelSmall
+            )
+        }
+        val badgeColor = when (ball.overlay) {
+            "hard_x" -> Color(0xFFDC2626)
+            "no_shot" -> Color(0xFFF97316)
+            "playable" -> Color(0xFF16A34A)
+            else -> Color.Transparent
+        }
+        if (!unplayed && badgeColor != Color.Transparent) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .size(7.dp)
+                    .clip(CircleShape)
+                    .background(badgeColor)
+            )
         }
     }
 }
@@ -957,13 +1104,28 @@ private object ApiClient {
         val createdAt: String
     )
 
+    data class LiveRackBall(
+        val ballNumber: Int,
+        val state: String,
+        val overlay: String
+    )
+
+    data class LiveRackSummary(
+        val rackNumber: Int,
+        val endedAt: String,
+        val ballsCleared: Int?,
+        val balls: List<LiveRackBall>
+    )
+
     data class LiveState(
         val currentRackId: String?,
+        val currentRackNumber: Int?,
         val suggestedNextBall: Int?,
         val effectiveDuration: Int,
         val isPaused: Boolean,
         val playedBallNumbers: Set<Int>,
-        val recentMisses: List<LiveMiss>
+        val recentMisses: List<LiveMiss>,
+        val recentRacks: List<LiveRackSummary>
     )
 
     data class LiveFetchResult(val ok: Boolean, val message: String = "", val state: LiveState? = null)
@@ -989,6 +1151,12 @@ private object ApiClient {
             val rackId = when (rackRaw) {
                 null, JSONObject.NULL -> null
                 else -> rackRaw.toString().takeIf { it.isNotBlank() && it.lowercase() != "null" }
+            }
+            val rackNumRaw = liveJson.opt("currentRackNumber")
+            val currentRackNumber = when (rackNumRaw) {
+                null, JSONObject.NULL -> null
+                is Number -> rackNumRaw.toInt().takeIf { it > 0 }
+                else -> rackNumRaw.toString().toIntOrNull()?.takeIf { it > 0 }
             }
             val suggested = liveJson.optInt("suggestedNextBall", 0).takeIf { it in 1..9 }
             val effectiveDuration = liveJson.optInt("effectiveDuration", 0).coerceAtLeast(0)
@@ -1027,15 +1195,54 @@ private object ApiClient {
                     )
                 }
             }
+            val recentRacks = mutableListOf<LiveRackSummary>()
+            val racksArr = liveJson.optJSONArray("recentRacks")
+            if (racksArr != null) {
+                for (i in 0 until racksArr.length()) {
+                    val rack = racksArr.optJSONObject(i) ?: continue
+                    val balls = mutableListOf<LiveRackBall>()
+                    val ballArr = rack.optJSONArray("balls")
+                    if (ballArr != null) {
+                        for (j in 0 until ballArr.length()) {
+                            val b = ballArr.optJSONObject(j) ?: continue
+                            val num = b.optInt("ballNumber", 0)
+                            if (num !in 1..9) continue
+                            balls.add(
+                                LiveRackBall(
+                                    ballNumber = num,
+                                    state = b.optString("state", "unplayed"),
+                                    overlay = b.optString("overlay", "")
+                                )
+                            )
+                        }
+                    }
+                    val bcRaw = rack.opt("ballsCleared")
+                    val ballsCleared = when (bcRaw) {
+                        null, JSONObject.NULL -> null
+                        is Number -> bcRaw.toInt().coerceIn(0, 9)
+                        else -> bcRaw.toString().toIntOrNull()?.coerceIn(0, 9)
+                    }
+                    recentRacks.add(
+                        LiveRackSummary(
+                            rackNumber = rack.optInt("rackNumber", 0),
+                            endedAt = rack.optString("endedAt", ""),
+                            ballsCleared = ballsCleared,
+                            balls = balls
+                        )
+                    )
+                }
+            }
             LiveFetchResult(
                 ok = true,
                 state = LiveState(
                     currentRackId = rackId,
+                    currentRackNumber = currentRackNumber,
                     suggestedNextBall = suggested,
                     effectiveDuration = effectiveDuration,
                     isPaused = isPaused,
                     playedBallNumbers = played,
-                    recentMisses = recent
+                    recentMisses = recent,
+                    recentRacks = recentRacks
                 )
             )
         } catch (e: Exception) {
