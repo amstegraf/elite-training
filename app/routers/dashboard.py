@@ -19,6 +19,7 @@ from app.services.dashboard_reference_session import (
     set_reference_session_cookie,
 )
 from app.services.derived_metrics import (
+    dashboard_global_progress_vs_baseline,
     dashboard_metric_trend,
     overall_position_success_breakdown,
     overall_pot_success_breakdown,
@@ -69,6 +70,8 @@ async def dashboard(request: Request) -> object:
     else:
         metrics_sessions = []
 
+    dashboard_kpi_progress = dashboard_global_progress_vs_baseline(metrics_sessions)
+
     g_rate, g_rc, g_tr = overall_rack_conversion_breakdown(metrics_sessions)
     pot_rate, pot_made, pot_att = overall_pot_success_breakdown(metrics_sessions)
     pos_rate, pos_miss, pos_cleared = overall_position_success_breakdown(metrics_sessions)
@@ -99,6 +102,7 @@ async def dashboard(request: Request) -> object:
             "dashboard_pot_trend": pot_trend,
             "dashboard_position_trend": position_trend,
             "dashboard_rack_trend": rack_trend,
+            "dashboard_kpi_progress": dashboard_kpi_progress,
             "dashboard_reference_session_id": reference_resolved_id,
             "dashboard_reference_started_at": reference_started_at,
             "dashboard_metrics_session_count": len(metrics_sessions),

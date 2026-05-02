@@ -84,6 +84,31 @@
   color: rgba(239, 68, 68, 0.7);
 }
 
+.dashboard-kpi-delta {
+  margin-top: 0.45rem;
+  text-align: right;
+  font-size: 0.92rem;
+  line-height: 1.25;
+}
+
+.dashboard-kpi-delta__main {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.dashboard-kpi-delta--up .dashboard-kpi-delta__main {
+  color: #16a34a;
+}
+
+.dashboard-kpi-delta--down .dashboard-kpi-delta__main {
+  color: #dc2626;
+}
+
+.dashboard-kpi-delta--neutral .dashboard-kpi-delta__main {
+  color: var(--muted);
+  font-weight: 700;
+}
+
 /* Dashboard Hero (adapted to soft light theme) */
 .dashboard__hero {
   margin-bottom: 3rem;

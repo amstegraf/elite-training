@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Dashboard · Elite Training{% endblock %}
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', path='css/dashboard/dashboard.css') }}?v=1.6">
+<link rel="stylesheet" href="{{ url_for('static', path='css/dashboard/dashboard.css') }}?v=1.8">
 {% endblock %}
 {% block content %}
 <section class="page dashboard animate-in">
@@ -58,6 +58,14 @@
   </div>
   {% endif %}
 
+  {% macro dashboard_kpi_delta_row(progress, key) -%}
+    {% if progress and progress[key].label %}
+    <p class="dashboard-kpi-delta dashboard-kpi-delta--{{ progress[key].dir }}">
+      <span class="dashboard-kpi-delta__main">{{ progress[key].label }}</span>
+    </p>
+    {% endif %}
+  {%- endmacro %}
+
   {% if (global_total_racks > 0 and global_rack_conversion_rate is not none) or (global_pot_attempts > 0 and global_pot_success_rate is not none) or (global_position_balls_cleared > 0 and global_position_success_rate is not none) %}
   <div class="dashboard-kpi-grid">
     {% if global_pot_attempts > 0 and global_pot_success_rate is not none %}
@@ -71,6 +79,7 @@
           <span class="dashboard-kpi-pct__value">{{ "%.1f"|format(global_pot_success_rate * 100) }}</span><span class="dashboard-kpi-pct__suffix">%</span>
           {% if dashboard_pot_trend == 'up' %}<div class="dashboard-trend-bubble" title="Trending Up"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M7 17L17 7M17 7H9M17 7V15" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>{% elif dashboard_pot_trend == 'down' %}<div class="dashboard-trend-bubble" title="Trending Down"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M7 7L17 17M17 17H9M17 17V9" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>{% endif %}
         </div>
+        {{ dashboard_kpi_delta_row(dashboard_kpi_progress, "pot") }}
       </div>
     </article>
     {% endif %}
@@ -85,6 +94,7 @@
           <span class="dashboard-kpi-pct__value">{{ "%.1f"|format(global_position_success_rate * 100) }}</span><span class="dashboard-kpi-pct__suffix">%</span>
           {% if dashboard_position_trend == 'up' %}<div class="dashboard-trend-bubble" title="Trending Up"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M7 17L17 7M17 7H9M17 7V15" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>{% elif dashboard_position_trend == 'down' %}<div class="dashboard-trend-bubble" title="Trending Down"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M7 7L17 17M17 17H9M17 17V9" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>{% endif %}
         </div>
+        {{ dashboard_kpi_delta_row(dashboard_kpi_progress, "position") }}
       </div>
     </article>
     {% endif %}
@@ -99,6 +109,7 @@
           <span class="dashboard-kpi-pct__value">{{ "%.1f"|format(global_rack_conversion_rate * 100) }}</span><span class="dashboard-kpi-pct__suffix">%</span>
           {% if dashboard_rack_trend == 'up' %}<div class="dashboard-trend-bubble" title="Trending Up"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M7 17L17 7M17 7H9M17 7V15" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>{% elif dashboard_rack_trend == 'down' %}<div class="dashboard-trend-bubble" title="Trending Down"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M7 7L17 17M17 17H9M17 17V9" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>{% endif %}
         </div>
+        {{ dashboard_kpi_delta_row(dashboard_kpi_progress, "rack") }}
       </div>
     </article>
     {% endif %}

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from datetime import datetime, timedelta, timezone
+from typing import Any, Literal
 
 from app.models import (
     MissEvent,
@@ -389,6 +391,112 @@ def overall_position_success_breakdown(
         return None, pos_miss, cleared
     raw = 1.0 - (pos_miss / cleared)
     return round(max(0.0, min(1.0, raw)), 4), pos_miss, cleared
+
+
+def _parse_session_started_at_utc(session: PrecisionSession) -> datetime:
+    raw = (session.started_at or "").strip()
+    if not raw:
+        return datetime.min.replace(tzinfo=timezone.utc)
+    if raw.endswith("Z"):
+        raw = raw[:-1] + "+00:00"
+    dt = datetime.fromisoformat(raw)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
+def _delta_direction(delta_pp: float | None) -> Literal["up", "down", "neutral", "na"]:
+    if delta_pp is None:
+        return "na"
+    if delta_pp > 0.05:
+        return "up"
+    if delta_pp < -0.05:
+        return "down"
+    return "neutral"
+
+
+def _format_pct_point_delta(delta_pp: float | None) -> str | None:
+    if delta_pp is None:
+        return None
+    if abs(delta_pp) < 0.05:
+        return "±0.0%"
+    if delta_pp > 0:
+        return f"+{delta_pp:.1f}%"
+    return f"{delta_pp:.1f}%"
+
+
+def dashboard_global_progress_vs_baseline(
+    sessions: Iterable[PrecisionSession],
+    *,
+    lookback_days: int = 30,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    """Compare current cumulative KPIs to a baseline cumulative snapshot.
+
+    Baseline is cumulative completed sessions with ``started_at`` on or before
+    ``now - lookback_days`` (UTC). If no session is that old, baseline uses only
+    the chronologically earliest completed session so a delta is still defined.
+    """
+    now_utc = now or datetime.now(timezone.utc)
+    cutoff = now_utc - timedelta(days=lookback_days)
+
+    done = [s for s in sessions if s.status == PrecisionSessionStatus.COMPLETED]
+    done.sort(key=lambda s: s.started_at)
+    if not done:
+        empty = {"label": None, "dir": "na"}
+        return {"caption": "", "pot": empty, "position": empty, "rack": empty}
+
+    baseline_done = [s for s in done if _parse_session_started_at_utc(s) <= cutoff]
+    if baseline_done:
+        caption = f"last {lookback_days} days"
+    else:
+        baseline_done = [done[0]]
+        caption = "earliest session"
+
+    pot_c, _, _ = overall_pot_success_breakdown(done)
+    pot_b, _, _ = overall_pot_success_breakdown(baseline_done)
+    pot_delta_pp = (
+        round((pot_c - pot_b) * 100.0, 1)
+        if pot_c is not None and pot_b is not None
+        else None
+    )
+
+    pos_c, _, _ = overall_position_success_breakdown(done)
+    pos_b, _, _ = overall_position_success_breakdown(baseline_done)
+    pos_delta_pp = (
+        round((pos_c - pos_b) * 100.0, 1)
+        if pos_c is not None and pos_b is not None
+        else None
+    )
+
+    from app.services.rack_conversion_tiers import overall_rack_conversion_breakdown
+
+    rack_c, _, tr_c = overall_rack_conversion_breakdown(done)
+    rack_b, _, tr_b = overall_rack_conversion_breakdown(baseline_done)
+    rack_delta_pp = (
+        round((rack_c - rack_b) * 100.0, 1)
+        if rack_c is not None
+        and rack_b is not None
+        and tr_c > 0
+        and tr_b > 0
+        else None
+    )
+
+    return {
+        "caption": caption,
+        "pot": {
+            "label": _format_pct_point_delta(pot_delta_pp),
+            "dir": _delta_direction(pot_delta_pp),
+        },
+        "position": {
+            "label": _format_pct_point_delta(pos_delta_pp),
+            "dir": _delta_direction(pos_delta_pp),
+        },
+        "rack": {
+            "label": _format_pct_point_delta(rack_delta_pp),
+            "dir": _delta_direction(rack_delta_pp),
+        },
+    }
 
 
 def aggregate_sessions_progress(sessions: list[PrecisionSession]) -> dict[str, list]:

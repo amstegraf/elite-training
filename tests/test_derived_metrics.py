@@ -484,3 +484,101 @@ def test_dashboard_metric_trend_single_session_is_flat() -> None:
         racks=[r],
     )
     assert dashboard_metric_trend([s], metric="pot") == "flat"
+
+
+def test_dashboard_global_progress_vs_30_day_baseline() -> None:
+    from datetime import datetime, timezone
+
+    from app.models import PrecisionSessionStatus, SessionMode, TableType
+    from app.services.derived_metrics import dashboard_global_progress_vs_baseline
+
+    now = datetime(2026, 6, 15, 12, 0, 0, tzinfo=timezone.utc)
+
+    r_old = RackRecord(
+        rack_number=1,
+        ended_at="2026-04-01T12:00:00+00:00",
+        balls_cleared=9,
+        misses=[],
+    )
+    s_old = PrecisionSession(
+        id="old",
+        program_id="p",
+        plan_id="pl",
+        table_type=TableType.EIGHT_FT,
+        mode=SessionMode.RACK,
+        status=PrecisionSessionStatus.COMPLETED,
+        started_at="2026-04-01T10:00:00+00:00",
+        racks=[r_old],
+    )
+    r_new = RackRecord(
+        rack_number=1,
+        ended_at="2026-06-10T12:00:00+00:00",
+        balls_cleared=9,
+        misses=[
+            MissEvent(ball_number=2, types=[MissType.POSITION], outcome=MissOutcome.POT_MISS)
+        ],
+    )
+    s_new = PrecisionSession(
+        id="new",
+        program_id="p",
+        plan_id="pl",
+        table_type=TableType.EIGHT_FT,
+        mode=SessionMode.RACK,
+        status=PrecisionSessionStatus.COMPLETED,
+        started_at="2026-06-10T10:00:00+00:00",
+        racks=[r_new],
+    )
+
+    out = dashboard_global_progress_vs_baseline([s_new, s_old], now=now)
+    assert out["caption"] == "last 30 days"
+    assert out["pot"]["dir"] == "down"
+    assert out["pot"]["label"] == "-5.3%"
+
+
+def test_dashboard_global_progress_falls_back_to_earliest_session() -> None:
+    from datetime import datetime, timezone
+
+    from app.models import PrecisionSessionStatus, SessionMode, TableType
+    from app.services.derived_metrics import dashboard_global_progress_vs_baseline
+
+    now = datetime(2026, 6, 15, 12, 0, 0, tzinfo=timezone.utc)
+
+    r1 = RackRecord(
+        rack_number=1,
+        ended_at="2026-06-10T12:00:00+00:00",
+        balls_cleared=9,
+        misses=[],
+    )
+    s1 = PrecisionSession(
+        id="a",
+        program_id="p",
+        plan_id="pl",
+        table_type=TableType.EIGHT_FT,
+        mode=SessionMode.RACK,
+        status=PrecisionSessionStatus.COMPLETED,
+        started_at="2026-06-10T10:00:00+00:00",
+        racks=[r1],
+    )
+    r2 = RackRecord(
+        rack_number=1,
+        ended_at="2026-06-12T12:00:00+00:00",
+        balls_cleared=9,
+        misses=[
+            MissEvent(ball_number=2, types=[MissType.POSITION], outcome=MissOutcome.POT_MISS)
+        ],
+    )
+    s2 = PrecisionSession(
+        id="b",
+        program_id="p",
+        plan_id="pl",
+        table_type=TableType.EIGHT_FT,
+        mode=SessionMode.RACK,
+        status=PrecisionSessionStatus.COMPLETED,
+        started_at="2026-06-12T10:00:00+00:00",
+        racks=[r2],
+    )
+
+    out = dashboard_global_progress_vs_baseline([s2, s1], now=now)
+    assert out["caption"] == "earliest session"
+    assert out["pot"]["dir"] == "down"
+    assert out["pot"]["label"] == "-5.3%"

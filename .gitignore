@@ -12,3 +12,5 @@ dist/
 build/
 node_modules/
 dist-desktop/
+
+data/*
