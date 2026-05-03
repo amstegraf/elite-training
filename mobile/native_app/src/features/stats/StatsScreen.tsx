@@ -4,16 +4,11 @@ import { AppHeader } from "../../ui/AppHeader";
 import { colors } from "../../core/theme/theme";
 import { Target, MapPin, Trophy, TrendingUp } from "lucide-react-native";
 import Svg, { Defs, LinearGradient as SvgLinearGradient, Stop, Path, Circle, Line } from "react-native-svg";
+import { useAppState } from "../../data/AppStateContext";
+import { progressionSeries } from "../../domain/metrics";
+import { computeTier } from "../../domain/tier";
 
 const ranges = ["1W", "1M", "3M", "6M", "1Y"] as const;
-
-// 12 weeks of data
-const series = {
-  pot:  [62, 64, 63, 66, 68, 70, 72, 71, 74, 76, 78, 81],
-  pos:  [50, 52, 55, 54, 58, 60, 62, 64, 63, 66, 67, 68],
-  rack: [22, 25, 28, 30, 32, 35, 38, 40, 42, 45, 48, 50],
-  pts:  [1200, 1350, 1500, 1700, 1850, 2000, 2200, 2350, 2500, 2650, 2750, 2847],
-};
 
 const c = {
   pot: colors.primary,
@@ -36,16 +31,70 @@ const buildPath = (data: number[], w: number, h: number, pad = 6) => {
 
 export function StatsScreen() {
   const [range, setRange] = useState<typeof ranges[number]>("3M");
+  const { completedSessions, data } = useAppState();
+  const daysByRange: Record<typeof ranges[number], number> = {
+    "1W": 7,
+    "1M": 30,
+    "3M": 90,
+    "6M": 180,
+    "1Y": 365,
+  };
+  const pointsSeries = progressionSeries(completedSessions, daysByRange[range], (g) => {
+    const tier = computeTier(g.potRate, g.positionRate, g.rackConversionRate, data.settings.tier);
+    return tier?.points ?? 0;
+  });
+  const series = {
+    pot: pointsSeries.map((p) => p.pot ?? 0),
+    pos: pointsSeries.map((p) => p.pos ?? 0),
+    rack: pointsSeries.map((p) => p.rack ?? 0),
+    pts: pointsSeries.map((p) => p.pts),
+  };
   
   const windowWidth = Dimensions.get("window").width;
   const chartWidth = windowWidth - 40 - 32; // padding horizontal 20 + padding inside card 16
   const chartHeight = 90;
 
   const cards = [
-    { key: "pot", label: "Pot Success", value: 81, delta: 19, icon: Target, color: c.pot, data: series.pot, unit: "%" },
-    { key: "pos", label: "Position Outcome", value: 68, delta: 18, icon: MapPin, color: c.pos, data: series.pos, unit: "%" },
-    { key: "rack", label: "Rack Conversion", value: 50, delta: 28, icon: Trophy, color: c.rack, data: series.rack, unit: "%" },
-    { key: "pts", label: "Tier Points", value: 2847, delta: 1647, icon: TrendingUp, color: c.pts, data: series.pts, unit: "pts" },
+    {
+      key: "pot",
+      label: "Pot Success",
+      value: Math.round(series.pot[series.pot.length - 1] ?? 0),
+      delta: Math.round((series.pot[series.pot.length - 1] ?? 0) - (series.pot[0] ?? 0)),
+      icon: Target,
+      color: c.pot,
+      data: series.pot.length > 1 ? series.pot : [0, 0],
+      unit: "%",
+    },
+    {
+      key: "pos",
+      label: "Position Outcome",
+      value: Math.round(series.pos[series.pos.length - 1] ?? 0),
+      delta: Math.round((series.pos[series.pos.length - 1] ?? 0) - (series.pos[0] ?? 0)),
+      icon: MapPin,
+      color: c.pos,
+      data: series.pos.length > 1 ? series.pos : [0, 0],
+      unit: "%",
+    },
+    {
+      key: "rack",
+      label: "Rack Conversion",
+      value: Math.round(series.rack[series.rack.length - 1] ?? 0),
+      delta: Math.round((series.rack[series.rack.length - 1] ?? 0) - (series.rack[0] ?? 0)),
+      icon: Trophy,
+      color: c.rack,
+      data: series.rack.length > 1 ? series.rack : [0, 0],
+      unit: "%",
+    },
+    {
+      key: "pts",
+      label: "Tier Points",
+      value: Math.round(series.pts[series.pts.length - 1] ?? 0),
+      delta: Math.round((series.pts[series.pts.length - 1] ?? 0) - (series.pts[0] ?? 0)),
+      icon: TrendingUp,
+      color: c.pts,
+      data: series.pts.length > 1 ? series.pts : [0, 0],
+      unit: "pts",
+    },
   ];
 
   return (

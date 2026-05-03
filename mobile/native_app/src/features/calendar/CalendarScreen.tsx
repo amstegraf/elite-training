@@ -1,31 +1,28 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from "react-native";
-import { useNavigation } from "@react-navigation/native";
 import { AppHeader } from "../../ui/AppHeader";
 import { colors } from "../../core/theme/theme";
 import { ChevronLeft, ChevronRight, Flame } from "lucide-react-native";
-
-// pseudo-random training data for May 2026
-const data: Record<number, number> = {
-  1: 1, 2: 3, 4: 2, 5: 4, 6: 1, 8: 2, 9: 3,
-  11: 1, 12: 2, 14: 4, 15: 3, 18: 2, 19: 1, 20: 3,
-  22: 5, 23: 2, 25: 1, 26: 3, 28: 2, 29: 4, 30: 2,
-};
+import { useAppState } from "../../data/AppStateContext";
+import { currentTrainingStreak, monthHeatmapData } from "../../domain/metrics";
 
 export function CalendarScreen() {
-  const nav = useNavigation<any>();
-
-  // Build May 2026 — starts Friday (offset 5)
-  const offset = 5;
-  const days = 31;
+  const { completedSessions } = useAppState();
+  const [monthAnchor, setMonthAnchor] = useState(
+    () => new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+  );
+  const month = monthHeatmapData(completedSessions, monthAnchor);
+  const offset = month.offset;
+  const days = month.daysInMonth;
   const cells: (number | null)[] = [
     ...Array(offset).fill(null),
     ...Array.from({ length: days }, (_, i) => i + 1),
   ];
   while (cells.length % 7 !== 0) cells.push(null);
 
-  const totalDays = Object.keys(data).length;
-  const totalSessions = Object.values(data).reduce((a, b) => a + b, 0);
+  const totalDays = month.totalDaysTrained;
+  const totalSessions = month.totalSessions;
+  const streak = currentTrainingStreak(completedSessions);
 
   const getIntensityStyle = (n?: number) => {
     if (!n) return { bg: "rgba(235, 232, 225, 0.6)", text: colors.mutedForeground };
@@ -43,11 +40,19 @@ export function CalendarScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Month nav */}
         <View style={styles.monthNav}>
-          <TouchableOpacity style={styles.navButton}>
+          <TouchableOpacity
+            style={styles.navButton}
+            onPress={() => setMonthAnchor((m) => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
+          >
             <ChevronLeft size={18} color={colors.foreground} />
           </TouchableOpacity>
-          <Text style={styles.monthText}>May 2026</Text>
-          <TouchableOpacity style={styles.navButton}>
+          <Text style={styles.monthText}>
+            {month.monthStart.toLocaleDateString(undefined, { month: "long", year: "numeric" })}
+          </Text>
+          <TouchableOpacity
+            style={styles.navButton}
+            onPress={() => setMonthAnchor((m) => new Date(m.getFullYear(), m.getMonth() + 1, 1))}
+          >
             <ChevronRight size={18} color={colors.foreground} />
           </TouchableOpacity>
         </View>
@@ -71,7 +76,7 @@ export function CalendarScreen() {
             <Text style={styles.summaryLabel}>Streak</Text>
             <View style={styles.summaryValueRow}>
               <Flame size={14} color={colors.accent} />
-              <Text style={styles.summaryValue}>12</Text>
+              <Text style={styles.summaryValue}>{streak}</Text>
             </View>
           </View>
         </View>
@@ -86,7 +91,7 @@ export function CalendarScreen() {
           <View style={styles.heatmapGrid}>
             {cells.map((d, i) => {
               if (d === null) return <View key={i} style={styles.heatmapCellEmpty} />;
-              const count = data[d];
+              const count = month.counts[d] ?? 0;
               const intensity = getIntensityStyle(count);
               
               return (

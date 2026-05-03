@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { ChevronLeft, MoreHorizontal } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import { colors } from "../core/theme/theme";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface AppHeaderProps {
   title: string;
@@ -13,8 +14,9 @@ interface AppHeaderProps {
 
 export const AppHeader = ({ title, subtitle, back, right }: AppHeaderProps) => {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, { paddingTop: Math.max(8, insets.top + 4) }]}>
       <View style={styles.leftContainer}>
         {back && (
           <TouchableOpacity
@@ -47,7 +49,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingTop: 8,
     paddingBottom: 16,
   },
   leftContainer: {

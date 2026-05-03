@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { baselineComparison, computeGlobalMetrics, deriveSession } from "./metrics";
+import {
+  baselineComparison,
+  computeGlobalMetrics,
+  currentTrainingStreak,
+  deriveSession,
+  monthHeatmapData,
+  progressionSeries,
+} from "./metrics";
+import { computeTier } from "./tier";
 import { PrecisionSession } from "./types";
+import { DEFAULT_TIER_SETTINGS } from "./types";
 
 function mkSession(id: string, startedAt: string, ballsCleared: number, potMiss = 0): PrecisionSession {
   return {
@@ -52,5 +61,34 @@ describe("metrics parity", () => {
       mkSession("new", new Date().toISOString(), 6, 3),
     ]);
     expect(out.potDiff).not.toBeNull();
+  });
+
+  it("builds month heatmap counts and streak", () => {
+    const now = new Date();
+    const yyyy = now.getUTCFullYear();
+    const mm = String(now.getUTCMonth() + 1).padStart(2, "0");
+    const dd = String(now.getUTCDate()).padStart(2, "0");
+    const dayKey = `${yyyy}-${mm}-${dd}`;
+    const s1 = mkSession("m1", `${dayKey}T10:00:00.000Z`, 9, 0);
+    const s2 = mkSession("m2", `${dayKey}T18:00:00.000Z`, 8, 1);
+    const month = monthHeatmapData([s1, s2], now);
+    expect(month.totalSessions).toBe(2);
+    expect(month.totalDaysTrained).toBe(1);
+    expect(currentTrainingStreak([s1, s2], now)).toBeGreaterThanOrEqual(1);
+  });
+
+  it("generates progression points for selected range", () => {
+    const sessions = [
+      mkSession("a", "2026-01-01T00:00:00.000Z", 4, 3),
+      mkSession("b", "2026-01-10T00:00:00.000Z", 6, 2),
+      mkSession("c", "2026-01-20T00:00:00.000Z", 8, 1),
+      mkSession("d", "2026-01-30T00:00:00.000Z", 9, 0),
+    ];
+    const points = progressionSeries(sessions, 3650, (g) => {
+      const tier = computeTier(g.potRate, g.positionRate, g.rackConversionRate, DEFAULT_TIER_SETTINGS);
+      return tier?.points ?? 0;
+    });
+    expect(points.length).toBeGreaterThanOrEqual(2);
+    expect(points.at(-1)?.pts ?? 0).toBeGreaterThanOrEqual(points[0]?.pts ?? 0);
   });
 });

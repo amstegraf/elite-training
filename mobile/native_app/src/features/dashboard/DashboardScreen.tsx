@@ -6,17 +6,48 @@ import { KpiCard } from "../../ui/KpiCard";
 import { TierBadge } from "../../ui/TierBadge";
 import { colors } from "../../core/theme/theme";
 import { Play, Target, MapPin, Trophy, Flame, ChevronRight, Bell } from "lucide-react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAppState } from "../../data/AppStateContext";
+import { computeSessionMetrics, completedSessionsSorted, formatDurationLabel } from "../../domain/metrics";
 
 export function DashboardScreen() {
   const nav = useNavigation<any>();
-  const insets = useSafeAreaInsets();
+  const { activeProfile, activeSessions, completedSessions, global, baseline, tier, startSession } = useAppState();
+  const recent = completedSessionsSorted(completedSessions).slice(0, 3);
+
+  const potPct = global.potRate === null ? 0 : Math.round(global.potRate * 100);
+  const posPct = global.positionRate === null ? 0 : Math.round(global.positionRate * 100);
+  const convPct = global.rackConversionRate === null ? 0 : Math.round(global.rackConversionRate * 100);
+  const tierPoints = tier?.points ?? 0;
+  const tierProgress = tier?.progressPct ?? 0;
+  const pointsToNext = tier?.pointsToNext;
+  const uiTier: "Bronze" | "Silver" | "Gold" | "Platinum" | "Elite" =
+    tier?.label === "Beginner"
+      ? "Bronze"
+      : tier?.label === "Amateur"
+        ? "Silver"
+        : tier?.label === "Strong Amateur"
+          ? "Gold"
+          : tier?.label === "Advanced"
+            ? "Platinum"
+            : "Elite";
+
+  const handleStart = () => {
+    const existing = activeSessions[0];
+    if (existing) {
+      nav.navigate("Session", { sessionId: existing.id });
+      return;
+    }
+    const createdId = startSession();
+    if (createdId) {
+      nav.navigate("Session", { sessionId: createdId });
+    }
+  };
 
   return (
     <View style={styles.container}>
       <AppHeader
         subtitle="Welcome back"
-        title="Marco Reyes"
+        title={activeProfile?.name ?? "Player"}
         right={
           <TouchableOpacity style={styles.bellButton} activeOpacity={0.8}>
             <Bell size={18} color={colors.foreground} />
@@ -34,13 +65,18 @@ export function DashboardScreen() {
             
             <View style={styles.heroTopRow}>
               <View>
-                <TierBadge tier="Gold" />
+                <TierBadge tier={uiTier} />
                 <View style={styles.pointsRow}>
-                  <Text style={styles.pointsValue}>2,847</Text>
+                  <Text style={styles.pointsValue}>{tierPoints.toLocaleString()}</Text>
                   <Text style={styles.pointsUnit}>pts</Text>
                 </View>
                 <Text style={styles.pointsSubtext}>
-                  153 to <Text style={{ color: colors.tierPlatinum, fontWeight: "bold" }}>Platinum</Text>
+                  {pointsToNext === null
+                    ? "Max tier reached"
+                    : `${pointsToNext} to `}
+                  {pointsToNext !== null && (
+                    <Text style={{ color: colors.tierPlatinum, fontWeight: "bold" }}>next tier</Text>
+                  )}
                 </Text>
               </View>
               <View style={styles.trophyIconContainer}>
@@ -49,15 +85,15 @@ export function DashboardScreen() {
             </View>
 
             <View style={styles.progressBarBg}>
-              <View style={[styles.progressBarFill, { width: "84%" }]} />
+              <View style={[styles.progressBarFill, { width: `${Math.max(0, Math.min(100, tierProgress))}%` }]} />
             </View>
             
             <View style={styles.heroBottomRow}>
               <View style={styles.streakContainer}>
                 <Flame size={12} color={colors.accent} />
-                <Text style={styles.streakText}>12-day streak</Text>
+                <Text style={styles.streakText}>{activeSessions.length > 0 ? "Session in progress" : "Ready to train"}</Text>
               </View>
-              <Text style={styles.streakText}>84%</Text>
+              <Text style={styles.streakText}>{Math.round(tierProgress)}%</Text>
             </View>
           </View>
         </View>
@@ -73,13 +109,13 @@ export function DashboardScreen() {
           </View>
           <View style={styles.kpiGrid}>
             <View style={styles.kpiFullWidth}>
-              <KpiCard label="Pot Success" value={78} icon={Target} delta={4} tone="primary" size="lg" />
+              <KpiCard label="Pot Success" value={potPct} icon={Target} delta={baseline.potDiff ?? 0} tone="primary" size="lg" />
             </View>
             <View style={styles.kpiHalfWidth}>
-              <KpiCard label="Position" value={64} icon={MapPin} delta={-2} tone="accent" />
+              <KpiCard label="Position" value={posPct} icon={MapPin} delta={baseline.posDiff ?? 0} tone="accent" />
             </View>
             <View style={styles.kpiHalfWidth}>
-              <KpiCard label="Rack Conv." value={42} icon={Trophy} delta={6} tone="warning" />
+              <KpiCard label="Rack Conv." value={convPct} icon={Trophy} delta={baseline.convDiff ?? 0} tone="warning" />
             </View>
           </View>
         </View>
@@ -89,12 +125,12 @@ export function DashboardScreen() {
           <TouchableOpacity
             style={styles.ctaCard}
             activeOpacity={0.9}
-            onPress={() => nav.navigate("SessionTab")}
+            onPress={handleStart}
           >
             <View style={styles.ctaRow}>
               <View>
                 <Text style={styles.ctaSubtext}>Ready to train?</Text>
-                <Text style={styles.ctaTitle}>Start Session</Text>
+                <Text style={styles.ctaTitle}>{activeSessions.length > 0 ? "Resume Session" : "Start Session"}</Text>
                 <Text style={styles.ctaDesc}>9-Ball · Standard Drill</Text>
               </View>
               <View style={styles.ctaIconContainer}>
@@ -115,27 +151,37 @@ export function DashboardScreen() {
           </View>
           
           <View style={styles.recentList}>
-            {[
-              { d: "Today, 09:42", dur: "48m", k: 81 },
-              { d: "Yesterday", dur: "32m", k: 74 },
-              { d: "Mon, Apr 28", dur: "55m", k: 69 },
-            ].map((s, i) => (
-              <TouchableOpacity key={i} style={styles.recentItem} activeOpacity={0.8} onPress={() => nav.navigate("Report")}>
+            {recent.map((s) => {
+              const derived = computeSessionMetrics(s);
+              const k = derived.potRate === null ? 0 : Math.round(derived.potRate * 100);
+              const d = new Date(s.startedAt).toLocaleString(undefined, {
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              });
+              return (
+              <TouchableOpacity key={s.id} style={styles.recentItem} activeOpacity={0.8} onPress={() => nav.navigate("Report", { sessionId: s.id })}>
                 <View style={styles.recentLeft}>
                   <View style={styles.recentIcon}>
                     <Target size={18} color={colors.primary} />
                   </View>
                   <View>
-                    <Text style={styles.recentDate}>{s.d}</Text>
-                    <Text style={styles.recentDur}>{s.dur} · 6 racks</Text>
+                    <Text style={styles.recentDate}>{d}</Text>
+                    <Text style={styles.recentDur}>{formatDurationLabel(derived.durationSeconds)} · {derived.totalRacks} racks</Text>
                   </View>
                 </View>
                 <View style={styles.recentRight}>
-                  <Text style={styles.recentScore}>{s.k}<Text style={styles.recentScoreUnit}>%</Text></Text>
+                  <Text style={styles.recentScore}>{k}<Text style={styles.recentScoreUnit}>%</Text></Text>
                   <Text style={styles.recentScoreLabel}>POT</Text>
                 </View>
               </TouchableOpacity>
-            ))}
+            );})}
+            {recent.length === 0 && (
+              <View style={styles.recentItem}>
+                <Text style={styles.recentDur}>No completed sessions yet.</Text>
+              </View>
+            )}
           </View>
         </View>
       </ScrollView>

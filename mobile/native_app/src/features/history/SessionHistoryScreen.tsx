@@ -5,18 +5,22 @@ import { AppHeader } from "../../ui/AppHeader";
 import { Chip } from "../../ui/Chip";
 import { colors } from "../../core/theme/theme";
 import { Filter, Target, ChevronRight } from "lucide-react-native";
-
-const sessions = [
-  { date: "Today", time: "09:42", dur: "48m", racks: 6, pot: 81, pos: 68, rack: 50 },
-  { date: "Yesterday", time: "18:10", dur: "32m", racks: 4, pot: 74, pos: 60, rack: 38 },
-  { date: "Mon, Apr 28", time: "10:05", dur: "55m", racks: 7, pot: 69, pos: 64, rack: 42 },
-  { date: "Sun, Apr 27", time: "08:30", dur: "1h 12m", racks: 9, pot: 78, pos: 70, rack: 55 },
-  { date: "Fri, Apr 25", time: "19:48", dur: "40m", racks: 5, pot: 72, pos: 62, rack: 40 },
-  { date: "Thu, Apr 24", time: "08:15", dur: "28m", racks: 3, pot: 65, pos: 58, rack: 33 },
-];
+import { useMemo, useState } from "react";
+import { useAppState } from "../../data/AppStateContext";
+import { completedSessionsSorted, computeSessionMetrics, formatDurationLabel } from "../../domain/metrics";
 
 export function SessionHistoryScreen() {
   const nav = useNavigation<any>();
+  const { completedSessions } = useAppState();
+  const [filter, setFilter] = useState<"all" | "week" | "month">("all");
+  const sorted = completedSessionsSorted(completedSessions);
+  const sessions = useMemo(() => {
+    if (filter === "all") return sorted;
+    const now = Date.now();
+    const days = filter === "week" ? 7 : 30;
+    const cutoff = now - days * 24 * 60 * 60 * 1000;
+    return sorted.filter((s) => new Date(s.startedAt).getTime() >= cutoff);
+  }, [filter, sorted]);
 
   return (
     <View style={styles.container}>
@@ -32,21 +36,33 @@ export function SessionHistoryScreen() {
 
       <View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtersScroll}>
-          {["All", "This Week", "9-Ball", "8-Ball", "Drills"].map((f, i) => (
-            <View key={f} style={{ marginRight: 8 }}>
-              <Chip label={f} active={i === 0} />
+          {[
+            { key: "all", label: "All" },
+            { key: "week", label: "This Week" },
+            { key: "month", label: "This Month" },
+          ].map((f) => (
+            <View key={f.key} style={{ marginRight: 8 }}>
+              <Chip label={f.label} active={filter === f.key} onPress={() => setFilter(f.key as "all" | "week" | "month")} />
             </View>
           ))}
         </ScrollView>
       </View>
 
       <ScrollView contentContainerStyle={styles.listScroll} showsVerticalScrollIndicator={false}>
-        {sessions.map((s, i) => (
+        {sessions.map((s) => {
+          const d = computeSessionMetrics(s);
+          const dt = new Date(s.startedAt);
+          const date = dt.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+          const time = dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+          const pot = Math.round((d.potRate ?? 0) * 100);
+          const pos = Math.round((d.positionRate ?? 0) * 100);
+          const rack = Math.round((d.rackConversionRate ?? 0) * 100);
+          return (
           <TouchableOpacity
-            key={i}
+            key={s.id}
             style={styles.card}
             activeOpacity={0.9}
-            onPress={() => nav.navigate("Report")}
+            onPress={() => nav.navigate("Report", { sessionId: s.id })}
           >
             <View style={styles.cardHeader}>
               <View style={styles.cardLeft}>
@@ -54,8 +70,8 @@ export function SessionHistoryScreen() {
                   <Target size={20} color={colors.primary} />
                 </View>
                 <View>
-                  <Text style={styles.dateText}>{s.date}</Text>
-                  <Text style={styles.metaText}>{s.time} · {s.dur} · {s.racks} racks</Text>
+                  <Text style={styles.dateText}>{date}</Text>
+                  <Text style={styles.metaText}>{time} · {formatDurationLabel(d.durationSeconds)} · {d.totalRacks} racks</Text>
                 </View>
               </View>
               <ChevronRight size={18} color={colors.mutedForeground} />
@@ -64,19 +80,24 @@ export function SessionHistoryScreen() {
             <View style={styles.statsGrid}>
               <View style={styles.miniStat}>
                 <Text style={styles.miniLabel}>POT</Text>
-                <Text style={styles.miniValue}>{s.pot}<Text style={styles.miniUnit}>%</Text></Text>
+                <Text style={styles.miniValue}>{pot}<Text style={styles.miniUnit}>%</Text></Text>
               </View>
               <View style={styles.miniStat}>
                 <Text style={styles.miniLabel}>POS</Text>
-                <Text style={styles.miniValue}>{s.pos}<Text style={styles.miniUnit}>%</Text></Text>
+                <Text style={styles.miniValue}>{pos}<Text style={styles.miniUnit}>%</Text></Text>
               </View>
               <View style={styles.miniStat}>
                 <Text style={styles.miniLabel}>RACK</Text>
-                <Text style={styles.miniValue}>{s.rack}<Text style={styles.miniUnit}>%</Text></Text>
+                <Text style={styles.miniValue}>{rack}<Text style={styles.miniUnit}>%</Text></Text>
               </View>
             </View>
           </TouchableOpacity>
-        ))}
+        );})}
+        {sessions.length === 0 && (
+          <View style={styles.card}>
+            <Text style={styles.metaText}>No sessions for this filter.</Text>
+          </View>
+        )}
       </ScrollView>
     </View>
   );

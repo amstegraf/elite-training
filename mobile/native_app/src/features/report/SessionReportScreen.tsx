@@ -6,24 +6,30 @@ import { KpiCard } from "../../ui/KpiCard";
 import { colors } from "../../core/theme/theme";
 import { Target, MapPin, Trophy, Share2, ArrowUpRight, Clock } from "lucide-react-native";
 import { useAppState } from "../../data/AppStateContext";
-
-const racks = [
-  { no: 1, balls: 9, pots: 9, misses: 0, time: "06:12", outcome: "win" },
-  { no: 2, balls: 9, pots: 5, misses: 2, time: "07:48", outcome: "loss" },
-  { no: 3, balls: 9, pots: 7, misses: 1, time: "05:30", outcome: "win" },
-  { no: 4, balls: 9, pots: 4, misses: 3, time: "08:55", outcome: "loss" },
-  { no: 5, balls: 9, pots: 8, misses: 1, time: "06:42", outcome: "win" },
-  { no: 6, balls: 9, pots: 6, misses: 2, time: "07:10", outcome: "loss" },
-];
+import { buildRackReportRows, completedSessionsSorted, computeSessionMetrics, formatDurationLabel } from "../../domain/metrics";
 
 export function SessionReportScreen() {
   const nav = useNavigation<any>();
+  const route = useRoute<any>();
+  const { completedSessions } = useAppState();
+  const sorted = completedSessionsSorted(completedSessions);
+  const selected =
+    sorted.find((s) => s.id === route.params?.sessionId) ??
+    sorted[0] ??
+    null;
+  const metrics = selected ? computeSessionMetrics(selected) : null;
+  const racks = selected ? buildRackReportRows(selected) : [];
+  const score = metrics?.potRate === null || !metrics ? 0 : Math.round((metrics.potRate + (metrics.positionRate ?? 0) + (metrics.rackConversionRate ?? 0)) / 3 * 100);
+  const sessionDate = selected
+    ? new Date(selected.startedAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+    : "No session";
+  const tierDeltaPts = Math.round((metrics?.rackConversionRate ?? 0) * 100);
 
   return (
     <View style={styles.container}>
       <AppHeader
         title="Session Report"
-        subtitle="May 2 · 09:42"
+        subtitle={sessionDate}
         back
         right={
           <TouchableOpacity style={styles.shareButton} activeOpacity={0.8}>
@@ -41,21 +47,23 @@ export function SessionReportScreen() {
               <View>
                 <Text style={styles.heroLabel}>Overall Score</Text>
                 <View style={styles.scoreRow}>
-                  <Text style={styles.scoreValue}>81</Text>
+                  <Text style={styles.scoreValue}>{score}</Text>
                   <Text style={styles.scoreMax}>/100</Text>
                 </View>
                 <View style={styles.timeRow}>
                   <Clock size={12} color="rgba(247, 245, 240, 0.7)" />
-                  <Text style={styles.timeText}>48m · 6 racks</Text>
+                  <Text style={styles.timeText}>
+                    {metrics ? `${formatDurationLabel(metrics.durationSeconds)} · ${metrics.totalRacks} racks` : "No data"}
+                  </Text>
                 </View>
               </View>
               <View style={styles.heroRight}>
                 <View style={styles.impactBadge}>
                   <ArrowUpRight size={12} color={colors.primaryGlow} />
-                  <Text style={styles.impactBadgeText}>+47 pts</Text>
+                  <Text style={styles.impactBadgeText}>+{tierDeltaPts} pts</Text>
                 </View>
                 <Text style={styles.impactLabel}>Tier impact</Text>
-                <Text style={styles.impactValue}>Gold → 84%</Text>
+                <Text style={styles.impactValue}>{Math.round((metrics?.rackConversionRate ?? 0) * 100)}% conversion</Text>
               </View>
             </View>
           </View>
@@ -64,9 +72,9 @@ export function SessionReportScreen() {
         {/* KPI Breakdown */}
         <View style={styles.section}>
           <View style={styles.kpiGrid}>
-            <View style={styles.kpiThird}><KpiCard label="Pot" value={81} icon={Target} delta={3} tone="primary" /></View>
-            <View style={styles.kpiThird}><KpiCard label="Position" value={68} icon={MapPin} delta={5} tone="accent" /></View>
-            <View style={styles.kpiThird}><KpiCard label="Rack" value={50} icon={Trophy} delta={8} tone="warning" /></View>
+            <View style={styles.kpiThird}><KpiCard label="Pot" value={Math.round((metrics?.potRate ?? 0) * 100)} icon={Target} delta={0} tone="primary" /></View>
+            <View style={styles.kpiThird}><KpiCard label="Position" value={Math.round((metrics?.positionRate ?? 0) * 100)} icon={MapPin} delta={0} tone="accent" /></View>
+            <View style={styles.kpiThird}><KpiCard label="Rack" value={Math.round((metrics?.rackConversionRate ?? 0) * 100)} icon={Trophy} delta={0} tone="warning" /></View>
           </View>
         </View>
 
@@ -74,21 +82,29 @@ export function SessionReportScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Rack-by-Rack</Text>
           <View style={styles.timelineCard}>
+            {racks.length === 0 && <Text style={styles.rackTime}>No racks in this session yet.</Text>}
             {racks.map((r, i) => {
               const pct = (r.pots / r.balls) * 100;
               const isWin = r.outcome === "win";
               return (
-                <View key={r.no} style={styles.timelineRow}>
+                <View key={r.id} style={styles.timelineRow}>
                   {i < racks.length - 1 && <View style={styles.timelineLine} />}
                   <View style={styles.timelineLeft}>
                     <View style={[styles.timelineNode, isWin ? styles.timelineNodeWin : styles.timelineNodeLoss]}>
-                      <Text style={[styles.timelineNodeText, isWin ? styles.timelineNodeTextWin : styles.timelineNodeTextLoss]}>{r.no}</Text>
+                      <Text style={[styles.timelineNodeText, isWin ? styles.timelineNodeTextWin : styles.timelineNodeTextLoss]}>{r.rackNumber}</Text>
                     </View>
                   </View>
                   <View style={styles.timelineContent}>
                     <View style={styles.timelineHeader}>
-                      <Text style={styles.rackTitle}>Rack {r.no}</Text>
-                      <Text style={styles.rackTime}>{r.time}</Text>
+                      <Text style={styles.rackTitle}>Rack {r.rackNumber}</Text>
+                      <Text style={styles.rackTime}>
+                        {r.endedAt
+                          ? new Date(r.endedAt).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : ""}
+                      </Text>
                     </View>
                     <View style={styles.progressRow}>
                       <View style={styles.progressBarBg}>

@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AppStateData, DEFAULT_APP_STATE } from "../domain/types";
 
-const KEY = "elite_native_state_v1";
+const KEY = "cue_path_state_v2";
 
 export async function loadState(): Promise<AppStateData> {
   const raw = await AsyncStorage.getItem(KEY);
@@ -11,7 +11,18 @@ export async function loadState(): Promise<AppStateData> {
     return {
       ...DEFAULT_APP_STATE,
       ...parsed,
-      settings: { ...DEFAULT_APP_STATE.settings, ...parsed.settings },
+      settings: {
+        ...DEFAULT_APP_STATE.settings,
+        ...parsed.settings,
+        tier: {
+          ...DEFAULT_APP_STATE.settings.tier,
+          ...parsed.settings?.tier,
+        },
+        preferences: {
+          ...DEFAULT_APP_STATE.settings.preferences,
+          ...parsed.settings?.preferences,
+        },
+      },
     };
   } catch {
     return DEFAULT_APP_STATE;

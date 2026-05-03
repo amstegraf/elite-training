@@ -9,6 +9,8 @@ import {
   MissType,
   PrecisionSession,
   Profile,
+  TierSettings,
+  UiPreferences,
 } from "../domain/types";
 import { loadState, saveState } from "./storage";
 
@@ -35,6 +37,14 @@ type AppStateContextValue = {
   ) => void;
   undoLastMiss: (sessionId: string) => void;
   updateTierSetting: (key: keyof AppStateData["settings"]["tier"], value: unknown) => void;
+  updateTierBounds: (
+    key: "potPctLowerBounds" | "posPctLowerBounds" | "convPctLowerBounds",
+    index: number,
+    value: number
+  ) => void;
+  updatePreference: (key: keyof UiPreferences, value: UiPreferences[keyof UiPreferences]) => void;
+  renameProfile: (id: string, name: string) => void;
+  deleteProfile: (id: string) => void;
 };
 
 const AppStateContext = createContext<AppStateContextValue | undefined>(undefined);
@@ -105,6 +115,26 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   };
 
   const setActiveProfile = (id: string) => setData((prev) => ({ ...prev, activeProfileId: id }));
+
+  const renameProfile = (id: string, name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    setData((prev) => ({
+      ...prev,
+      profiles: prev.profiles.map((p) => (p.id === id ? { ...p, name: trimmed } : p)),
+    }));
+  };
+
+  const deleteProfile = (id: string) => {
+    setData((prev) => {
+      if (prev.profiles.length <= 1) return prev;
+      const profiles = prev.profiles.filter((p) => p.id !== id);
+      const sessions = prev.sessions.filter((s) => s.profileId !== id);
+      const activeProfileId =
+        prev.activeProfileId === id ? profiles[0]?.id ?? undefined : prev.activeProfileId;
+      return { ...prev, profiles, sessions, activeProfileId };
+    });
+  };
 
   const startSession = (): string | null => {
     if (!data.activeProfileId) return null;
@@ -215,6 +245,46 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     }));
   };
 
+  const updateTierBounds = (
+    key: "potPctLowerBounds" | "posPctLowerBounds" | "convPctLowerBounds",
+    index: number,
+    value: number
+  ) => {
+    setData((prev) => {
+      const current = [...prev.settings.tier[key]] as number[];
+      current[index] = Math.max(0, Math.min(100, Math.round(value)));
+      const sorted = current.map((v, i) =>
+        i === 0 ? v : Math.max(v, current[i - 1] + 1)
+      ) as TierSettings[typeof key];
+      return {
+        ...prev,
+        settings: {
+          ...prev.settings,
+          tier: {
+            ...prev.settings.tier,
+            [key]: sorted,
+          },
+        },
+      };
+    });
+  };
+
+  const updatePreference = (
+    key: keyof UiPreferences,
+    value: UiPreferences[keyof UiPreferences]
+  ) => {
+    setData((prev) => ({
+      ...prev,
+      settings: {
+        ...prev.settings,
+        preferences: {
+          ...prev.settings.preferences,
+          [key]: value,
+        },
+      },
+    }));
+  };
+
   const value: AppStateContextValue = {
     ready,
     data,
@@ -233,6 +303,10 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     logMiss,
     undoLastMiss,
     updateTierSetting,
+    updateTierBounds,
+    updatePreference,
+    renameProfile,
+    deleteProfile,
   };
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;

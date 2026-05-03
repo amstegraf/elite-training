@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Switch } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { AppHeader } from "../../ui/AppHeader";
@@ -6,6 +6,7 @@ import { TierBadge } from "../../ui/TierBadge";
 import { colors } from "../../core/theme/theme";
 import { Bell, Moon, Vibrate, Volume2, Languages, Users, ChevronRight } from "lucide-react-native";
 import Slider from "@react-native-community/slider";
+import { useAppState } from "../../data/AppStateContext";
 
 const initialTiers = [
   { tier: "Bronze", baseline: 40 },
@@ -17,11 +18,18 @@ const initialTiers = [
 
 export function SettingsScreen() {
   const nav = useNavigation<any>();
-  const [dark, setDark] = useState(false);
-  const [haptics, setHaptics] = useState(true);
-  const [sound, setSound] = useState(true);
-  const [notif, setNotif] = useState(true);
-  const [baselines, setBaselines] = useState(initialTiers);
+  const { data, updatePreference, updateTierBounds } = useAppState();
+  const prefs = data.settings.preferences;
+  const tier = data.settings.tier;
+  const baselines = initialTiers.map((t, i) => ({
+    ...t,
+    baseline: Math.round(
+      (tier.potPctLowerBounds[Math.min(i, 3)] +
+        tier.posPctLowerBounds[Math.min(i, 3)] +
+        tier.convPctLowerBounds[Math.min(i, 3)]) /
+        3
+    ),
+  }));
 
   const ToggleRow = ({ icon: Icon, label, desc, value, onChange }: any) => (
     <View style={styles.row}>
@@ -75,8 +83,13 @@ export function SettingsScreen() {
                   maximumValue={100}
                   step={1}
                   value={t.baseline}
+                  disabled={i > 3}
                   onValueChange={(v) => {
-                    setBaselines((b) => b.map((x, j) => (j === i ? { ...x, baseline: v } : x)));
+                    if (i <= 3) {
+                      updateTierBounds("potPctLowerBounds", i, v);
+                      updateTierBounds("posPctLowerBounds", i, v);
+                      updateTierBounds("convPctLowerBounds", i, v);
+                    }
                   }}
                   minimumTrackTintColor={colors.primary}
                   maximumTrackTintColor={colors.border}
@@ -91,13 +104,13 @@ export function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>App</Text>
           <View style={[styles.card, styles.cardNoPadding]}>
-            <ToggleRow icon={Moon} label="Dark mode" desc="Easier on the eyes" value={dark} onChange={setDark} />
+            <ToggleRow icon={Moon} label="Dark mode" desc="Easier on the eyes" value={prefs.darkMode} onChange={(v: boolean) => updatePreference("darkMode", v)} />
             <View style={styles.divider} />
-            <ToggleRow icon={Vibrate} label="Haptic feedback" value={haptics} onChange={setHaptics} />
+            <ToggleRow icon={Vibrate} label="Haptic feedback" value={prefs.haptics} onChange={(v: boolean) => updatePreference("haptics", v)} />
             <View style={styles.divider} />
-            <ToggleRow icon={Volume2} label="Sound effects" value={sound} onChange={setSound} />
+            <ToggleRow icon={Volume2} label="Sound effects" value={prefs.sound} onChange={(v: boolean) => updatePreference("sound", v)} />
             <View style={styles.divider} />
-            <ToggleRow icon={Bell} label="Practice reminders" desc="Daily at 18:00" value={notif} onChange={setNotif} />
+            <ToggleRow icon={Bell} label="Practice reminders" desc={`Daily at ${prefs.reminderTime}`} value={prefs.reminders} onChange={(v: boolean) => updatePreference("reminders", v)} />
           </View>
         </View>
 
@@ -107,11 +120,11 @@ export function SettingsScreen() {
           <View style={[styles.card, styles.cardNoPadding]}>
             <NavRow icon={Users} label="Manage profiles" onPress={() => nav.navigate("Profiles")} />
             <View style={styles.divider} />
-            <NavRow icon={Languages} label="Language" value="English" />
+            <NavRow icon={Languages} label="Language" value={prefs.language} />
           </View>
         </View>
 
-        <Text style={styles.versionText}>Elite Training v1.0.0</Text>
+        <Text style={styles.versionText}>Cue Path v1.0.0</Text>
       </ScrollView>
     </View>
   );

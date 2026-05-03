@@ -1,10 +1,13 @@
-import React, { useEffect, useState } from "react";
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import React, { useEffect, useMemo, useState } from "react";
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Modal } from "react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { AppHeader } from "../../ui/AppHeader";
 import { PoolBall } from "../../ui/PoolBall";
 import { colors } from "../../core/theme/theme";
 import { Pause, Play, Undo2, Square, Flag, X, Check, Crosshair } from "lucide-react-native";
+import { useAppState } from "../../data/AppStateContext";
+import { inferBallsCleared, sessionDurationSeconds } from "../../domain/metrics";
+import { MissOutcome, MissType } from "../../domain/types";
 
 const missTypes = [
   { id: "position", label: "Position" },
@@ -27,29 +30,80 @@ const fmt = (s: number) => {
 
 export function SessionScreen() {
   const nav = useNavigation<any>();
-  const [seconds, setSeconds] = useState(847);
+  const route = useRoute<any>();
+  const {
+    data,
+    activeSessions,
+    startSession,
+    endSession,
+    startRack,
+    endRack,
+    logMiss,
+    undoLastMiss,
+  } = useAppState();
+  const [sessionId, setSessionId] = useState<string | null>(route.params?.sessionId ?? null);
+  const [secondsTick, setSecondsTick] = useState(0);
   const [running, setRunning] = useState(true);
   const [ball, setBall] = useState<number>(3);
-  const [miss, setMiss] = useState<string | null>("alignment");
-  const [outcome, setOutcome] = useState<string | null>("playable");
-  const [rack, setRack] = useState({ no: 4, balls: 7, pots: 5, misses: 2 });
+  const [miss, setMiss] = useState<MissType[]>(["alignment"]);
+  const [outcome, setOutcome] = useState<MissOutcome>("playable");
+  const [showEndRack, setShowEndRack] = useState(false);
+  const [ballsCleared, setBallsCleared] = useState(0);
+
+  useEffect(() => {
+    if (route.params?.sessionId) {
+      setSessionId(route.params.sessionId);
+    }
+  }, [route.params?.sessionId]);
+
+  useEffect(() => {
+    if (sessionId) return;
+    if (activeSessions[0]) {
+      setSessionId(activeSessions[0].id);
+      return;
+    }
+    const id = startSession();
+    if (id) setSessionId(id);
+  }, [activeSessions, sessionId, startSession]);
+
+  const session = useMemo(
+    () => data.sessions.find((s) => s.id === sessionId) ?? null,
+    [data.sessions, sessionId]
+  );
+  const currentRack = useMemo(
+    () => session?.racks.find((r) => r.id === session.currentRackId) ?? null,
+    [session]
+  );
 
   useEffect(() => {
     if (!running) return;
-    const t = setInterval(() => setSeconds((s) => s + 1), 1000);
+    const t = setInterval(() => setSecondsTick((s) => s + 1), 1000);
     return () => clearInterval(t);
   }, [running]);
+
+  const seconds = session ? sessionDurationSeconds(session) + secondsTick : 0;
+  const rackNo = currentRack?.rackNumber ?? (session?.racks.length ?? 0) + 1;
+  const rackMisses = currentRack?.misses.length ?? 0;
+  const inferredPots = currentRack ? inferBallsCleared({ ...currentRack, ballsCleared: undefined }) : 0;
+  const rackPots = currentRack ? Math.max(0, Math.min(9, inferredPots === 9 ? ball - 1 : inferredPots)) : 0;
 
   return (
     <View style={styles.container}>
       <AppHeader
         subtitle="Live Session"
-        title={`Rack ${rack.no}`}
+        title={`Rack ${rackNo}`}
         back
         right={
           <TouchableOpacity
             style={styles.endButton}
-            onPress={() => nav.navigate("Report")}
+            onPress={() => {
+              if (!session) return;
+              if (session.currentRackId) {
+                endRack(session.id, ballsCleared);
+              }
+              endSession(session.id);
+              nav.navigate("Report", { sessionId: session.id });
+            }}
           >
             <Square size={14} color={colors.danger} fill={colors.danger} />
             <Text style={styles.endButtonText}>End</Text>
@@ -82,15 +136,15 @@ export function SessionScreen() {
             <View style={styles.statsGrid}>
               <View style={styles.statBox}>
                 <Text style={styles.statLabel}>Balls</Text>
-                <Text style={styles.statValue}>{rack.pots}/{rack.balls}</Text>
+                <Text style={styles.statValue}>{rackPots}/9</Text>
               </View>
               <View style={styles.statBox}>
                 <Text style={styles.statLabel}>Pots</Text>
-                <Text style={[styles.statValue, { color: colors.accent }]}>{rack.pots}</Text>
+                <Text style={[styles.statValue, { color: colors.accent }]}>{rackPots}</Text>
               </View>
               <View style={styles.statBox}>
                 <Text style={styles.statLabel}>Misses</Text>
-                <Text style={styles.statValue}>{rack.misses}</Text>
+                <Text style={styles.statValue}>{rackMisses}</Text>
               </View>
             </View>
           </View>
@@ -124,11 +178,17 @@ export function SessionScreen() {
             {missTypes.map((m) => (
               <TouchableOpacity
                 key={m.id}
-                onPress={() => setMiss(m.id)}
-                style={[styles.chip, miss === m.id && styles.chipActive]}
+                onPress={() =>
+                  setMiss((prev) =>
+                    prev.includes(m.id as MissType)
+                      ? prev.filter((x) => x !== m.id)
+                      : [...prev, m.id as MissType]
+                  )
+                }
+                style={[styles.chip, miss.includes(m.id as MissType) && styles.chipActive]}
               >
-                <Crosshair size={14} color={miss === m.id ? colors.primaryForeground : colors.foreground} />
-                <Text style={[styles.chipText, miss === m.id && styles.chipTextActive]}>{m.label}</Text>
+                <Crosshair size={14} color={miss.includes(m.id as MissType) ? colors.primaryForeground : colors.foreground} />
+                <Text style={[styles.chipText, miss.includes(m.id as MissType) && styles.chipTextActive]}>{m.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -139,7 +199,13 @@ export function SessionScreen() {
           <Text style={styles.sectionTitle}>Position Outcome</Text>
           <View style={styles.outcomeGrid}>
             {outcomes.map((o) => {
-              const active = outcome === o.id;
+              const outcomeValue =
+                o.id === "potmiss"
+                  ? "pot_miss"
+                  : o.id === "noshot"
+                    ? "no_shot_position"
+                    : "playable";
+              const active = outcome === outcomeValue;
               let toneStyle = {};
               let textStyle = {};
               if (active) {
@@ -151,7 +217,7 @@ export function SessionScreen() {
               return (
                 <TouchableOpacity
                   key={o.id}
-                  onPress={() => setOutcome(o.id)}
+                  onPress={() => setOutcome(outcomeValue as MissOutcome)}
                   style={[styles.outcomeChip, active && toneStyle]}
                 >
                   {o.id === "playable" && <Check size={16} color={active ? colors.primaryForeground : colors.foreground} />}
@@ -166,26 +232,40 @@ export function SessionScreen() {
 
         {/* Action Bar */}
         <View style={styles.actionBar}>
-          <TouchableOpacity style={styles.logMissBtn} activeOpacity={0.9}>
+          <TouchableOpacity
+            style={styles.logMissBtn}
+            activeOpacity={0.9}
+            onPress={() => {
+              if (!session || !session.currentRackId) return;
+              if (miss.length === 0) return;
+              logMiss(session.id, ball, miss, outcome);
+            }}
+          >
             <X size={20} color={colors.foreground} strokeWidth={2.6} />
             <Text style={styles.logMissText}>Log Miss</Text>
           </TouchableOpacity>
           
           <View style={styles.actionGrid}>
-            <TouchableOpacity style={styles.actionSecondary}>
+            <TouchableOpacity
+              style={styles.actionSecondary}
+              onPress={() => session && undoLastMiss(session.id)}
+            >
               <Undo2 size={16} color={colors.foreground} />
               <Text style={styles.actionSecondaryText}>Undo</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionSecondary}
-              onPress={() => setRack((r) => ({ ...r, no: r.no, balls: 9, pots: 0, misses: 0 }))}
+              onPress={() => session && startRack(session.id)}
             >
               <Play size={14} color={colors.foreground} fill={colors.foreground} />
               <Text style={styles.actionSecondaryText}>Start</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionPrimary}
-              onPress={() => setRack((r) => ({ ...r, no: r.no + 1, pots: 0, misses: 0 }))}
+              onPress={() => {
+                if (!session || !session.currentRackId) return;
+                setShowEndRack(true);
+              }}
             >
               <Flag size={14} color={colors.primaryForeground} />
               <Text style={styles.actionPrimaryText}>End Rack</Text>
@@ -193,6 +273,40 @@ export function SessionScreen() {
           </View>
         </View>
       </ScrollView>
+
+      <Modal visible={showEndRack} transparent animationType="fade">
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Balls Cleared</Text>
+            <View style={styles.modalGrid}>
+              {Array.from({ length: 10 }, (_, i) => i).map((n) => (
+                <TouchableOpacity
+                  key={n}
+                  style={[styles.modalBall, ballsCleared === n && styles.modalBallActive]}
+                  onPress={() => setBallsCleared(n)}
+                >
+                  <Text style={[styles.modalBallText, ballsCleared === n && styles.modalBallTextActive]}>{n}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalCancel} onPress={() => setShowEndRack(false)}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalConfirm}
+                onPress={() => {
+                  if (!session) return;
+                  endRack(session.id, ballsCleared);
+                  setShowEndRack(false);
+                }}
+              >
+                <Text style={styles.modalConfirmText}>Confirm</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -422,5 +536,77 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "Inter_600SemiBold",
     color: colors.primaryForeground,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.25)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+  },
+  modalCard: {
+    width: "100%",
+    backgroundColor: colors.card,
+    borderRadius: 24,
+    padding: 16,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontFamily: "Sora_700Bold",
+    color: colors.foreground,
+    marginBottom: 12,
+  },
+  modalGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  modalBall: {
+    height: 34,
+    width: 34,
+    borderRadius: 17,
+    backgroundColor: colors.secondary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalBallActive: {
+    backgroundColor: colors.primary,
+  },
+  modalBallText: {
+    color: colors.foreground,
+    fontFamily: "Inter_600SemiBold",
+  },
+  modalBallTextActive: {
+    color: colors.primaryForeground,
+  },
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 8,
+    marginTop: 16,
+  },
+  modalCancel: {
+    height: 38,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    backgroundColor: colors.secondary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalCancelText: {
+    color: colors.foreground,
+    fontFamily: "Inter_600SemiBold",
+  },
+  modalConfirm: {
+    height: 38,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalConfirmText: {
+    color: colors.primaryForeground,
+    fontFamily: "Inter_600SemiBold",
   },
 });

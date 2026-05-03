@@ -45,8 +45,18 @@ export interface TierSettings {
   penaltyFactor: number;
 }
 
+export interface UiPreferences {
+  darkMode: boolean;
+  haptics: boolean;
+  sound: boolean;
+  reminders: boolean;
+  reminderTime: string;
+  language: string;
+}
+
 export interface AppSettings {
   tier: TierSettings;
+  preferences: UiPreferences;
 }
 
 export interface AppStateData {
@@ -81,5 +91,13 @@ export const DEFAULT_APP_STATE: AppStateData = {
   sessions: [],
   settings: {
     tier: DEFAULT_TIER_SETTINGS,
+    preferences: {
+      darkMode: false,
+      haptics: true,
+      sound: true,
+      reminders: true,
+      reminderTime: "18:00",
+      language: "English",
+    },
   },
 };
