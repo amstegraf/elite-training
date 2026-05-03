@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from "react-native";
+import { Alert, StyleSheet, Text, View, ScrollView, TouchableOpacity } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { AppHeader } from "../../ui/AppHeader";
 import { KpiCard } from "../../ui/KpiCard";
@@ -11,7 +11,7 @@ import { buildRackReportRows, completedSessionsSorted, computeSessionMetrics, fo
 export function SessionReportScreen() {
   const nav = useNavigation<any>();
   const route = useRoute<any>();
-  const { completedSessions } = useAppState();
+  const { completedSessions, startSession, deleteSession } = useAppState();
   const sorted = completedSessionsSorted(completedSessions);
   const selected =
     sorted.find((s) => s.id === route.params?.sessionId) ??
@@ -24,6 +24,29 @@ export function SessionReportScreen() {
     ? new Date(selected.startedAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
     : "No session";
   const tierDeltaPts = Math.round((metrics?.rackConversionRate ?? 0) * 100);
+  const handleNewSession = () => {
+    const createdId = startSession();
+    if (!createdId) return;
+    nav.navigate("Session", { sessionId: createdId });
+  };
+  const handleDeleteSession = () => {
+    if (!selected) return;
+    Alert.alert(
+      "Delete session",
+      "Are you sure you want to delete this session? This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            deleteSession(selected.id);
+            nav.navigate("HistoryTab");
+          },
+        },
+      ]
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -125,9 +148,14 @@ export function SessionReportScreen() {
         </View>
 
         <View style={styles.section}>
-          <TouchableOpacity style={styles.newSessionBtn} onPress={() => nav.navigate("DashboardTab")}>
-            <Text style={styles.newSessionText}>New Session</Text>
-          </TouchableOpacity>
+          <View style={styles.actionRow}>
+            <TouchableOpacity style={styles.newSessionBtn} onPress={handleNewSession}>
+              <Text style={styles.newSessionText}>New Session</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.deleteSessionBtn} onPress={handleDeleteSession}>
+              <Text style={styles.deleteSessionText}>Delete Session</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </View>
@@ -342,16 +370,36 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: "rgba(255, 0, 0, 0.6)",
   },
+  actionRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
   newSessionBtn: {
     height: 48,
     borderRadius: 16,
     backgroundColor: colors.secondary,
     alignItems: "center",
     justifyContent: "center",
+    flex: 1,
   },
   newSessionText: {
     fontSize: 14,
     fontFamily: "Inter_600SemiBold",
     color: colors.foreground,
+  },
+  deleteSessionBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: "rgba(255, 0, 0, 0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 0, 0, 0.25)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  deleteSessionText: {
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+    color: colors.danger,
   },
 });

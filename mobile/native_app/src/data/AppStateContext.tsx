@@ -53,6 +53,7 @@ type AppStateContextValue = {
   updatePreference: (key: keyof UiPreferences, value: UiPreferences[keyof UiPreferences]) => void;
   renameProfile: (id: string, name: string) => void;
   deleteProfile: (id: string) => void;
+  deleteSession: (sessionId: string) => void;
   toggleSessionPause: (sessionId: string, pause: boolean) => void;
 };
 
@@ -156,6 +157,13 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         prev.activeProfileId === id ? profiles[0]?.id ?? undefined : prev.activeProfileId;
       return { ...prev, profiles, sessions, activeProfileId };
     });
+  };
+
+  const deleteSession = (sessionId: string) => {
+    setData((prev) => ({
+      ...prev,
+      sessions: prev.sessions.filter((session) => session.id !== sessionId),
+    }));
   };
 
   const startSession = (): string | null => {
@@ -392,6 +400,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     updatePreference,
     renameProfile,
     deleteProfile,
+    deleteSession,
     toggleSessionPause,
   };
 
