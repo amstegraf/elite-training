@@ -1,5 +1,11 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { baselineComparison, computeGlobalMetrics, isoNow, uid } from "../domain/metrics";
+import {
+  baselineComparison,
+  computeGlobalMetrics,
+  defaultBallsClearedForRack,
+  isoNow,
+  uid,
+} from "../domain/metrics";
 import { computeTier } from "../domain/tier";
 import {
   AppStateData,
@@ -28,7 +34,7 @@ type AppStateContextValue = {
   startSession: () => string | null;
   endSession: (sessionId: string) => void;
   startRack: (sessionId: string) => void;
-  endRack: (sessionId: string, ballsCleared: number) => void;
+  endRack: (sessionId: string, ballsCleared?: number) => void;
   logMiss: (
     sessionId: string,
     ballNumber: number,
@@ -45,6 +51,7 @@ type AppStateContextValue = {
   updatePreference: (key: keyof UiPreferences, value: UiPreferences[keyof UiPreferences]) => void;
   renameProfile: (id: string, name: string) => void;
   deleteProfile: (id: string) => void;
+  toggleSessionPause: (sessionId: string, pause: boolean) => void;
 };
 
 const AppStateContext = createContext<AppStateContextValue | undefined>(undefined);
@@ -138,12 +145,18 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
 
   const startSession = (): string | null => {
     if (!data.activeProfileId) return null;
+    const rack = { id: uid(), rackNumber: 1, startedAt: isoNow(), misses: [] };
     const s: PrecisionSession = {
       id: uid(),
       profileId: data.activeProfileId,
       startedAt: isoNow(),
       status: "in_progress",
-      racks: [],
+      durationSeconds: 0,
+      isPaused: false,
+      lastUnpausedAt: isoNow(),
+      totalMisses: 0,
+      racks: [rack],
+      currentRackId: rack.id,
     };
     setData((prev) => ({ ...prev, sessions: [s, ...prev.sessions] }));
     return s.id;
@@ -152,12 +165,22 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const endSession = (sessionId: string) => {
     setData((prev) => ({
       ...prev,
-      sessions: withSession(prev.sessions, sessionId, (s) => ({
-        ...s,
-        status: "completed",
-        endedAt: isoNow(),
-        currentRackId: undefined,
-      })),
+      sessions: withSession(prev.sessions, sessionId, (s) => {
+        if (s.currentRackId) return s;
+        const now = isoNow();
+        const delta = !s.isPaused && s.lastUnpausedAt
+          ? Math.max(0, Math.floor((new Date(now).getTime() - new Date(s.lastUnpausedAt).getTime()) / 1000))
+          : 0;
+        return {
+          ...s,
+          status: "completed",
+          endedAt: now,
+          durationSeconds: (s.durationSeconds ?? 0) + delta,
+          isPaused: true,
+          lastUnpausedAt: now,
+          currentRackId: undefined,
+        };
+      }),
     }));
   };
 
@@ -173,16 +196,25 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     }));
   };
 
-  const endRack = (sessionId: string, ballsCleared: number) => {
+  const endRack = (sessionId: string, ballsCleared?: number) => {
     setData((prev) => ({
       ...prev,
-      sessions: withSession(prev.sessions, sessionId, (s) => ({
-        ...s,
-        racks: s.racks.map((r) =>
-          r.id === s.currentRackId ? { ...r, endedAt: isoNow(), ballsCleared } : r
-        ),
-        currentRackId: undefined,
-      })),
+      sessions: withSession(prev.sessions, sessionId, (s) => {
+        const rack = s.racks.find((r) => r.id === s.currentRackId);
+        if (!rack) return s;
+        const inferred = defaultBallsClearedForRack(rack);
+        const safeBalls =
+          typeof ballsCleared === "number"
+            ? Math.max(0, Math.min(9, Math.round(ballsCleared)))
+            : (inferred ?? 0);
+        return {
+          ...s,
+          racks: s.racks.map((r) =>
+            r.id === s.currentRackId ? { ...r, endedAt: isoNow(), ballsCleared: safeBalls } : r
+          ),
+          currentRackId: undefined,
+        };
+      }),
     }));
   };
 
@@ -217,14 +249,52 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     setData((prev) => ({
       ...prev,
       sessions: withSession(prev.sessions, sessionId, (s) => {
-        const racks = [...s.racks];
-        for (let i = racks.length - 1; i >= 0; i -= 1) {
-          if (racks[i].misses.length > 0) {
-            racks[i] = { ...racks[i], misses: racks[i].misses.slice(0, -1) };
-            break;
-          }
-        }
+        let latestRackIdx = -1;
+        let latestMissIdx = -1;
+        let latestAt = "";
+        s.racks.forEach((rack, rackIdx) => {
+          rack.misses.forEach((m, missIdx) => {
+            const at = m.createdAt ?? "";
+            if (at >= latestAt) {
+              latestAt = at;
+              latestRackIdx = rackIdx;
+              latestMissIdx = missIdx;
+            }
+          });
+        });
+        if (latestRackIdx < 0 || latestMissIdx < 0) return s;
+        const racks = s.racks.map((r, idx) =>
+          idx === latestRackIdx
+            ? { ...r, misses: r.misses.filter((_, i) => i !== latestMissIdx) }
+            : r
+        );
         return { ...s, racks };
+      }),
+    }));
+  };
+
+  const toggleSessionPause = (sessionId: string, pause: boolean) => {
+    setData((prev) => ({
+      ...prev,
+      sessions: withSession(prev.sessions, sessionId, (s) => {
+        if (s.status !== "in_progress") return s;
+        if ((s.isPaused ?? false) === pause) return s;
+        const now = isoNow();
+        if (pause) {
+          const delta = s.lastUnpausedAt
+            ? Math.max(0, Math.floor((new Date(now).getTime() - new Date(s.lastUnpausedAt).getTime()) / 1000))
+            : 0;
+          return {
+            ...s,
+            isPaused: true,
+            durationSeconds: (s.durationSeconds ?? 0) + delta,
+          };
+        }
+        return {
+          ...s,
+          isPaused: false,
+          lastUnpausedAt: now,
+        };
       }),
     }));
   };
@@ -307,6 +377,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     updatePreference,
     renameProfile,
     deleteProfile,
+    toggleSessionPause,
   };
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;

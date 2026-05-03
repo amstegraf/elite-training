@@ -28,13 +28,25 @@ export function missBreaksRun(outcome: string): boolean {
   return outcome === "pot_miss";
 }
 
-export function inferBallsCleared(rack: RackRecord): number {
-  if (typeof rack.ballsCleared === "number") return rack.ballsCleared;
+export function defaultBallsClearedForRack(rack: RackRecord): number | null {
+  if (rack.misses.length === 0) return 9;
   const breaking = rack.misses
     .filter((m) => missBreaksRun(m.outcome))
     .map((m) => m.ballNumber);
-  if (breaking.length > 0) return Math.max(0, Math.min(9, Math.min(...breaking) - 1));
-  return 9;
+  if (breaking.length === 0) return null;
+  return Math.max(0, Math.min(9, Math.min(...breaking) - 1));
+}
+
+export function suggestedNextBallNumber(rack: RackRecord | null): number {
+  if (!rack || rack.misses.length === 0) return 1;
+  const last = rack.misses[rack.misses.length - 1]?.ballNumber ?? 1;
+  return Math.min(9, Math.max(1, last + 1));
+}
+
+export function inferBallsCleared(rack: RackRecord): number {
+  if (typeof rack.ballsCleared === "number") return rack.ballsCleared;
+  const inferred = defaultBallsClearedForRack(rack);
+  return inferred ?? 0;
 }
 
 export function deriveSession(session: PrecisionSession): SessionDerived {
@@ -176,10 +188,12 @@ export interface ProgressPoint {
 
 export function sessionDurationSeconds(session: PrecisionSession): number {
   if (!session.startedAt) return 0;
-  const start = new Date(session.startedAt).getTime();
-  const end = session.endedAt ? new Date(session.endedAt).getTime() : Date.now();
-  if (!Number.isFinite(start) || !Number.isFinite(end)) return 0;
-  return Math.max(0, Math.floor((end - start) / 1000));
+  const base = session.durationSeconds ?? 0;
+  if (session.endedAt || session.isPaused) return base;
+  const from = session.lastUnpausedAt || session.startedAt;
+  const start = new Date(from).getTime();
+  if (!Number.isFinite(start)) return base;
+  return Math.max(0, base + Math.floor((Date.now() - start) / 1000));
 }
 
 export function computeSessionMetrics(session: PrecisionSession): SessionMetrics {

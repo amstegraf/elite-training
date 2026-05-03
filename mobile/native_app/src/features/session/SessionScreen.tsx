@@ -1,12 +1,16 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Modal } from "react-native";
+import { Alert, StyleSheet, Text, View, ScrollView, TouchableOpacity, Modal } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { AppHeader } from "../../ui/AppHeader";
 import { PoolBall } from "../../ui/PoolBall";
 import { colors } from "../../core/theme/theme";
 import { Pause, Play, Undo2, Square, Flag, X, Check, Crosshair } from "lucide-react-native";
 import { useAppState } from "../../data/AppStateContext";
-import { inferBallsCleared, sessionDurationSeconds } from "../../domain/metrics";
+import {
+  inferBallsCleared,
+  sessionDurationSeconds,
+  suggestedNextBallNumber,
+} from "../../domain/metrics";
 import { MissOutcome, MissType } from "../../domain/types";
 
 const missTypes = [
@@ -40,15 +44,15 @@ export function SessionScreen() {
     endRack,
     logMiss,
     undoLastMiss,
+    toggleSessionPause,
   } = useAppState();
   const [sessionId, setSessionId] = useState<string | null>(route.params?.sessionId ?? null);
-  const [secondsTick, setSecondsTick] = useState(0);
-  const [running, setRunning] = useState(true);
+  const [, setTick] = useState(0);
   const [ball, setBall] = useState<number>(3);
   const [miss, setMiss] = useState<MissType[]>(["alignment"]);
   const [outcome, setOutcome] = useState<MissOutcome>("playable");
   const [showEndRack, setShowEndRack] = useState(false);
-  const [ballsCleared, setBallsCleared] = useState(0);
+  const [clearedBalls, setClearedBalls] = useState<number[]>([]);
 
   useEffect(() => {
     if (route.params?.sessionId) {
@@ -76,16 +80,22 @@ export function SessionScreen() {
   );
 
   useEffect(() => {
-    if (!running) return;
-    const t = setInterval(() => setSecondsTick((s) => s + 1), 1000);
+    const t = setInterval(() => setTick((s) => s + 1), 1000);
     return () => clearInterval(t);
-  }, [running]);
+  }, []);
 
-  const seconds = session ? sessionDurationSeconds(session) + secondsTick : 0;
+  const seconds = session ? sessionDurationSeconds(session) : 0;
   const rackNo = currentRack?.rackNumber ?? (session?.racks.length ?? 0) + 1;
   const rackMisses = currentRack?.misses.length ?? 0;
-  const inferredPots = currentRack ? inferBallsCleared({ ...currentRack, ballsCleared: undefined }) : 0;
-  const rackPots = currentRack ? Math.max(0, Math.min(9, inferredPots === 9 ? ball - 1 : inferredPots)) : 0;
+  const suggestedBall = suggestedNextBallNumber(currentRack);
+  const inferredPots = currentRack ? inferBallsCleared(currentRack) : 0;
+  const rackPots = currentRack ? Math.max(0, Math.min(9, inferredPots === 0 ? suggestedBall - 1 : inferredPots)) : 0;
+
+  useEffect(() => {
+    if (currentRack) {
+      setBall(suggestedNextBallNumber(currentRack));
+    }
+  }, [currentRack?.id, currentRack?.misses.length]);
 
   return (
     <View style={styles.container}>
@@ -99,7 +109,8 @@ export function SessionScreen() {
             onPress={() => {
               if (!session) return;
               if (session.currentRackId) {
-                endRack(session.id, ballsCleared);
+                Alert.alert("End rack first", "Close the current rack before ending the session.");
+                return;
               }
               endSession(session.id);
               nav.navigate("Report", { sessionId: session.id });
@@ -123,9 +134,11 @@ export function SessionScreen() {
               </View>
               <TouchableOpacity
                 style={styles.playPauseBtn}
-                onPress={() => setRunning((r) => !r)}
+                onPress={() =>
+                  session && toggleSessionPause(session.id, !(session.isPaused ?? false))
+                }
               >
-                {running ? (
+                {!(session?.isPaused ?? false) ? (
                   <Pause size={22} color={colors.primaryForeground} fill={colors.primaryForeground} />
                 ) : (
                   <Play size={22} color={colors.primaryForeground} fill={colors.primaryForeground} style={{ marginLeft: 2 }} />
@@ -264,6 +277,12 @@ export function SessionScreen() {
               style={styles.actionPrimary}
               onPress={() => {
                 if (!session || !session.currentRackId) return;
+                const guessed = suggestedNextBallNumber(currentRack) - 1;
+                const preselected = Array.from({ length: Math.max(0, guessed) }, (_, i) => i + 1)
+                  .filter((n) =>
+                    !currentRack?.misses.some((m) => m.ballNumber === n && m.outcome === "pot_miss")
+                  );
+                setClearedBalls(preselected);
                 setShowEndRack(true);
               }}
             >
@@ -277,18 +296,23 @@ export function SessionScreen() {
       <Modal visible={showEndRack} transparent animationType="fade">
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Balls Cleared</Text>
+            <Text style={styles.modalTitle}>Balls potted</Text>
             <View style={styles.modalGrid}>
-              {Array.from({ length: 10 }, (_, i) => i).map((n) => (
+              {Array.from({ length: 9 }, (_, i) => i + 1).map((n) => (
                 <TouchableOpacity
                   key={n}
-                  style={[styles.modalBall, ballsCleared === n && styles.modalBallActive]}
-                  onPress={() => setBallsCleared(n)}
+                  style={[styles.modalBall, clearedBalls.includes(n) && styles.modalBallActive]}
+                  onPress={() =>
+                    setClearedBalls((prev) =>
+                      prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n].sort((a, b) => a - b)
+                    )
+                  }
                 >
-                  <Text style={[styles.modalBallText, ballsCleared === n && styles.modalBallTextActive]}>{n}</Text>
+                  <Text style={[styles.modalBallText, clearedBalls.includes(n) && styles.modalBallTextActive]}>{n}</Text>
                 </TouchableOpacity>
               ))}
             </View>
+            <Text style={styles.modalHint}>{clearedBalls.length} balls cleared</Text>
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.modalCancel} onPress={() => setShowEndRack(false)}>
                 <Text style={styles.modalCancelText}>Cancel</Text>
@@ -297,7 +321,7 @@ export function SessionScreen() {
                 style={styles.modalConfirm}
                 onPress={() => {
                   if (!session) return;
-                  endRack(session.id, ballsCleared);
+                  endRack(session.id, clearedBalls.length);
                   setShowEndRack(false);
                 }}
               >
@@ -560,6 +584,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
+  },
+  modalHint: {
+    marginTop: 10,
+    fontSize: 12,
+    color: colors.mutedForeground,
+    fontFamily: "Inter_600SemiBold",
   },
   modalBall: {
     height: 34,

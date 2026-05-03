@@ -33,9 +33,9 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/splash-screen.png",
-          "imageWidth": 1000,
-          "resizeMode": "cover",
+          "image": "./assets/cue-path-app-icon.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
           "backgroundColor": "#0F172A"
         }
       ]

@@ -20,6 +20,7 @@ import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from "@expo-goog
 
 function Root() {
   const [showSplash, setShowSplash] = useState(true);
+  const [nativeHidden, setNativeHidden] = useState(false);
   const [fontsLoaded] = useFonts({
     Sora_400Regular,
     Sora_600SemiBold,
@@ -32,15 +33,17 @@ function Root() {
 
   useEffect(() => {
     if (fontsLoaded) {
-      const timer = setTimeout(async () => {
+      SplashScreen.hideAsync()
+        .then(() => setNativeHidden(true))
+        .catch(() => setNativeHidden(true));
+      const timer = setTimeout(() => {
         setShowSplash(false);
-        await SplashScreen.hideAsync();
-      }, 1200);
+      }, 1500);
       return () => clearTimeout(timer);
     }
   }, [fontsLoaded]);
 
-  const loading = showSplash;
+  const loading = !nativeHidden || showSplash;
 
   return (
     <>

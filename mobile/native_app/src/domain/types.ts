@@ -25,6 +25,10 @@ export interface PrecisionSession {
   startedAt: string;
   endedAt?: string;
   status: SessionStatus;
+  durationSeconds?: number;
+  isPaused?: boolean;
+  lastUnpausedAt?: string;
+  totalMisses?: number;
   racks: RackRecord[];
   currentRackId?: string;
 }
