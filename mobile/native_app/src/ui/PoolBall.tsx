@@ -41,10 +41,10 @@ export const PoolBall = ({ number, size = "md", active, hasLoggedMiss, onPress }
       style={[
         styles.ball,
         { width: dim, height: dim, backgroundColor: colorDef.bg },
-        active && styles.activeOuter,
         hasLoggedMiss && styles.loggedMissOuter,
       ]}
     >
+      {active && <View pointerEvents="none" style={styles.activeHalo} />}
       {isStripe && (
         <View style={styles.stripeBg} />
       )}
@@ -70,10 +70,15 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  activeOuter: {
-    borderWidth: 3,
-    borderColor: colors.primary,
-    transform: [{ scale: 1.1 }],
+  activeHalo: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    bottom: -4,
+    left: -4,
+    borderRadius: 999,
+    borderWidth: 2,
+    borderColor: "rgba(255, 126, 126, 0.95)",
   },
   loggedMissOuter: {
     borderColor: colors.danger,

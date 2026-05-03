@@ -105,25 +105,6 @@ export function SubscriptionScreen() {
       />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {isCurrent ? (
-          <View style={styles.currentCard}>
-            <View style={styles.currentIcon}>
-              <Sparkles size={16} color={colors.primary} />
-            </View>
-            <View style={styles.currentTextWrap}>
-              <Text style={styles.currentEyebrow}>Current Plan</Text>
-              <Text style={styles.currentPlan}>{current.name}</Text>
-            </View>
-            <View style={styles.activeBadge}>
-              <Text style={styles.activeBadgeText}>Active</Text>
-            </View>
-          </View>
-        ) : (
-          <TouchableOpacity style={styles.upgradeButton} activeOpacity={0.9}>
-            <Text style={styles.upgradeButtonText}>Upgrade to {selected.name}</Text>
-          </TouchableOpacity>
-        )}
-
         <View style={styles.planStack}>
           {PLANS.map((plan) => {
             const Icon = plan.icon;
@@ -178,6 +159,27 @@ export function SubscriptionScreen() {
           })}
         </View>
       </ScrollView>
+
+      <View style={styles.fixedFooterWrap}>
+        {isCurrent ? (
+          <View style={styles.currentCard}>
+            <View style={styles.currentIcon}>
+              <Sparkles size={16} color={colors.primary} />
+            </View>
+            <View style={styles.currentTextWrap}>
+              <Text style={styles.currentEyebrow}>Current Plan</Text>
+              <Text style={styles.currentPlan}>{current.name}</Text>
+            </View>
+            <View style={styles.activeBadge}>
+              <Text style={styles.activeBadgeText}>Active</Text>
+            </View>
+          </View>
+        ) : (
+          <TouchableOpacity style={styles.upgradeButton} activeOpacity={0.9}>
+            <Text style={styles.upgradeButtonText}>Upgrade to {selected.name}</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 }
@@ -192,16 +194,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  scrollContent: { paddingHorizontal: 20, paddingBottom: 180 },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 170 },
   currentCard: {
     flexDirection: "row",
     alignItems: "center",
+    minHeight: 61,
     borderRadius: 18,
     backgroundColor: colors.secondary,
     borderWidth: 1,
     borderColor: "rgba(226, 224, 221, 0.8)",
     padding: 12,
-    marginBottom: 16,
   },
   currentIcon: {
     width: 36,
@@ -220,11 +222,11 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
   },
   currentPlan: {
-    fontSize: 28,
-    lineHeight: 32,
+    fontSize: 20,
+    lineHeight: 24,
     color: colors.foreground,
     fontFamily: "Sora_700Bold",
-    marginTop: 2,
+    marginTop: 1,
   },
   activeBadge: {
     paddingHorizontal: 10,
@@ -240,7 +242,7 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   upgradeButton: {
-    height: 54,
+    height: 61,
     borderRadius: 16,
     backgroundColor: colors.primary,
     alignItems: "center",
@@ -253,6 +255,12 @@ const styles = StyleSheet.create({
     fontFamily: "Sora_700Bold",
   },
   planStack: { gap: 12 },
+  fixedFooterWrap: {
+    position: "absolute",
+    left: 20,
+    right: 20,
+    bottom: 20,
+  },
   planCard: {
     borderWidth: 1,
     borderRadius: 28,

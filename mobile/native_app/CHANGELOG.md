@@ -4,6 +4,11 @@ All notable changes to the native app are tracked here.
 
 ## v0.1.0-alpha (in progress)
 
+- Subscription footer behavior refined: bottom area is now fixed and stable, swapping between `Current Plan` and `Upgrade CTA` in the same position to eliminate jump.
+- Dashboard tier progress now shows the explicit next tier name (e.g. "877 to next tier Semi-pro") with highlighted tier text.
+- Dashboard wording fix: changed KPI section title from "Last 7 days" to "Overall".
+- Updated selected pool-ball highlight to a clearer light-red outer halo with spacing from the ball.
+- Subscription: made upgrade CTA fixed at screen bottom so it remains visible while scrolling plans.
 - Added `Previous Racks` section to live session with prototype-style cards (rack badge, pots ratio, conversion pill, split progress bar, and per-rack duration/meta).
 - Live session: added state-based disabling for Start/End Rack controls and upgraded End Rack ball picker to single-row colored pool balls.
 - History: improved subtitle and mini KPI text contrast for better readability.

@@ -8,6 +8,7 @@ import { colors } from "../../core/theme/theme";
 import { Play, Target, MapPin, Trophy, Flame, ChevronRight, Bell } from "lucide-react-native";
 import { useAppState } from "../../data/AppStateContext";
 import { computeSessionMetrics, completedSessionsSorted, formatDurationLabel } from "../../domain/metrics";
+import { TIER_LABELS } from "../../domain/types";
 
 export function DashboardScreen() {
   const nav = useNavigation<any>();
@@ -20,6 +21,11 @@ export function DashboardScreen() {
   const tierPoints = tier?.points ?? 0;
   const tierProgress = tier?.progressPct ?? 0;
   const pointsToNext = tier?.pointsToNext;
+  const currentTierIdx = tier ? TIER_LABELS.indexOf(tier.label) : -1;
+  const nextTierLabel =
+    pointsToNext === null || currentTierIdx < 0 || currentTierIdx >= TIER_LABELS.length - 1
+      ? null
+      : TIER_LABELS[currentTierIdx + 1];
 
   const handleStart = () => {
     const existing = activeSessions[0];
@@ -63,9 +69,9 @@ export function DashboardScreen() {
                 <Text style={styles.pointsSubtext}>
                   {pointsToNext === null
                     ? "Max tier reached"
-                    : `${pointsToNext} to `}
-                  {pointsToNext !== null && (
-                    <Text style={{ color: colors.tierPlatinum, fontWeight: "bold" }}>next tier</Text>
+                    : `${pointsToNext} to next tier `}
+                  {nextTierLabel && (
+                    <Text style={{ color: colors.tierGold, fontWeight: "bold" }}>{nextTierLabel}</Text>
                   )}
                 </Text>
               </View>
@@ -91,7 +97,7 @@ export function DashboardScreen() {
         {/* KPI Grid */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Last 7 days</Text>
+            <Text style={styles.sectionTitle}>Overall</Text>
             <TouchableOpacity onPress={() => nav.navigate("StatsTab")} style={styles.sectionLinkRow}>
               <Text style={styles.sectionLink}>Stats</Text>
               <ChevronRight size={14} color={colors.primary} />
