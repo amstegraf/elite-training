@@ -4,6 +4,7 @@ All notable changes to the native app are tracked here.
 
 ## v0.1.0-alpha (in progress)
 
+- Refreshed session report metric visuals to match latest prototype (Session Tier/Recovery cards, Rack Consistency mini-bars + std deviation, and enhanced Failure Breakdown with stacked bar + emphasis).
 - Added new `Subscription` page based on latest prototype (Free / Pro / Elite plans UI).
 - Wired first upsell redirect: session report `AI Coach` button now opens the subscription page.
 - Enhanced live session feedback: object balls now mark logged misses, stats pulse on updates, and Log Miss button animates on submit.

@@ -4,7 +4,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { AppHeader } from "../../ui/AppHeader";
 import { KpiCard } from "../../ui/KpiCard";
 import { colors } from "../../core/theme/theme";
-import { Target, MapPin, Trophy, Share2, ArrowUpRight, Clock, Sparkles } from "lucide-react-native";
+import { Target, MapPin, Trophy, Share2, ArrowUpRight, Clock, Sparkles, ChevronRight, Info } from "lucide-react-native";
 import { useAppState } from "../../data/AppStateContext";
 import { buildRackReportRows, completedSessionsSorted, computeSessionMetrics, formatDurationLabel } from "../../domain/metrics";
 import { computeTier } from "../../domain/tier";
@@ -38,6 +38,11 @@ export function SessionReportScreen() {
   const consistencyAverage = rackPots.length
     ? rackPots.reduce((sum, value) => sum + value, 0) / rackPots.length
     : null;
+  const consistencyStdDev = consistencyAverage === null
+    ? null
+    : Math.sqrt(
+        rackPots.reduce((sum, value) => sum + (value - consistencyAverage) ** 2, 0) / rackPots.length
+      );
   const sessionTier = metrics
     ? computeTier(
         metrics.potRate,
@@ -65,7 +70,11 @@ export function SessionReportScreen() {
     const count = failureCounts[item.key];
     const pct = failureTotal > 0 ? (count / failureTotal) * 100 : 0;
     return { ...item, pct };
-  });
+  }).sort((a, b) => b.pct - a.pct);
+  const topFailureLabels = failureBreakdown
+    .filter((entry) => entry.pct > 0)
+    .slice(0, 2)
+    .map((entry) => entry.label);
   let recoveryNumerator = 0;
   let recoveryDenominator = 0;
   (selected?.racks ?? []).forEach((rack) => {
@@ -171,15 +180,36 @@ export function SessionReportScreen() {
 
         <View style={styles.section}>
           <View style={styles.metaGrid}>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={styles.metaCard}
+            >
+              <View style={styles.metaHeadRow}>
+                <Text style={styles.metaLabel}>Session Tier</Text>
+                <ChevronRight size={14} color={colors.mutedForeground} />
+              </View>
+              <View style={styles.sessionTierPill}>
+                <View style={styles.sessionTierDot} />
+                <Text style={styles.sessionTierPillText}>{sessionTier?.label ?? "—"}</Text>
+              </View>
+              <Text style={styles.metaHint}>Tap to improve →</Text>
+            </TouchableOpacity>
             <View style={styles.metaCard}>
-              <Text style={styles.metaLabel}>Session Label</Text>
-              <Text style={styles.metaValue}>{sessionTier?.label ?? "—"}</Text>
-            </View>
-            <View style={styles.metaCard}>
-              <Text style={styles.metaLabel}>Recovery Rate</Text>
-              <Text style={styles.metaValue}>
+              <View style={styles.metaHeadRow}>
+                <Text style={styles.metaLabel}>Recovery Rate</Text>
+                <View style={styles.metaInfoRow}>
+                  <Info size={10} color={colors.mutedForeground} />
+                  <Text style={styles.metaInfoText}>after miss</Text>
+                </View>
+              </View>
+              <Text style={[
+                styles.metaValue,
+                recoveryRate !== null && recoveryRate >= 75 && styles.metaValueSuccess,
+                recoveryRate !== null && recoveryRate < 50 && styles.metaValueDanger,
+              ]}>
                 {recoveryRate === null ? "—" : `${recoveryRate.toFixed(1)}%`}
               </Text>
+              <Text style={styles.metaHint}>vs 70% baseline</Text>
             </View>
           </View>
         </View>
@@ -187,32 +217,87 @@ export function SessionReportScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Rack Consistency</Text>
           <View style={styles.consistencyCard}>
-            <View style={styles.consistencyItem}>
-              <Text style={styles.consistencyLabel}>Worst</Text>
-              <Text style={[styles.consistencyValue, styles.consistencyValueDanger]}>
-                {consistencyWorst === null ? "—" : consistencyWorst}
-              </Text>
+            <View style={styles.consistencySummaryRow}>
+              <View style={styles.consistencyItem}>
+                <Text style={styles.consistencyLabel}>Worst</Text>
+                <Text style={[styles.consistencyValue, styles.consistencyValueDanger]}>
+                  {consistencyWorst === null ? "—" : consistencyWorst}
+                </Text>
+                <Text style={styles.consistencyUnit}>balls</Text>
+              </View>
+              <View style={styles.consistencyItem}>
+                <Text style={styles.consistencyLabel}>Average</Text>
+                <Text style={styles.consistencyValue}>
+                  {consistencyAverage === null ? "—" : consistencyAverage.toFixed(2)}
+                </Text>
+                <Text style={styles.consistencyUnit}>balls</Text>
+              </View>
+              <View style={styles.consistencyItem}>
+                <Text style={styles.consistencyLabel}>Best</Text>
+                <Text style={[styles.consistencyValue, styles.consistencyValueGood]}>
+                  {consistencyBest === null ? "—" : consistencyBest}
+                </Text>
+                <Text style={styles.consistencyUnit}>balls</Text>
+              </View>
             </View>
-            <View style={styles.consistencyItem}>
-              <Text style={styles.consistencyLabel}>Average</Text>
-              <Text style={styles.consistencyValue}>
-                {consistencyAverage === null ? "—" : consistencyAverage.toFixed(2)}
-              </Text>
+            <View style={styles.consistencyBarsRow}>
+              {racks.map((rack, idx) => {
+                const ratio = Math.max(0, Math.min(1, rack.pots / 9));
+                const barColor =
+                  rack.pots >= 8
+                    ? colors.primary
+                    : rack.pots >= 6
+                      ? colors.warning
+                      : colors.danger;
+                return (
+                  <View key={rack.id} style={styles.consistencyBarCol}>
+                    <View style={styles.consistencyBarTrack}>
+                      <View
+                        style={[
+                          styles.consistencyBarFill,
+                          {
+                            height: `${Math.max(16, ratio * 100)}%`,
+                            backgroundColor: barColor,
+                          },
+                        ]}
+                      />
+                    </View>
+                    <Text style={styles.consistencyRackLabel}>R{idx + 1}</Text>
+                  </View>
+                );
+              })}
             </View>
-            <View style={styles.consistencyItem}>
-              <Text style={styles.consistencyLabel}>Best</Text>
-              <Text style={styles.consistencyValue}>
-                {consistencyBest === null ? "—" : consistencyBest}
-              </Text>
-            </View>
+            <Text style={styles.consistencyFootnote}>
+              Std deviation <Text style={styles.consistencyFootnoteStrong}>{consistencyStdDev?.toFixed(2) ?? "—"}</Text> · lower is steadier
+            </Text>
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Failure Breakdown</Text>
+          <Text style={styles.failureSubtitle}>
+            <Text style={styles.failureSubtitleStrong}>
+              {topFailureLabels.length > 0 ? topFailureLabels.join(" & ") : "No misses"}
+            </Text>
+            {topFailureLabels.length > 0 ? " cost you most this session." : " logged in this session."}
+          </Text>
           <View style={styles.failureCard}>
+            <View style={styles.failureStackBar}>
+              {failureBreakdown.map((entry) => (
+                <View
+                  key={`stack-${entry.key}`}
+                  style={[
+                    styles.failureStackSegment,
+                    {
+                      width: `${entry.pct}%`,
+                      backgroundColor: entry.color,
+                    },
+                  ]}
+                />
+              ))}
+            </View>
             {failureBreakdown.map((entry) => (
-              <View key={entry.key} style={styles.failureRow}>
+              <View key={entry.key} style={[styles.failureRow, entry.pct <= 0.001 && styles.failureRowMuted]}>
                 <Text style={styles.failureLabel}>{entry.label}</Text>
                 <View style={styles.failureTrack}>
                   <View
@@ -225,7 +310,9 @@ export function SessionReportScreen() {
                     ]}
                   />
                 </View>
-                <Text style={styles.failureValue}>{entry.pct.toFixed(1)}%</Text>
+                <Text style={[styles.failureValue, entry.pct >= (failureBreakdown[1]?.pct ?? 0) && styles.failureValueStrong]}>
+                  {entry.pct.toFixed(1)}%
+                </Text>
               </View>
             ))}
           </View>
@@ -449,10 +536,61 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     fontFamily: "Inter_600SemiBold",
   },
+  metaHeadRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  metaInfoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+  },
+  metaInfoText: {
+    fontSize: 10,
+    color: colors.mutedForeground,
+    fontFamily: "Inter_500Medium",
+  },
   metaValue: {
     marginTop: 6,
     fontSize: 18,
     color: colors.foreground,
+    fontFamily: "Sora_700Bold",
+  },
+  metaValueSuccess: {
+    color: colors.primary,
+  },
+  metaValueDanger: {
+    color: colors.danger,
+  },
+  metaHint: {
+    marginTop: 4,
+    fontSize: 10,
+    color: colors.mutedForeground,
+    fontFamily: "Inter_500Medium",
+  },
+  sessionTierPill: {
+    marginTop: 8,
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderWidth: 1,
+    borderColor: "rgba(120, 126, 145, 0.35)",
+    backgroundColor: "rgba(120, 126, 145, 0.15)",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  sessionTierDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.mutedForeground,
+  },
+  sessionTierPillText: {
+    color: colors.foreground,
+    fontSize: 14,
     fontFamily: "Sora_700Bold",
   },
   sectionTitle: {
@@ -467,6 +605,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(226, 224, 221, 0.6)",
     padding: 12,
+  },
+  consistencySummaryRow: {
     flexDirection: "row",
     gap: 8,
   },
@@ -493,6 +633,57 @@ const styles = StyleSheet.create({
   consistencyValueDanger: {
     color: colors.danger,
   },
+  consistencyValueGood: {
+    color: colors.primary,
+  },
+  consistencyUnit: {
+    fontSize: 11,
+    color: colors.mutedForeground,
+    fontFamily: "Inter_500Medium",
+    marginTop: 2,
+  },
+  consistencyBarsRow: {
+    height: 84,
+    marginTop: 14,
+    flexDirection: "row",
+    gap: 6,
+    alignItems: "flex-end",
+  },
+  consistencyBarCol: {
+    flex: 1,
+    alignItems: "center",
+    gap: 4,
+  },
+  consistencyBarTrack: {
+    width: "100%",
+    flex: 1,
+    justifyContent: "flex-end",
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+    overflow: "hidden",
+    backgroundColor: "rgba(120, 126, 145, 0.08)",
+  },
+  consistencyBarFill: {
+    width: "100%",
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+  },
+  consistencyRackLabel: {
+    fontSize: 10,
+    color: colors.mutedForeground,
+    fontFamily: "Inter_500Medium",
+  },
+  consistencyFootnote: {
+    textAlign: "center",
+    marginTop: 8,
+    fontSize: 11,
+    color: colors.mutedForeground,
+    fontFamily: "Inter_500Medium",
+  },
+  consistencyFootnoteStrong: {
+    color: colors.foreground,
+    fontFamily: "Inter_700Bold",
+  },
   failureCard: {
     backgroundColor: colors.card,
     borderRadius: 18,
@@ -501,10 +692,35 @@ const styles = StyleSheet.create({
     padding: 14,
     gap: 10,
   },
+  failureSubtitle: {
+    marginTop: -6,
+    marginBottom: 10,
+    fontSize: 13,
+    color: colors.mutedForeground,
+    fontFamily: "Inter_500Medium",
+  },
+  failureSubtitleStrong: {
+    color: colors.foreground,
+    fontFamily: "Inter_700Bold",
+  },
+  failureStackBar: {
+    height: 10,
+    borderRadius: 999,
+    overflow: "hidden",
+    backgroundColor: colors.secondary,
+    flexDirection: "row",
+    marginBottom: 6,
+  },
+  failureStackSegment: {
+    height: "100%",
+  },
   failureRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
+  },
+  failureRowMuted: {
+    opacity: 0.6,
   },
   failureLabel: {
     width: 68,
@@ -530,6 +746,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.mutedForeground,
     fontFamily: "Inter_600SemiBold",
+  },
+  failureValueStrong: {
+    color: colors.foreground,
+    fontFamily: "Inter_700Bold",
   },
   timelineCard: {
     backgroundColor: colors.card,
