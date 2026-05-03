@@ -453,8 +453,9 @@ const styles = StyleSheet.create({
   },
   ballGrid: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
+    flexWrap: "nowrap",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   chipRow: {
     flexDirection: "row",

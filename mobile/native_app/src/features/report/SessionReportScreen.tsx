@@ -4,7 +4,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { AppHeader } from "../../ui/AppHeader";
 import { KpiCard } from "../../ui/KpiCard";
 import { colors } from "../../core/theme/theme";
-import { Target, MapPin, Trophy, Share2, ArrowUpRight, Clock } from "lucide-react-native";
+import { Target, MapPin, Trophy, Share2, ArrowUpRight, Clock, Sparkles } from "lucide-react-native";
 import { useAppState } from "../../data/AppStateContext";
 import { buildRackReportRows, completedSessionsSorted, computeSessionMetrics, formatDurationLabel } from "../../domain/metrics";
 
@@ -109,6 +109,7 @@ export function SessionReportScreen() {
             {racks.map((r, i) => {
               const pct = (r.pots / r.balls) * 100;
               const isWin = r.outcome === "win";
+              const skipped = Math.max(0, r.balls - r.pots - r.misses);
               return (
                 <View key={r.id} style={styles.timelineRow}>
                   {i < racks.length - 1 && <View style={styles.timelineLine} />}
@@ -135,16 +136,59 @@ export function SessionReportScreen() {
                       </View>
                       <Text style={styles.rackPots}>{r.pots}/{r.balls}</Text>
                     </View>
-                    <View style={styles.missesRow}>
-                      {Array.from({ length: r.misses }).map((_, k) => (
-                        <View key={k} style={styles.missMarker} />
-                      ))}
+                    <View style={styles.ballRow}>
+                      {Array.from({ length: r.balls }).map((_, k) => {
+                        const status = k < r.pots ? "pot" : k < r.pots + r.misses ? "miss" : "skip";
+                        return (
+                          <View
+                            key={`${r.id}-${k + 1}`}
+                            style={[
+                              styles.ballCell,
+                              status === "pot" && styles.ballCellPot,
+                              status === "miss" && styles.ballCellMiss,
+                              status === "skip" && styles.ballCellSkip,
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.ballCellText,
+                                status === "pot" && styles.ballCellTextPot,
+                                status === "miss" && styles.ballCellTextMiss,
+                                status === "skip" && styles.ballCellTextSkip,
+                              ]}
+                            >
+                              {k + 1}
+                            </Text>
+                          </View>
+                        );
+                      })}
+                    </View>
+                    <View style={styles.ballLegendRow}>
+                      <View style={styles.ballLegendItem}>
+                        <View style={[styles.ballLegendDot, styles.ballLegendDotPot]} />
+                        <Text style={styles.ballLegendText}>{r.pots} potted</Text>
+                      </View>
+                      <View style={styles.ballLegendItem}>
+                        <View style={[styles.ballLegendDot, styles.ballLegendDotMiss]} />
+                        <Text style={styles.ballLegendText}>{r.misses} miss</Text>
+                      </View>
+                      <View style={styles.ballLegendItem}>
+                        <View style={[styles.ballLegendDot, styles.ballLegendDotSkip]} />
+                        <Text style={styles.ballLegendText}>{skipped} skipped</Text>
+                      </View>
                     </View>
                   </View>
                 </View>
               );
             })}
           </View>
+        </View>
+
+        <View style={styles.section}>
+          <TouchableOpacity style={styles.aiCoachBtn} activeOpacity={0.85}>
+            <Sparkles size={16} color="#FFFFFF" />
+            <Text style={styles.aiCoachText}>AI Coach</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.section}>
@@ -359,20 +403,97 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
     color: colors.mutedForeground,
   },
-  missesRow: {
+  ballRow: {
     flexDirection: "row",
     gap: 4,
     marginTop: 8,
+    flexWrap: "wrap",
   },
-  missMarker: {
+  ballCell: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  ballCellPot: {
+    backgroundColor: "rgba(32, 181, 118, 0.2)",
+    borderColor: "rgba(32, 181, 118, 0.55)",
+  },
+  ballCellMiss: {
+    backgroundColor: "rgba(255, 75, 75, 0.16)",
+    borderColor: "rgba(255, 75, 75, 0.55)",
+  },
+  ballCellSkip: {
+    backgroundColor: "rgba(120, 126, 145, 0.12)",
+    borderColor: "rgba(120, 126, 145, 0.3)",
+  },
+  ballCellText: {
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+  },
+  ballCellTextPot: {
+    color: colors.primary,
+  },
+  ballCellTextMiss: {
+    color: colors.danger,
+  },
+  ballCellTextSkip: {
+    color: colors.mutedForeground,
+  },
+  ballLegendRow: {
+    flexDirection: "row",
+    marginTop: 8,
+    gap: 12,
+    flexWrap: "wrap",
+  },
+  ballLegendItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  ballLegendDot: {
+    width: 6,
     height: 6,
-    width: 24,
     borderRadius: 3,
-    backgroundColor: "rgba(255, 0, 0, 0.6)",
+  },
+  ballLegendDotPot: {
+    backgroundColor: colors.primary,
+  },
+  ballLegendDotMiss: {
+    backgroundColor: colors.danger,
+  },
+  ballLegendDotSkip: {
+    backgroundColor: "rgba(120, 126, 145, 0.7)",
+  },
+  ballLegendText: {
+    fontSize: 11,
+    color: colors.mutedForeground,
+    fontFamily: "Inter_500Medium",
   },
   actionRow: {
     flexDirection: "row",
     gap: 10,
+  },
+  aiCoachBtn: {
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: "#8b3dff",
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 8,
+    shadowColor: "#8b3dff",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 4,
+  },
+  aiCoachText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontFamily: "Inter_700Bold",
   },
   newSessionBtn: {
     height: 48,
