@@ -1,0 +1,85 @@
+export type MissType = "position" | "alignment" | "delivery" | "speed";
+export type MissOutcome = "playable" | "pot_miss" | "no_shot_position";
+export type SessionStatus = "in_progress" | "completed";
+
+export interface MissEvent {
+  id: string;
+  ballNumber: number;
+  types: MissType[];
+  outcome: MissOutcome;
+  createdAt: string;
+}
+
+export interface RackRecord {
+  id: string;
+  rackNumber: number;
+  startedAt: string;
+  endedAt?: string;
+  ballsCleared?: number;
+  misses: MissEvent[];
+}
+
+export interface PrecisionSession {
+  id: string;
+  profileId: string;
+  startedAt: string;
+  endedAt?: string;
+  status: SessionStatus;
+  racks: RackRecord[];
+  currentRackId?: string;
+}
+
+export interface Profile {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface TierSettings {
+  potPctLowerBounds: [number, number, number, number];
+  posPctLowerBounds: [number, number, number, number];
+  convPctLowerBounds: [number, number, number, number];
+  weightPos: number;
+  weightConv: number;
+  weightPot: number;
+  penaltyFactor: number;
+}
+
+export interface AppSettings {
+  tier: TierSettings;
+}
+
+export interface AppStateData {
+  profiles: Profile[];
+  activeProfileId?: string;
+  sessions: PrecisionSession[];
+  settings: AppSettings;
+}
+
+export const TIER_LABELS = [
+  "Beginner",
+  "Amateur",
+  "Strong Amateur",
+  "Advanced",
+  "Semi-pro",
+  "Elite",
+] as const;
+export type TierLabel = (typeof TIER_LABELS)[number];
+
+export const DEFAULT_TIER_SETTINGS: TierSettings = {
+  potPctLowerBounds: [65, 82, 90, 94],
+  posPctLowerBounds: [30, 50, 70, 90],
+  convPctLowerBounds: [0, 10, 40, 60],
+  weightPos: 0.3,
+  weightConv: 0.5,
+  weightPot: 0.2,
+  penaltyFactor: 0.3,
+};
+
+export const DEFAULT_APP_STATE: AppStateData = {
+  profiles: [],
+  sessions: [],
+  settings: {
+    tier: DEFAULT_TIER_SETTINGS,
+  },
+};

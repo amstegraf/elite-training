@@ -14,3 +14,14 @@ node_modules/
 dist-desktop/
 
 data/*
+
+# Native app (Expo / React Native)
+mobile/native_app/.expo/
+mobile/native_app/dist/
+mobile/native_app/web-build/
+mobile/native_app/.metro-health-check*
+mobile/native_app/android/
+mobile/native_app/ios/
+
+# External design/prototype reference clone
+pool-elite-prototype/

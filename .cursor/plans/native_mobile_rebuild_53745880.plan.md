@@ -2,21 +2,24 @@
 name: Native Mobile Rebuild
 overview: Plan a new Android-first, Expo React Native app in a new folder, keeping the existing web/desktop/companion mobile app untouched while making iOS expansion straightforward.
 todos:
+  - id: analyze-prototype-first
+    content: Analyze `pool-elite-prototype` folder and use it as the primary design implementation reference.
+    status: completed
   - id: bootstrap-rn-project
     content: Create `mobile/native_app` Expo React Native + TypeScript scaffold with splash, theme, and navigation shell.
-    status: pending
+    status: completed
   - id: port-domain-logic
     content: Port session aggregates, KPI formulas, and tier/points engine from Python services into TypeScript domain modules with parity tests.
-    status: pending
+    status: completed
   - id: build-core-screens
     content: Implement Dashboard, Session logging, Session report, and Session history with local repositories.
-    status: pending
+    status: completed
   - id: add-calendar-stats
     content: Implement training calendar and progression stats screens backed by local computed aggregates.
-    status: pending
+    status: completed
   - id: profiles-settings-hardening
     content: Add profiles/settings workflows and complete offline QA/performance hardening; prepare iOS build path.
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -61,6 +64,7 @@ flowchart TD
 ## Feature Delivery Phases
 
 ### Phase 1: App Foundation + Splash + Navigation
+- Analyze `pool-elite-prototype` first and extract reusable design tokens, navigation patterns, and screen composition rules.
 - Initialize Expo app with React Native + TypeScript, linting, and strict TS config.
 - Add splash screen, app icon set, and theme system (light/dark-ready).
 - Implement navigation shell (tabs/stacks) for Dashboard, Session, History, Calendar, Stats, Profiles, Settings.

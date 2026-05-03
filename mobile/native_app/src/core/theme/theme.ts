@@ -1,0 +1,26 @@
+export const colors = {
+  background: "hsl(40, 30%, 97%)",
+  foreground: "hsl(220, 25%, 10%)",
+  surface: "hsl(0, 0%, 100%)",
+  card: "hsl(0, 0%, 100%)",
+  primary: "hsl(158, 64%, 28%)",
+  primaryForeground: "hsl(40, 30%, 97%)",
+  primaryGlow: "hsl(158, 70%, 42%)",
+  secondary: "hsl(40, 20%, 92%)",
+  muted: "hsl(40, 14%, 92%)",
+  mutedForeground: "hsl(220, 10%, 42%)",
+  accent: "hsl(28, 95%, 55%)",
+  warning: "hsl(38, 92%, 50%)",
+  danger: "hsl(0, 78%, 52%)",
+  border: "hsl(40, 12%, 88%)",
+  tierBronze: "hsl(28, 60%, 48%)",
+  tierSilver: "hsl(220, 8%, 62%)",
+  tierGold: "hsl(42, 90%, 52%)",
+  tierPlatinum: "hsl(200, 30%, 70%)",
+  tierElite: "hsl(158, 70%, 42%)",
+  
+  // Aliases to not break AppNavigator before it's updated
+  bg: "hsl(40, 30%, 97%)",
+  text: "hsl(220, 25%, 10%)",
+  line: "hsl(40, 12%, 88%)",
+};
