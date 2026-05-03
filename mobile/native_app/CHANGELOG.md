@@ -4,6 +4,10 @@ All notable changes to the native app are tracked here.
 
 ## v0.1.0-alpha (in progress)
 
+- Added new `Subscription` page based on latest prototype (Free / Pro / Elite plans UI).
+- Wired first upsell redirect: session report `AI Coach` button now opens the subscription page.
+- Enhanced live session feedback: object balls now mark logged misses, stats pulse on updates, and Log Miss button animates on submit.
+- Added `scratch` as a selectable miss type and adjusted miss-type layout to centered 3-2 rows.
 - Added session report metrics block: session label, recovery rate, rack consistency (worst/average/best), and failure breakdown chart.
 - Moved `AI Coach` button to sit directly under pot/position/conversion KPI cards in session report.
 - Fixed object-ball selector layout to keep balls 1-9 on a single row in live session UI.

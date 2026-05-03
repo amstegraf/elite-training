@@ -13,6 +13,7 @@ import { CalendarScreen } from "../features/calendar/CalendarScreen";
 import { ProfilesScreen } from "../features/profiles/ProfilesScreen";
 import { SettingsScreen } from "../features/settings/SettingsScreen";
 import { StatsScreen } from "../features/stats/StatsScreen";
+import { SubscriptionScreen } from "../features/subscription/SubscriptionScreen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const Tabs = createBottomTabNavigator();
@@ -89,6 +90,7 @@ export function AppNavigator() {
         <Stack.Screen name="Home" component={RootTabs} />
         <Stack.Screen name="Session" component={SessionScreen} />
         <Stack.Screen name="Report" component={SessionReportScreen} />
+        <Stack.Screen name="Subscription" component={SubscriptionScreen} />
         <Stack.Screen name="Profiles" component={ProfilesScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
       </Stack.Navigator>

@@ -10,6 +10,8 @@ const MISS_TYPE_MAP: Record<string, MissType> = {
   delivery: "delivery",
   side_spin: "delivery",
   stance_or_grip: "delivery",
+  scratch: "scratch",
+  foul: "scratch",
 };
 
 const MISS_OUTCOME_MAP: Record<string, MissOutcome> = {

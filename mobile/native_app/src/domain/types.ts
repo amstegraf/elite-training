@@ -1,4 +1,4 @@
-export type MissType = "position" | "alignment" | "delivery" | "speed";
+export type MissType = "position" | "alignment" | "delivery" | "speed" | "scratch";
 export type MissOutcome = "playable" | "pot_miss" | "no_shot_position";
 export type SessionStatus = "in_progress" | "completed";
 

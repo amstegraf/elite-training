@@ -6,6 +6,7 @@ interface PoolBallProps {
   number: number;
   size?: "sm" | "md" | "lg";
   active?: boolean;
+  hasLoggedMiss?: boolean;
   onPress?: () => void;
 }
 
@@ -21,7 +22,7 @@ const ballColors: Record<number, { bg: string; text: string }> = {
   9: { bg: "hsl(48, 95%, 55%)", text: "hsl(220, 25%, 10%)" }, // Stripe
 };
 
-export const PoolBall = ({ number, size = "md", active, onPress }: PoolBallProps) => {
+export const PoolBall = ({ number, size = "md", active, hasLoggedMiss, onPress }: PoolBallProps) => {
   const isStripe = number > 8;
   const colorDef = ballColors[number] || ballColors[1];
   
@@ -40,7 +41,8 @@ export const PoolBall = ({ number, size = "md", active, onPress }: PoolBallProps
       style={[
         styles.ball,
         { width: dim, height: dim, backgroundColor: colorDef.bg },
-        active && styles.activeOuter
+        active && styles.activeOuter,
+        hasLoggedMiss && styles.loggedMissOuter,
       ]}
     >
       {isStripe && (
@@ -49,6 +51,7 @@ export const PoolBall = ({ number, size = "md", active, onPress }: PoolBallProps
       <View style={[styles.innerCircle, { width: dim * 0.5, height: dim * 0.5 }]}>
         <Text style={[styles.number, { fontSize: dim * 0.28 }]}>{number}</Text>
       </View>
+      {hasLoggedMiss && <View style={styles.loggedMissDot} />}
     </TouchableOpacity>
   );
 };
@@ -71,6 +74,21 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: colors.primary,
     transform: [{ scale: 1.1 }],
+  },
+  loggedMissOuter: {
+    borderColor: colors.danger,
+    borderWidth: 2,
+  },
+  loggedMissDot: {
+    position: "absolute",
+    top: -2,
+    right: -2,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.danger,
+    borderWidth: 1,
+    borderColor: "#fff",
   },
   stripeBg: {
     position: "absolute",

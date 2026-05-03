@@ -159,7 +159,11 @@ export function SessionReportScreen() {
         </View>
 
         <View style={styles.section}>
-          <TouchableOpacity style={styles.aiCoachBtn} activeOpacity={0.85}>
+          <TouchableOpacity
+            style={styles.aiCoachBtn}
+            activeOpacity={0.85}
+            onPress={() => nav.navigate("Subscription")}
+          >
             <Sparkles size={16} color="#FFFFFF" />
             <Text style={styles.aiCoachText}>AI Coach</Text>
           </TouchableOpacity>

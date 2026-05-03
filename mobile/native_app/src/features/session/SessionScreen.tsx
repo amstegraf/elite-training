@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Alert, StyleSheet, Text, View, ScrollView, TouchableOpacity, Modal } from "react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Alert, Animated, Easing, StyleSheet, Text, View, ScrollView, TouchableOpacity, Modal } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { AppHeader } from "../../ui/AppHeader";
 import { PoolBall } from "../../ui/PoolBall";
@@ -18,6 +18,7 @@ const missTypes = [
   { id: "alignment", label: "Alignment" },
   { id: "delivery", label: "Delivery" },
   { id: "speed", label: "Speed" },
+  { id: "scratch", label: "Scratch" },
 ];
 
 const outcomes = [
@@ -53,6 +54,9 @@ export function SessionScreen() {
   const [outcome, setOutcome] = useState<MissOutcome>("playable");
   const [showEndRack, setShowEndRack] = useState(false);
   const [clearedBalls, setClearedBalls] = useState<number[]>([]);
+  const logBtnScale = useRef(new Animated.Value(1)).current;
+  const missStatScale = useRef(new Animated.Value(1)).current;
+  const potStatScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     if (route.params?.sessionId) {
@@ -90,12 +94,70 @@ export function SessionScreen() {
   const suggestedBall = suggestedNextBallNumber(currentRack);
   const inferredPots = currentRack ? inferBallsCleared(currentRack) : 0;
   const rackPots = currentRack ? Math.max(0, Math.min(9, inferredPots === 0 ? suggestedBall - 1 : inferredPots)) : 0;
+  const loggedMissBalls = useMemo(() => {
+    const set = new Set<number>();
+    (currentRack?.misses ?? []).forEach((entry) => {
+      set.add(entry.ballNumber);
+    });
+    return set;
+  }, [currentRack?.misses]);
 
   useEffect(() => {
     if (currentRack) {
       setBall(suggestedNextBallNumber(currentRack));
     }
   }, [currentRack?.id, currentRack?.misses.length]);
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.timing(missStatScale, {
+        toValue: 1.12,
+        duration: 120,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(missStatScale, {
+        toValue: 1,
+        duration: 160,
+        easing: Easing.inOut(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [rackMisses, missStatScale]);
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.timing(potStatScale, {
+        toValue: 1.08,
+        duration: 120,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(potStatScale, {
+        toValue: 1,
+        duration: 160,
+        easing: Easing.inOut(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [rackPots, potStatScale]);
+
+  const animateLogMissFeedback = () => {
+    Animated.sequence([
+      Animated.timing(logBtnScale, {
+        toValue: 0.96,
+        duration: 90,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.spring(logBtnScale, {
+        toValue: 1,
+        friction: 4,
+        tension: 170,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
 
   return (
     <View style={styles.container}>
@@ -153,11 +215,15 @@ export function SessionScreen() {
               </View>
               <View style={styles.statBox}>
                 <Text style={styles.statLabel}>Pots</Text>
-                <Text style={[styles.statValue, { color: colors.accent }]}>{rackPots}</Text>
+                <Animated.Text style={[styles.statValue, styles.statValueAccent, { transform: [{ scale: potStatScale }] }]}>
+                  {rackPots}
+                </Animated.Text>
               </View>
               <View style={styles.statBox}>
                 <Text style={styles.statLabel}>Misses</Text>
-                <Text style={styles.statValue}>{rackMisses}</Text>
+                <Animated.Text style={[styles.statValue, { transform: [{ scale: missStatScale }] }]}>
+                  {rackMisses}
+                </Animated.Text>
               </View>
             </View>
           </View>
@@ -177,6 +243,7 @@ export function SessionScreen() {
                   number={n}
                   size="sm"
                   active={ball === n}
+                  hasLoggedMiss={loggedMissBalls.has(n)}
                   onPress={() => setBall(n)}
                 />
               ))}
@@ -188,7 +255,7 @@ export function SessionScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Miss Type</Text>
           <View style={styles.chipRow}>
-            {missTypes.map((m) => (
+            {missTypes.slice(0, 3).map((m) => (
               <TouchableOpacity
                 key={m.id}
                 onPress={() =>
@@ -199,6 +266,24 @@ export function SessionScreen() {
                   )
                 }
                 style={[styles.chip, miss.includes(m.id as MissType) && styles.chipActive]}
+              >
+                <Crosshair size={14} color={miss.includes(m.id as MissType) ? colors.primaryForeground : colors.foreground} />
+                <Text style={[styles.chipText, miss.includes(m.id as MissType) && styles.chipTextActive]}>{m.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <View style={[styles.chipRow, styles.chipRowCentered]}>
+            {missTypes.slice(3).map((m) => (
+              <TouchableOpacity
+                key={m.id}
+                onPress={() =>
+                  setMiss((prev) =>
+                    prev.includes(m.id as MissType)
+                      ? prev.filter((x) => x !== m.id)
+                      : [...prev, m.id as MissType]
+                  )
+                }
+                style={[styles.chip, styles.chipNarrow, miss.includes(m.id as MissType) && styles.chipActive]}
               >
                 <Crosshair size={14} color={miss.includes(m.id as MissType) ? colors.primaryForeground : colors.foreground} />
                 <Text style={[styles.chipText, miss.includes(m.id as MissType) && styles.chipTextActive]}>{m.label}</Text>
@@ -245,6 +330,7 @@ export function SessionScreen() {
 
         {/* Action Bar */}
         <View style={styles.actionBar}>
+          <Animated.View style={{ transform: [{ scale: logBtnScale }] }}>
           <TouchableOpacity
             style={styles.logMissBtn}
             activeOpacity={0.9}
@@ -252,11 +338,13 @@ export function SessionScreen() {
               if (!session || !session.currentRackId) return;
               if (miss.length === 0) return;
               logMiss(session.id, ball, miss, outcome);
+              animateLogMissFeedback();
             }}
           >
             <X size={20} color={colors.foreground} strokeWidth={2.6} />
             <Text style={styles.logMissText}>Log Miss</Text>
           </TouchableOpacity>
+          </Animated.View>
           
           <View style={styles.actionGrid}>
             <TouchableOpacity
@@ -421,6 +509,9 @@ const styles = StyleSheet.create({
     color: colors.primaryForeground,
     marginTop: 2,
   },
+  statValueAccent: {
+    color: colors.accent,
+  },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -459,8 +550,11 @@ const styles = StyleSheet.create({
   },
   chipRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: 8,
+    marginBottom: 8,
+  },
+  chipRowCentered: {
+    justifyContent: "center",
   },
   chip: {
     flexDirection: "row",
@@ -472,6 +566,10 @@ const styles = StyleSheet.create({
     gap: 6,
     borderWidth: 1,
     borderColor: "transparent",
+    flex: 1,
+  },
+  chipNarrow: {
+    flex: 0.42,
   },
   chipActive: {
     backgroundColor: colors.primary,
