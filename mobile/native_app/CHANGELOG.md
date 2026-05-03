@@ -4,6 +4,8 @@ All notable changes to the native app are tracked here.
 
 ## v0.1.0-alpha (in progress)
 
+- Added session report metrics block: session label, recovery rate, rack consistency (worst/average/best), and failure breakdown chart.
+- Moved `AI Coach` button to sit directly under pot/position/conversion KPI cards in session report.
 - Fixed object-ball selector layout to keep balls 1-9 on a single row in live session UI.
 - Updated session report with per-ball status chips (potted/miss/skipped) and legend rows per rack.
 - Added `AI Coach` action button to session report layout (prototype-aligned placement/styling).
