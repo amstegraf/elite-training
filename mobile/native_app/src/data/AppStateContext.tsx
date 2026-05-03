@@ -18,6 +18,8 @@ import {
   TierSettings,
   UiPreferences,
 } from "../domain/types";
+import { DEV_SEED_ENABLED, DEV_SEED_SESSIONS, DEV_SEED_SOURCE } from "../dev/seedSessions.generated";
+import { importDesktopSessions } from "../dev/seedImport";
 import { loadState, saveState } from "./storage";
 
 type AppStateContextValue = {
@@ -56,6 +58,23 @@ type AppStateContextValue = {
 
 const AppStateContext = createContext<AppStateContextValue | undefined>(undefined);
 
+function withDefaultProfile(state: AppStateData): AppStateData {
+  if (state.profiles.length > 0) return state;
+  const profile: Profile = { id: uid(), name: "Player 1", createdAt: isoNow() };
+  return { ...state, profiles: [profile], activeProfileId: profile.id };
+}
+
+function withDevSeedSessions(state: AppStateData): AppStateData {
+  if (!DEV_SEED_ENABLED) return state;
+  const profileId = state.activeProfileId ?? state.profiles[0]?.id;
+  if (!profileId) return state;
+  const imported = importDesktopSessions(DEV_SEED_SESSIONS, profileId);
+  if (!imported.length) return state;
+  // In dev-seed mode, always replace local sessions to avoid stale restored app data.
+  void DEV_SEED_SOURCE;
+  return { ...state, sessions: imported };
+}
+
 function withSession(
   sessions: PrecisionSession[],
   sessionId: string,
@@ -71,16 +90,12 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     (async () => {
       try {
-        const d = await loadState();
-        if (d.profiles.length === 0) {
-          const p: Profile = { id: uid(), name: "Player 1", createdAt: isoNow() };
-          setData({ ...d, profiles: [p], activeProfileId: p.id });
-        } else {
-          setData(d);
-        }
+        const loaded = await loadState();
+        const withProfile = withDefaultProfile(loaded);
+        setData(withDevSeedSessions(withProfile));
       } catch {
-        const p: Profile = { id: uid(), name: "Player 1", createdAt: isoNow() };
-        setData({ ...DEFAULT_APP_STATE, profiles: [p], activeProfileId: p.id });
+        const withProfile = withDefaultProfile(DEFAULT_APP_STATE);
+        setData(withDevSeedSessions(withProfile));
       } finally {
         setReady(true);
       }

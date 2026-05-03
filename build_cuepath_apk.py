@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import shutil
 import subprocess
@@ -14,6 +15,10 @@ NATIVE_APP_DIR = ROOT / "mobile" / "native_app"
 ANDROID_DIR = NATIVE_APP_DIR / "android"
 APK_SOURCE = ANDROID_DIR / "app" / "build" / "outputs" / "apk" / "release" / "app-release.apk"
 OUTPUT_DIR = Path(r"C:\Users\aurel\OneDrive\Workspace\CuePath\builds")
+DEFAULT_DESKTOP_SESSIONS_DIR = Path(
+    r"C:\Users\aurel\AppData\Roaming\Elite Training\precision-data\sessions"
+)
+DEV_SEED_TARGET = NATIVE_APP_DIR / "src" / "dev" / "seedSessions.generated.ts"
 APK_PATTERN = re.compile(r"^cue-path-v(\d+)\.(\d+)\.(\d+)\.apk$", re.IGNORECASE)
 
 
@@ -84,7 +89,56 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Install debug via USB (`gradlew.bat installDebug`, requires Metro).",
     )
+    parser.add_argument(
+        "--dev-import-sessions",
+        action="store_true",
+        help="Embed desktop sessions into APK for dev-only testing.",
+    )
+    parser.add_argument(
+        "--dev-sessions-dir",
+        default=str(DEFAULT_DESKTOP_SESSIONS_DIR),
+        help="Desktop sessions folder used by --dev-import-sessions.",
+    )
     return parser.parse_args()
+
+
+def _render_seed_module(enabled: bool, source: str, sessions: list[dict]) -> str:
+    payload = json.dumps(sessions, indent=2)
+    return (
+        f"export const DEV_SEED_ENABLED = {'true' if enabled else 'false'} as const;\n"
+        f"export const DEV_SEED_SOURCE = {json.dumps(source)} as const;\n"
+        f"export const DEV_SEED_SESSIONS: unknown[] = {payload};\n"
+    )
+
+
+def prepare_dev_seed_module(enable: bool, source_dir: Path) -> None:
+    DEV_SEED_TARGET.parent.mkdir(parents=True, exist_ok=True)
+    if not enable:
+        DEV_SEED_TARGET.write_text(
+            _render_seed_module(False, "", []),
+            encoding="utf-8",
+        )
+        return
+
+    if not source_dir.exists():
+        raise RuntimeError(f"Session source folder not found: {source_dir}")
+
+    sessions: list[dict] = []
+    for file in sorted(source_dir.glob("*.json")):
+        if file.name.endswith(".coach.json"):
+            continue
+        try:
+            parsed = json.loads(file.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            continue
+        if isinstance(parsed, dict) and "racks" in parsed:
+            sessions.append(parsed)
+
+    DEV_SEED_TARGET.write_text(
+        _render_seed_module(True, str(source_dir), sessions),
+        encoding="utf-8",
+    )
+    print(f"Prepared dev session seed with {len(sessions)} sessions.")
 
 
 def main() -> int:
@@ -95,6 +149,10 @@ def main() -> int:
         return 1
 
     try:
+        prepare_dev_seed_module(
+            enable=args.dev_import_sessions,
+            source_dir=Path(args.dev_sessions_dir),
+        )
         run_command(["npx", "expo", "prebuild", "-p", "android"], cwd=NATIVE_APP_DIR)
         gradlew = ANDROID_DIR / "gradlew.bat"
         if not gradlew.exists():
