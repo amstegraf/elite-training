@@ -20,16 +20,6 @@ export function DashboardScreen() {
   const tierPoints = tier?.points ?? 0;
   const tierProgress = tier?.progressPct ?? 0;
   const pointsToNext = tier?.pointsToNext;
-  const uiTier: "Bronze" | "Silver" | "Gold" | "Platinum" | "Elite" =
-    tier?.label === "Beginner"
-      ? "Bronze"
-      : tier?.label === "Amateur"
-        ? "Silver"
-        : tier?.label === "Strong Amateur"
-          ? "Gold"
-          : tier?.label === "Advanced"
-            ? "Platinum"
-            : "Elite";
 
   const handleStart = () => {
     const existing = activeSessions[0];
@@ -65,7 +55,7 @@ export function DashboardScreen() {
             
             <View style={styles.heroTopRow}>
               <View>
-                <TierBadge tier={uiTier} />
+                <TierBadge tier={tier?.label ?? "Beginner"} />
                 <View style={styles.pointsRow}>
                   <Text style={styles.pointsValue}>{tierPoints.toLocaleString()}</Text>
                   <Text style={styles.pointsUnit}>pts</Text>

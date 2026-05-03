@@ -14,6 +14,10 @@ interface KpiCardProps {
 
 export const KpiCard = ({ label, value, unit = "%", delta, icon: Icon, tone = "primary", size = "md" }: KpiCardProps) => {
   const isLg = size === "lg";
+  const formatDelta = (n: number): string => {
+    const rounded = Number(Math.abs(n).toFixed(2));
+    return rounded.toString();
+  };
   
   const getToneColors = () => {
     switch (tone) {
@@ -39,7 +43,7 @@ export const KpiCard = ({ label, value, unit = "%", delta, icon: Icon, tone = "p
           {delta !== undefined && (
             <View style={styles.deltaRow}>
               <Text style={[styles.deltaText, { color: delta >= 0 ? colors.primary : colors.danger }]}>
-                {delta >= 0 ? "▲" : "▼"} {Math.abs(delta)}%
+                {delta >= 0 ? "▲" : "▼"} {formatDelta(delta)}%
               </Text>
             </View>
           )}

@@ -1,35 +1,26 @@
 import React from "react";
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Switch } from "react-native";
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Switch, Modal, TextInput } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { AppHeader } from "../../ui/AppHeader";
 import { TierBadge } from "../../ui/TierBadge";
 import { colors } from "../../core/theme/theme";
 import { Bell, Moon, Vibrate, Volume2, Languages, Users, ChevronRight } from "lucide-react-native";
-import Slider from "@react-native-community/slider";
 import { useAppState } from "../../data/AppStateContext";
-
-const initialTiers = [
-  { tier: "Bronze", baseline: 40 },
-  { tier: "Silver", baseline: 55 },
-  { tier: "Gold", baseline: 70 },
-  { tier: "Platinum", baseline: 82 },
-  { tier: "Elite", baseline: 92 },
-];
+import { useState } from "react";
 
 export function SettingsScreen() {
   const nav = useNavigation<any>();
-  const { data, updatePreference, updateTierBounds } = useAppState();
+  const { data, activeProfile, updatePreference, renameProfile } = useAppState();
   const prefs = data.settings.preferences;
   const tier = data.settings.tier;
-  const baselines = initialTiers.map((t, i) => ({
-    ...t,
-    baseline: Math.round(
-      (tier.potPctLowerBounds[Math.min(i, 3)] +
-        tier.posPctLowerBounds[Math.min(i, 3)] +
-        tier.convPctLowerBounds[Math.min(i, 3)]) /
-        3
-    ),
-  }));
+  const [nameModalOpen, setNameModalOpen] = useState(false);
+  const [nameInput, setNameInput] = useState(activeProfile?.name ?? "");
+  const tierRows = [
+    { tier: "Beginner", idx: 0 },
+    { tier: "Amateur", idx: 1 },
+    { tier: "Strong Amateur", idx: 2 },
+    { tier: "Advanced", idx: 3 },
+  ] as const;
 
   const ToggleRow = ({ icon: Icon, label, desc, value, onChange }: any) => (
     <View style={styles.row}>
@@ -67,36 +58,49 @@ export function SettingsScreen() {
       <AppHeader title="Settings" subtitle="Preferences" back />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Tier Baselines */}
+        {/* Profile */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tier Baselines</Text>
+          <Text style={styles.sectionTitle}>Profile</Text>
+          <View style={[styles.card, styles.cardNoPadding]}>
+            <TouchableOpacity style={styles.row} onPress={() => {
+              setNameInput(activeProfile?.name ?? "");
+              setNameModalOpen(true);
+            }}>
+              <View style={styles.iconContainer}>
+                <Users size={16} color={colors.foreground} />
+              </View>
+              <View style={styles.rowContent}>
+                <Text style={styles.rowLabel}>Player name</Text>
+                <Text style={styles.rowDesc}>{activeProfile?.name ?? "Player 1"}</Text>
+              </View>
+              <ChevronRight size={16} color={colors.mutedForeground} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Tier Baselines (Read-only) */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Tier Baselines (Fixed)</Text>
           <View style={styles.card}>
-            {baselines.map((t, i) => (
+            {tierRows.map((t) => (
               <View key={t.tier} style={styles.baselineRow}>
                 <View style={styles.baselineHeader}>
                   <TierBadge tier={t.tier as any} />
-                  <Text style={styles.baselineValue}>{t.baseline}<Text style={styles.baselineUnit}>%</Text></Text>
+                  <Text style={styles.baselineValue}>
+                    {Math.round(
+                      (tier.potPctLowerBounds[t.idx] + tier.posPctLowerBounds[t.idx] + tier.convPctLowerBounds[t.idx]) / 3
+                    )}
+                    <Text style={styles.baselineUnit}>%</Text>
+                  </Text>
                 </View>
-                <Slider
-                  style={styles.slider}
-                  minimumValue={0}
-                  maximumValue={100}
-                  step={1}
-                  value={t.baseline}
-                  disabled={i > 3}
-                  onValueChange={(v) => {
-                    if (i <= 3) {
-                      updateTierBounds("potPctLowerBounds", i, v);
-                      updateTierBounds("posPctLowerBounds", i, v);
-                      updateTierBounds("convPctLowerBounds", i, v);
-                    }
-                  }}
-                  minimumTrackTintColor={colors.primary}
-                  maximumTrackTintColor={colors.border}
-                  thumbTintColor={colors.primary}
-                />
+                <Text style={styles.rowDesc}>
+                  Pot {tier.potPctLowerBounds[t.idx]}% · Pos {tier.posPctLowerBounds[t.idx]}% · Conv {tier.convPctLowerBounds[t.idx]}%
+                </Text>
               </View>
             ))}
+            <Text style={styles.rowDesc}>
+              Weights: Pos {tier.weightPos}, Conv {tier.weightConv}, Pot {tier.weightPot} · Penalty {tier.penaltyFactor}
+            </Text>
           </View>
         </View>
 
@@ -126,6 +130,37 @@ export function SettingsScreen() {
 
         <Text style={styles.versionText}>Cue Path v1.0.0</Text>
       </ScrollView>
+
+      <Modal visible={nameModalOpen} transparent animationType="fade">
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Edit player name</Text>
+            <TextInput
+              value={nameInput}
+              onChangeText={setNameInput}
+              placeholder="Player name"
+              placeholderTextColor={colors.mutedForeground}
+              style={styles.modalInput}
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalCancel} onPress={() => setNameModalOpen(false)}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalConfirm}
+                onPress={() => {
+                  if (activeProfile) {
+                    renameProfile(activeProfile.id, nameInput);
+                  }
+                  setNameModalOpen(false);
+                }}
+              >
+                <Text style={styles.modalConfirmText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -176,10 +211,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.mutedForeground,
   },
-  slider: {
-    height: 40,
-    width: "100%",
-  },
   row: {
     flexDirection: "row",
     alignItems: "center",
@@ -218,5 +249,63 @@ const styles = StyleSheet.create({
     color: colors.mutedForeground,
     marginTop: 8,
     marginBottom: 20,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.25)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+  },
+  modalCard: {
+    width: "100%",
+    backgroundColor: colors.card,
+    borderRadius: 24,
+    padding: 16,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontFamily: "Sora_700Bold",
+    color: colors.foreground,
+    marginBottom: 10,
+  },
+  modalInput: {
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 12,
+    color: colors.foreground,
+    fontFamily: "Inter_500Medium",
+  },
+  modalActions: {
+    marginTop: 12,
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 8,
+  },
+  modalCancel: {
+    height: 38,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    backgroundColor: colors.secondary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalCancelText: {
+    color: colors.foreground,
+    fontFamily: "Inter_600SemiBold",
+  },
+  modalConfirm: {
+    height: 38,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalConfirmText: {
+    color: colors.primaryForeground,
+    fontFamily: "Inter_600SemiBold",
   },
 });
