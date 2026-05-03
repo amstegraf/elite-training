@@ -4,6 +4,10 @@ All notable changes to the native app are tracked here.
 
 ## v0.1.0-alpha (in progress)
 
+- Added `Previous Racks` section to live session with prototype-style cards (rack badge, pots ratio, conversion pill, split progress bar, and per-rack duration/meta).
+- Live session: added state-based disabling for Start/End Rack controls and upgraded End Rack ball picker to single-row colored pool balls.
+- History: improved subtitle and mini KPI text contrast for better readability.
+- Subscription: fixed plan selection polish with stronger selected-state fills, removed dark selected border look, and increased bottom scroll space to improve Elite card interaction.
 - Refreshed session report metric visuals to match latest prototype (Session Tier/Recovery cards, Rack Consistency mini-bars + std deviation, and enhanced Failure Breakdown with stacked bar + emphasis).
 - Added new `Subscription` page based on latest prototype (Free / Pro / Elite plans UI).
 - Wired first upsell redirect: session report `AI Coach` button now opens the subscription page.

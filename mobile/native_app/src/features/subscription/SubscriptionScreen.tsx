@@ -16,6 +16,7 @@ type Plan = {
   icon: React.ComponentType<{ size?: number; color?: string }>;
   borderColor: string;
   tintBg: string;
+  selectedBg: string;
   dotColor: string;
   features: string[];
 };
@@ -30,6 +31,7 @@ const PLANS: Plan[] = [
     icon: Sparkles,
     borderColor: "rgba(32, 181, 118, 0.75)",
     tintBg: "rgba(32, 181, 118, 0.08)",
+    selectedBg: "rgba(32, 181, 118, 0.26)",
     dotColor: "#20b576",
     features: [
       "Unlimited sessions",
@@ -49,6 +51,7 @@ const PLANS: Plan[] = [
     icon: Zap,
     borderColor: "rgba(245, 166, 10, 0.7)",
     tintBg: "rgba(245, 166, 10, 0.12)",
+    selectedBg: "rgba(245, 166, 10, 0.28)",
     dotColor: "#f5a60a",
     features: [
       "AI Coach (session + stats)",
@@ -69,6 +72,7 @@ const PLANS: Plan[] = [
     icon: Crown,
     borderColor: "rgba(255, 75, 75, 0.65)",
     tintBg: "rgba(255, 75, 75, 0.1)",
+    selectedBg: "rgba(255, 75, 75, 0.24)",
     dotColor: colors.danger,
     features: [
       "Everything in Pro",
@@ -132,6 +136,7 @@ export function SubscriptionScreen() {
                   styles.planCard,
                   { borderColor: plan.borderColor, backgroundColor: plan.tintBg },
                   planSelected && styles.planCardSelected,
+                  planSelected && { backgroundColor: plan.selectedBg, borderColor: plan.dotColor },
                 ]}
                 onPress={() => setSelectedPlan(plan.id)}
                 activeOpacity={0.9}
@@ -187,7 +192,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  scrollContent: { paddingHorizontal: 20, paddingBottom: 110 },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 180 },
   currentCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -254,11 +259,7 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   planCardSelected: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 18,
-    elevation: 3,
+    borderWidth: 2,
   },
   planHeader: { flexDirection: "row", alignItems: "flex-start" },
   planIcon: {

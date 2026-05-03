@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: 12,
-    color: colors.muted,
+    color: colors.mutedForeground,
     marginTop: 2,
   },
   statsGrid: {
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: 1,
-    color: colors.muted,
+    color: colors.mutedForeground,
   },
   miniValue: {
     fontSize: 16,
@@ -188,6 +188,6 @@ const styles = StyleSheet.create({
   },
   miniUnit: {
     fontSize: 10,
-    color: colors.muted,
+    color: colors.mutedForeground,
   },
 });

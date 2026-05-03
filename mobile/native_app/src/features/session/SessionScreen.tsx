@@ -94,6 +94,9 @@ export function SessionScreen() {
   const suggestedBall = suggestedNextBallNumber(currentRack);
   const inferredPots = currentRack ? inferBallsCleared(currentRack) : 0;
   const rackPots = currentRack ? Math.max(0, Math.min(9, inferredPots === 0 ? suggestedBall - 1 : inferredPots)) : 0;
+  const hasOpenRack = Boolean(session?.currentRackId);
+  const canStartRack = Boolean(session) && !hasOpenRack;
+  const canEndRack = Boolean(session) && hasOpenRack;
   const loggedMissBalls = useMemo(() => {
     const set = new Set<number>();
     (currentRack?.misses ?? []).forEach((entry) => {
@@ -101,6 +104,34 @@ export function SessionScreen() {
     });
     return set;
   }, [currentRack?.misses]);
+  const previousRacks = useMemo(() => {
+    const rows = (session?.racks ?? [])
+      .filter((rack) => Boolean(rack.endedAt))
+      .map((rack) => {
+        const balls = 9;
+        const pots = Math.max(0, Math.min(9, inferBallsCleared(rack)));
+        const misses = rack.misses.length;
+        const skipped = Math.max(0, balls - pots - misses);
+        const pct = balls > 0 ? Math.round((pots / balls) * 100) : 0;
+        const startMs = new Date(rack.startedAt).getTime();
+        const endMs = new Date(rack.endedAt ?? rack.startedAt).getTime();
+        const durationSeconds = Number.isFinite(startMs) && Number.isFinite(endMs)
+          ? Math.max(0, Math.floor((endMs - startMs) / 1000))
+          : 0;
+        return {
+          id: rack.id,
+          rackNumber: rack.rackNumber,
+          balls,
+          pots,
+          misses,
+          skipped,
+          pct,
+          durationSeconds,
+        };
+      })
+      .sort((a, b) => b.rackNumber - a.rackNumber);
+    return rows;
+  }, [session?.racks]);
 
   useEffect(() => {
     if (currentRack) {
@@ -355,14 +386,16 @@ export function SessionScreen() {
               <Text style={styles.actionSecondaryText}>Undo</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.actionSecondary}
+              style={[styles.actionSecondary, !canStartRack && styles.actionDisabled]}
+              disabled={!canStartRack}
               onPress={() => session && startRack(session.id)}
             >
               <Play size={14} color={colors.foreground} fill={colors.foreground} />
               <Text style={styles.actionSecondaryText}>Start</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.actionPrimary}
+              style={[styles.actionPrimary, !canEndRack && styles.actionPrimaryDisabled]}
+              disabled={!canEndRack}
               onPress={() => {
                 if (!session || !session.currentRackId) return;
                 const guessed = suggestedNextBallNumber(currentRack) - 1;
@@ -379,6 +412,68 @@ export function SessionScreen() {
             </TouchableOpacity>
           </View>
         </View>
+
+        {previousRacks.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.previousHeader}>
+              <Text style={styles.sectionTitle}>Previous Racks</Text>
+              <Text style={styles.previousHeaderMeta}>{previousRacks.length} played</Text>
+            </View>
+            <View style={styles.previousList}>
+              {previousRacks.map((rack) => {
+                const pctToneStyle =
+                  rack.pct >= 90
+                    ? styles.pctPillGood
+                    : rack.pct >= 70
+                      ? styles.pctPillPrimary
+                      : rack.pct >= 50
+                        ? styles.pctPillWarn
+                        : styles.pctPillBad;
+                return (
+                  <View key={rack.id} style={styles.previousCard}>
+                    <View style={styles.previousRackBadge}>
+                      <Text style={styles.previousRackBadgeText}>#{rack.rackNumber}</Text>
+                    </View>
+                    <View style={styles.previousContent}>
+                      <View style={styles.previousTopRow}>
+                        <Text style={styles.previousTitle}>
+                          {rack.pots}/{rack.balls} <Text style={styles.previousTitleMuted}>pots</Text>
+                        </Text>
+                        <View style={[styles.pctPill, pctToneStyle]}>
+                          <Text style={styles.pctPillText}>{rack.pct}%</Text>
+                        </View>
+                      </View>
+                      <View style={styles.previousBarTrack}>
+                        {rack.pots > 0 && (
+                          <View style={[styles.previousBarPot, { width: `${(rack.pots / rack.balls) * 100}%` }]} />
+                        )}
+                        {rack.misses > 0 && (
+                          <View style={[styles.previousBarMiss, { width: `${(rack.misses / rack.balls) * 100}%` }]} />
+                        )}
+                        {rack.skipped > 0 && (
+                          <View style={[styles.previousBarSkip, { width: `${(rack.skipped / rack.balls) * 100}%` }]} />
+                        )}
+                      </View>
+                      <View style={styles.previousMetaRow}>
+                        <View style={styles.previousMetaDots}>
+                          <View style={styles.previousMetaItem}>
+                            <View style={styles.previousDotPot} />
+                            <Text style={styles.previousMetaText}>{rack.pots}</Text>
+                          </View>
+                          <View style={styles.previousMetaItem}>
+                            <View style={styles.previousDotMiss} />
+                            <Text style={styles.previousMetaText}>{rack.misses}</Text>
+                          </View>
+                        </View>
+                        <Text style={styles.previousMetaText}>{fmt(rack.durationSeconds)}</Text>
+                      </View>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
       </ScrollView>
 
       <Modal visible={showEndRack} transparent animationType="fade">
@@ -387,17 +482,17 @@ export function SessionScreen() {
             <Text style={styles.modalTitle}>Balls potted</Text>
             <View style={styles.modalGrid}>
               {Array.from({ length: 9 }, (_, i) => i + 1).map((n) => (
-                <TouchableOpacity
+                <PoolBall
                   key={n}
-                  style={[styles.modalBall, clearedBalls.includes(n) && styles.modalBallActive]}
+                  number={n}
+                  size="sm"
+                  active={clearedBalls.includes(n)}
                   onPress={() =>
                     setClearedBalls((prev) =>
                       prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n].sort((a, b) => a - b)
                     )
                   }
-                >
-                  <Text style={[styles.modalBallText, clearedBalls.includes(n) && styles.modalBallTextActive]}>{n}</Text>
-                </TouchableOpacity>
+                />
               ))}
             </View>
             <Text style={styles.modalHint}>{clearedBalls.length} balls cleared</Text>
@@ -660,6 +755,145 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
     color: colors.primaryForeground,
   },
+  actionDisabled: {
+    opacity: 0.45,
+  },
+  actionPrimaryDisabled: {
+    opacity: 0.55,
+  },
+  previousHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  previousHeaderMeta: {
+    fontSize: 12,
+    color: colors.mutedForeground,
+    fontFamily: "Inter_500Medium",
+  },
+  previousList: {
+    gap: 10,
+  },
+  previousCard: {
+    backgroundColor: colors.card,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "rgba(226, 224, 221, 0.65)",
+    padding: 10,
+    flexDirection: "row",
+    gap: 10,
+    alignItems: "center",
+  },
+  previousRackBadge: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: colors.secondary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  previousRackBadgeText: {
+    fontSize: 20,
+    lineHeight: 22,
+    fontFamily: "Sora_700Bold",
+    color: colors.foreground,
+  },
+  previousContent: {
+    flex: 1,
+  },
+  previousTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 4,
+  },
+  previousTitle: {
+    fontSize: 22,
+    lineHeight: 24,
+    color: colors.foreground,
+    fontFamily: "Sora_700Bold",
+  },
+  previousTitleMuted: {
+    fontSize: 14,
+    lineHeight: 16,
+    color: colors.mutedForeground,
+    fontFamily: "Inter_500Medium",
+  },
+  pctPill: {
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  pctPillGood: {
+    backgroundColor: colors.primary,
+  },
+  pctPillPrimary: {
+    backgroundColor: colors.primary,
+  },
+  pctPillWarn: {
+    backgroundColor: colors.warning,
+  },
+  pctPillBad: {
+    backgroundColor: colors.danger,
+  },
+  pctPillText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontFamily: "Inter_700Bold",
+  },
+  previousBarTrack: {
+    height: 6,
+    borderRadius: 999,
+    overflow: "hidden",
+    backgroundColor: "rgba(120,126,145,0.18)",
+    flexDirection: "row",
+    marginBottom: 6,
+  },
+  previousBarPot: {
+    height: "100%",
+    backgroundColor: colors.primary,
+  },
+  previousBarMiss: {
+    height: "100%",
+    backgroundColor: colors.danger,
+  },
+  previousBarSkip: {
+    height: "100%",
+    backgroundColor: "rgba(120,126,145,0.35)",
+  },
+  previousMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  previousMetaDots: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  previousMetaItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  previousMetaText: {
+    fontSize: 12,
+    color: colors.mutedForeground,
+    fontFamily: "Inter_500Medium",
+  },
+  previousDotPot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.primary,
+  },
+  previousDotMiss: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.danger,
+  },
   modalBackdrop: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.25)",
@@ -681,32 +915,15 @@ const styles = StyleSheet.create({
   },
   modalGrid: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
+    flexWrap: "nowrap",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   modalHint: {
     marginTop: 10,
     fontSize: 12,
     color: colors.mutedForeground,
     fontFamily: "Inter_600SemiBold",
-  },
-  modalBall: {
-    height: 34,
-    width: 34,
-    borderRadius: 17,
-    backgroundColor: colors.secondary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  modalBallActive: {
-    backgroundColor: colors.primary,
-  },
-  modalBallText: {
-    color: colors.foreground,
-    fontFamily: "Inter_600SemiBold",
-  },
-  modalBallTextActive: {
-    color: colors.primaryForeground,
   },
   modalActions: {
     flexDirection: "row",
