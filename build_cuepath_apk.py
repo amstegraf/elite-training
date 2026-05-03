@@ -77,7 +77,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--install-usb",
         action="store_true",
-        help="Also run `gradlew.bat installDebug` to install on a USB-connected device.",
+        help="Build and install release via USB (`gradlew.bat installRelease`, no Metro).",
+    )
+    parser.add_argument(
+        "--install-usb-debug",
+        action="store_true",
+        help="Install debug via USB (`gradlew.bat installDebug`, requires Metro).",
     )
     return parser.parse_args()
 
@@ -96,7 +101,12 @@ def main() -> int:
             raise RuntimeError(
                 f"Gradle wrapper not found at '{gradlew}'. Prebuild may have failed."
             )
+        if args.install_usb and args.install_usb_debug:
+            raise RuntimeError("Use only one of --install-usb or --install-usb-debug.")
+
         if args.install_usb:
+            run_command(["gradlew.bat", "installRelease"], cwd=ANDROID_DIR)
+        elif args.install_usb_debug:
             run_command(["gradlew.bat", "installDebug"], cwd=ANDROID_DIR)
         else:
             run_command(["gradlew.bat", "assembleRelease"], cwd=ANDROID_DIR)
@@ -106,7 +116,11 @@ def main() -> int:
 
     if args.install_usb:
         print("\nBuild complete.")
-        print("USB install:   installDebug completed.")
+        print("USB install:   installRelease completed (standalone, no Metro).")
+        return 0
+    if args.install_usb_debug:
+        print("\nBuild complete.")
+        print("USB install:   installDebug completed (requires Metro).")
         return 0
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
