@@ -18,6 +18,7 @@ import { OnboardingScreen } from "../features/onboarding/OnboardingScreen";
 import { DrillsScreen } from "../features/drills/DrillsScreen";
 import { DrillDetailScreen } from "../features/drills/DrillDetailScreen";
 import { DrillsPathScreen } from "../features/drills/DrillsPathScreen";
+import { AboutScreen } from "../features/about/AboutScreen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const Tabs = createBottomTabNavigator();
@@ -106,6 +107,7 @@ export function AppNavigator({ initialRouteName = "Home" }: AppNavigatorProps) {
         <Stack.Screen name="DrillsPath" component={DrillsPathScreen} />
         <Stack.Screen name="DrillDetail" component={DrillDetailScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="About" component={AboutScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

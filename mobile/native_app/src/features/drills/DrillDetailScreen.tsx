@@ -181,6 +181,14 @@ export function DrillDetailScreen() {
     nav.goBack();
   };
 
+  const continueFromResult = () => {
+    persistFinishedRun();
+    state.setShowResultModal(false);
+    state.setActive(false);
+    state.setResults([]);
+    nav.navigate("Drills");
+  };
+
   return (
     <View style={styles.container}>
       <AppHeader
@@ -391,10 +399,7 @@ export function DrillDetailScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.modalPrimaryBtn}
-                onPress={() => {
-                  persistFinishedRun();
-                  state.setShowResultModal(false);
-                }}
+                onPress={continueFromResult}
                 activeOpacity={0.9}
               >
                 <Text style={styles.modalPrimaryBtnText}>Continue</Text>

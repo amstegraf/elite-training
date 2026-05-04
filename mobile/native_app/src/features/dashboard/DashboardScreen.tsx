@@ -7,12 +7,13 @@ import { KpiCard } from "../../ui/KpiCard";
 import { TierBadge } from "../../ui/TierBadge";
 import { ProfileMenu } from "./ProfileMenu";
 import { colors } from "../../core/theme/theme";
-import { Play, Target, MapPin, Trophy, Flame, ChevronRight, Bell, Star, Crosshair, Crown } from "lucide-react-native";
+import { Play, Target, MapPin, Trophy, Flame, ChevronRight, Bell, Star, Crosshair, Sparkles, Map as MapIcon } from "lucide-react-native";
 import { useAppState } from "../../data/AppStateContext";
 import { computeSessionMetrics, completedSessionsSorted, formatDurationLabel } from "../../domain/metrics";
 import { TIER_LABELS } from "../../domain/types";
 import { listDrills } from "../../data/drills";
 import { LinearGradient } from "expo-linear-gradient";
+import Svg, { Path, Circle } from "react-native-svg";
 
 export function DashboardScreen() {
   const nav = useNavigation<any>();
@@ -202,6 +203,88 @@ export function DashboardScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Drill Journey CTA */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Drill Journey</Text>
+            <TouchableOpacity onPress={() => nav.navigate("DrillsPath")} style={styles.sectionLinkRow}>
+              <Text style={styles.sectionLink}>View map</Text>
+              <ChevronRight size={14} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity activeOpacity={0.9} onPress={() => nav.navigate("DrillsPath")}>
+            <LinearGradient
+              colors={["#2d1350", "#431163", "#7a154e"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.journeyCard}
+            >
+              <View style={styles.journeyGlowGold} />
+              <View style={styles.journeyGlowPurple} />
+
+              <View style={styles.journeyPathSvg}>
+                <Svg width="100%" height="100%" viewBox="0 0 100 200" preserveAspectRatio="none">
+                  <Path
+                    d="M70 10 Q 20 50 70 90 Q 20 130 70 170"
+                    stroke="rgba(245, 179, 88, 0.9)"
+                    strokeWidth="2.5"
+                    strokeDasharray="4 6"
+                    strokeLinecap="round"
+                    fill="none"
+                  />
+                  <Circle cx="70" cy="10" r="9" fill="hsl(45,95%,60%)" />
+                  <Circle cx="70" cy="90" r="9" fill="hsl(30,95%,60%)" />
+                  <Circle cx="70" cy="170" r="9" fill="hsl(280,60%,50%)" fillOpacity="0.45" />
+                </Svg>
+              </View>
+
+              <View style={styles.journeyInner}>
+                <View style={styles.journeyChip}>
+                  <Sparkles size={11} color={colors.tierGold} />
+                  <Text style={styles.journeyChipText}>New Path</Text>
+                </View>
+
+                <Text style={styles.journeyTitle}>
+                  Start your{"\n"}Drill Journey
+                </Text>
+                <Text style={styles.journeyDescription}>
+                  Climb from <Text style={styles.journeyBronze}>Bronze</Text> to{" "}
+                  <Text style={styles.journeyElite}>Elite</Text>. Unlock chapters, beat bosses, earn badges.
+                </Text>
+
+                <View style={styles.journeyTierRail}>
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <React.Fragment key={n}>
+                      <View
+                        style={[
+                          styles.journeyTierDot,
+                          n === 1 && { backgroundColor: "hsl(28,60%,50%)", opacity: 1 },
+                          n === 2 && { backgroundColor: "hsl(220,10%,75%)", opacity: 1 },
+                          n === 3 && { backgroundColor: "hsl(45,95%,60%)", opacity: 0.35 },
+                          n === 4 && { backgroundColor: "hsl(190,70%,70%)", opacity: 0.35 },
+                          n === 5 && { backgroundColor: "hsl(280,85%,65%)", opacity: 0.35 },
+                        ]}
+                      />
+                      {n < 5 ? <View style={styles.journeyTierConnector} /> : null}
+                    </React.Fragment>
+                  ))}
+                </View>
+
+                <View style={styles.journeyFooterRow}>
+                  <View style={styles.journeyBeginBtn}>
+                    <MapIcon size={14} color="#311727" />
+                    <Text style={styles.journeyBeginText}>Begin Journey</Text>
+                  </View>
+                  <View>
+                    <Text style={styles.journeyFooterText}>Chapter 1</Text>
+                    <Text style={styles.journeyFooterTextStrong}>Bronze · Stop Shot</Text>
+                  </View>
+                </View>
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+
         {/* Drills progress */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -296,15 +379,6 @@ export function DashboardScreen() {
               </LinearGradient>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.pathDrillsBtn}
-              activeOpacity={0.88}
-              onPress={() => nav.navigate("DrillsPath")}
-            >
-              <Crown size={14} color="rgba(255,255,255,0.86)" />
-              <Text style={styles.pathDrillsText}>Open Drill Path</Text>
-              <ChevronRight size={14} color="rgba(255,255,255,0.78)" />
-            </TouchableOpacity>
           </LinearGradient>
         </View>
 
@@ -564,6 +638,132 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  journeyCard: {
+    borderRadius: 24,
+    padding: 18,
+    minHeight: 238,
+    overflow: "hidden",
+  },
+  journeyGlowGold: {
+    position: "absolute",
+    top: -56,
+    right: -40,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: "rgba(247, 196, 76, 0.2)",
+  },
+  journeyGlowPurple: {
+    position: "absolute",
+    bottom: -70,
+    left: -52,
+    width: 190,
+    height: 190,
+    borderRadius: 95,
+    backgroundColor: "rgba(153, 84, 215, 0.24)",
+  },
+  journeyPathSvg: {
+    position: "absolute",
+    right: 6,
+    top: 0,
+    bottom: 0,
+    width: 92,
+    opacity: 0.8,
+  },
+  journeyInner: {
+    flex: 1,
+    justifyContent: "space-between",
+  },
+  journeyChip: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.16)",
+    backgroundColor: "rgba(255,255,255,0.09)",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  journeyChipText: {
+    textTransform: "uppercase",
+    color: "#f7f5f0",
+    letterSpacing: 1.5,
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+  },
+  journeyTitle: {
+    marginTop: 12,
+    color: "#fff",
+    fontSize: 36,
+    lineHeight: 38,
+    fontFamily: "Sora_700Bold",
+  },
+  journeyDescription: {
+    marginTop: 6,
+    maxWidth: "78%",
+    color: "rgba(255,255,255,0.78)",
+    fontSize: 12,
+    lineHeight: 18,
+    fontFamily: "Inter_500Medium",
+  },
+  journeyBronze: {
+    color: "hsl(28, 76%, 60%)",
+    fontFamily: "Inter_700Bold",
+  },
+  journeyElite: {
+    color: "hsl(280, 88%, 71%)",
+    fontFamily: "Inter_700Bold",
+  },
+  journeyTierRail: {
+    marginTop: 12,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  journeyTierDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "rgba(255,255,255,0.4)",
+  },
+  journeyTierConnector: {
+    width: 16,
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    marginHorizontal: 4,
+  },
+  journeyFooterRow: {
+    marginTop: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  journeyBeginBtn: {
+    height: 44,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    backgroundColor: "#f5bc45",
+  },
+  journeyBeginText: {
+    color: "#311727",
+    fontSize: 16,
+    fontFamily: "Sora_700Bold",
+  },
+  journeyFooterText: {
+    color: "rgba(255,255,255,0.72)",
+    fontSize: 11,
+    fontFamily: "Inter_500Medium",
+  },
+  journeyFooterTextStrong: {
+    marginTop: 2,
+    color: "rgba(255,255,255,0.9)",
+    fontSize: 15,
+    fontFamily: "Inter_700Bold",
+  },
   drillsCard: {
     borderRadius: 24,
     padding: 18,
@@ -696,23 +896,6 @@ const styles = StyleSheet.create({
   trainDrillsText: {
     color: colors.foreground,
     fontSize: 13,
-    fontFamily: "Sora_700Bold",
-  },
-  pathDrillsBtn: {
-    marginTop: 8,
-    height: 42,
-    borderRadius: 13,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.18)",
-    backgroundColor: "rgba(255,255,255,0.06)",
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",
-    gap: 6,
-  },
-  pathDrillsText: {
-    color: "rgba(255,255,255,0.9)",
-    fontSize: 12,
     fontFamily: "Sora_700Bold",
   },
   recentList: {

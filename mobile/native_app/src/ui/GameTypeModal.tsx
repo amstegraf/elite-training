@@ -77,12 +77,7 @@ export function GameTypeModal({
                   size="sm"
                   onPress={() => handleSelect(count)}
                 />
-                <Text style={styles.optionLabel}>
-                  {isSelecting && selectedBall === count ? "Starting..." : `${count}-Ball`}
-                </Text>
-                {isSelecting && selectedBall === count ? (
-                  <ActivityIndicator size="small" color={colors.primary} />
-                ) : null}
+                <Text style={styles.optionLabel}>{`${count}-Ball`}</Text>
               </TouchableOpacity>
             ))}
           </View>

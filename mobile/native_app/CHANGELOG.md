@@ -4,6 +4,7 @@ All notable changes to the native app are tracked here.
 
 ## v0.1.0-alpha (in progress)
 
+- Choose-game modal UX polish: removed the in-option `Starting...` replacement text/spinner while keeping the underlying single-tap reliability guards.
 - Added the new `Drill Path` journey feature: JSON-driven chapter/node progression, runtime status derivation from saved drill results, prototype-style path screen with serpentine nodes and pulsing current `Continue` ring, plus navigation wiring and entry CTAs from dashboard/drills.
 - Game-type picker touch fix: taps on the pool-ball graphic now trigger selection just like tapping the `8/9/10-Ball` text label.
 - Session start stability fix: game-type modal now closes only after confirmed successful `startSession`, keeps retry unlocked on failure, and is temporarily disabled with loading hint while app state/profile hydration is still preparing.
