@@ -22,7 +22,7 @@ const FAILURE_TYPES = [
 export function SessionReportScreen() {
   const nav = useNavigation<any>();
   const route = useRoute<any>();
-  const { completedSessions, startSession, deleteSession, data } = useAppState();
+  const { ready, completedSessions, startSession, deleteSession, data } = useAppState();
   const [showGameTypeModal, setShowGameTypeModal] = React.useState(false);
   const [showCoachModal, setShowCoachModal] = React.useState(false);
   const sorted = completedSessionsSorted(completedSessions);
@@ -100,11 +100,12 @@ export function SessionReportScreen() {
   const handleNewSession = () => {
     setShowGameTypeModal(true);
   };
-  const handleCreateSession = (ballCount: 8 | 9 | 10) => {
-    setShowGameTypeModal(false);
+  const handleCreateSession = (ballCount: 8 | 9 | 10): boolean => {
     const createdId = startSession(ballCount);
-    if (!createdId) return;
+    if (!createdId) return false;
+    setShowGameTypeModal(false);
     nav.navigate("Session", { sessionId: createdId });
+    return true;
   };
   const handleDeleteSession = () => {
     if (!selected) return;
@@ -457,9 +458,9 @@ export function SessionReportScreen() {
 
             <View style={styles.coachFeatureList}>
               {[
-                "Shot-by-shot feedback from your misses",
+                "AI Pattern Play Recommendations",
+                "AI Coach Session Breakdown",
                 "Personalized weekly improvement roadmap",
-                "Drill recommendations for weak patterns",
               ].map((feature) => (
                 <View key={feature} style={styles.coachFeatureRow}>
                   <View style={styles.coachCheckWrap}>
@@ -479,7 +480,7 @@ export function SessionReportScreen() {
               }}
             >
               <Sparkles size={15} color="#FFFFFF" />
-              <Text style={styles.coachUnlockText}>Unlock AI Coach</Text>
+              <Text style={styles.coachUnlockText}>See all features</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.coachLaterBtn} onPress={() => setShowCoachModal(false)} activeOpacity={0.85}>
@@ -491,6 +492,8 @@ export function SessionReportScreen() {
       <GameTypeModal
         visible={showGameTypeModal}
         onSelect={handleCreateSession}
+        disabled={!ready}
+        disabledLabel="Preparing player profile..."
         onCancel={() => setShowGameTypeModal(false)}
       />
     </View>

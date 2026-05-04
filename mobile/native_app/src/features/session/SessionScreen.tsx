@@ -38,6 +38,7 @@ export function SessionScreen() {
   const nav = useNavigation<any>();
   const route = useRoute<any>();
   const {
+    ready,
     data,
     activeSessions,
     startSession,
@@ -529,10 +530,14 @@ export function SessionScreen() {
       <GameTypeModal
         visible={showGameTypeModal}
         onSelect={(ballCount) => {
-          setShowGameTypeModal(false);
           const id = startSession(ballCount);
-          if (id) setSessionId(id);
+          if (!id) return false;
+          setShowGameTypeModal(false);
+          setSessionId(id);
+          return true;
         }}
+        disabled={!ready}
+        disabledLabel="Preparing player profile..."
         onCancel={() => {
           setShowGameTypeModal(false);
           nav.navigate("Home");

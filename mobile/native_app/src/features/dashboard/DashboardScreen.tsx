@@ -17,7 +17,7 @@ import { LinearGradient } from "expo-linear-gradient";
 export function DashboardScreen() {
   const nav = useNavigation<any>();
   const scrollRef = useRef<ScrollView | null>(null);
-  const { activeProfile, activeSessions, completedSessions, drillResults, global, baseline, tier, startSession } = useAppState();
+  const { ready, activeProfile, activeSessions, completedSessions, drillResults, global, baseline, tier, startSession } = useAppState();
   const [showGameTypeModal, setShowGameTypeModal] = React.useState(false);
   const recent = completedSessionsSorted(completedSessions).slice(0, 5);
   const drills = useMemo(() => listDrills(), []);
@@ -87,12 +87,15 @@ export function DashboardScreen() {
     setShowGameTypeModal(true);
   };
 
-  const handleGameTypeSelected = (ballCount: 8 | 9 | 10) => {
-    setShowGameTypeModal(false);
+  const handleGameTypeSelected = (ballCount: 8 | 9 | 10): boolean => {
     const createdId = startSession(ballCount);
+    if (!createdId) return false;
+    setShowGameTypeModal(false);
     if (createdId) {
       nav.navigate("Session", { sessionId: createdId });
+      return true;
     }
+    return false;
   };
 
   useFocusEffect(
@@ -355,6 +358,8 @@ export function DashboardScreen() {
       <GameTypeModal
         visible={showGameTypeModal}
         onSelect={handleGameTypeSelected}
+        disabled={!ready}
+        disabledLabel="Preparing player profile..."
         onCancel={() => setShowGameTypeModal(false)}
       />
     </View>

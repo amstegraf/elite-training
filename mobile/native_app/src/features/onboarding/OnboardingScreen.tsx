@@ -53,7 +53,7 @@ const steps: Step[] = [
 
 export function OnboardingScreen() {
   const nav = useNavigation<any>();
-  const { startSession, activeSessions } = useAppState();
+  const { ready, startSession, activeSessions } = useAppState();
   const [idx, setIdx] = useState(0);
   const [showGameTypeModal, setShowGameTypeModal] = useState(false);
   const isLast = idx === steps.length - 1;
@@ -113,20 +113,24 @@ export function OnboardingScreen() {
       <GameTypeModal
         visible={showGameTypeModal}
         onSelect={async (ballCount) => {
-          setShowGameTypeModal(false);
+          if (!ready) return false;
           await markOnboardingCompleted();
           const existing = activeSessions[0];
           if (existing) {
+            setShowGameTypeModal(false);
             nav.reset({ index: 1, routes: [{ name: "Home" }, { name: "Session", params: { sessionId: existing.id } }] });
-            return;
+            return true;
           }
           const sessionId = startSession(ballCount);
           if (sessionId) {
+            setShowGameTypeModal(false);
             nav.reset({ index: 1, routes: [{ name: "Home" }, { name: "Session", params: { sessionId } }] });
-            return;
+            return true;
           }
-          nav.reset({ index: 0, routes: [{ name: "Home" }] });
+          return false;
         }}
+        disabled={!ready}
+        disabledLabel="Preparing player profile..."
         onCancel={() => setShowGameTypeModal(false)}
       />
     </SafeAreaView>

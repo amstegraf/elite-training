@@ -6,14 +6,23 @@ import { PoolBall } from "./PoolBall";
 
 interface GameTypeModalProps {
   visible: boolean;
-  onSelect: (ballCount: GameBallCount) => void;
+  onSelect: (ballCount: GameBallCount) => boolean | Promise<boolean>;
   onCancel: () => void;
+  disabled?: boolean;
+  disabledLabel?: string;
 }
 
-export function GameTypeModal({ visible, onSelect, onCancel }: GameTypeModalProps) {
+export function GameTypeModal({
+  visible,
+  onSelect,
+  onCancel,
+  disabled = false,
+  disabledLabel = "Preparing session...",
+}: GameTypeModalProps) {
   const lockRef = useRef(false);
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectedBall, setSelectedBall] = useState<GameBallCount | null>(null);
+  const blocked = isSelecting || disabled;
 
   useEffect(() => {
     if (!visible) {
@@ -24,20 +33,25 @@ export function GameTypeModal({ visible, onSelect, onCancel }: GameTypeModalProp
   }, [visible]);
 
   const handleSelect = useCallback(
-    (ballCount: GameBallCount) => {
+    async (ballCount: GameBallCount) => {
       if (lockRef.current) return;
       lockRef.current = true;
       setIsSelecting(true);
       setSelectedBall(ballCount);
-      onSelect(ballCount);
+      const success = await onSelect(ballCount);
+      if (!success) {
+        lockRef.current = false;
+        setIsSelecting(false);
+        setSelectedBall(null);
+      }
     },
     [onSelect]
   );
 
   const handleCancel = useCallback(() => {
-    if (isSelecting) return;
+    if (blocked) return;
     onCancel();
-  }, [isSelecting, onCancel]);
+  }, [blocked, onCancel]);
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={handleCancel}>
@@ -52,10 +66,10 @@ export function GameTypeModal({ visible, onSelect, onCancel }: GameTypeModalProp
                 style={[
                   styles.option,
                   selectedBall === count && styles.optionSelected,
-                  isSelecting && selectedBall !== count && styles.optionDisabled,
+                  blocked && selectedBall !== count && styles.optionDisabled,
                 ]}
                 activeOpacity={0.9}
-                disabled={isSelecting}
+                disabled={blocked}
                 onPress={() => handleSelect(count)}
               >
                 <PoolBall number={count} size="sm" />
@@ -68,11 +82,17 @@ export function GameTypeModal({ visible, onSelect, onCancel }: GameTypeModalProp
               </TouchableOpacity>
             ))}
           </View>
+          {disabled && !isSelecting ? (
+            <View style={styles.disabledHintWrap}>
+              <ActivityIndicator size="small" color={colors.mutedForeground} />
+              <Text style={styles.disabledHintText}>{disabledLabel}</Text>
+            </View>
+          ) : null}
           <TouchableOpacity
-            style={[styles.cancel, isSelecting && styles.optionDisabled]}
+            style={[styles.cancel, blocked && styles.optionDisabled]}
             onPress={handleCancel}
             activeOpacity={0.85}
-            disabled={isSelecting}
+            disabled={blocked}
           >
             <Text style={styles.cancelText}>Cancel</Text>
           </TouchableOpacity>
@@ -147,5 +167,17 @@ const styles = StyleSheet.create({
   cancelText: {
     color: colors.foreground,
     fontFamily: "Inter_600SemiBold",
+  },
+  disabledHintWrap: {
+    marginTop: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  disabledHintText: {
+    fontSize: 12,
+    color: colors.mutedForeground,
+    fontFamily: "Inter_500Medium",
   },
 });
