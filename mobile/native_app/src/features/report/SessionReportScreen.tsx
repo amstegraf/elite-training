@@ -14,6 +14,7 @@ const FAILURE_TYPES = [
   { key: "alignment", label: "Alignment", color: "#f472b6" },
   { key: "delivery", label: "Delivery", color: "#fcd34d" },
   { key: "speed", label: "Speed", color: "#38bdf8" },
+  { key: "scratch", label: "Scratch", color: "#ef4444" },
 ] as const;
 
 export function SessionReportScreen() {
@@ -57,6 +58,7 @@ export function SessionReportScreen() {
     alignment: 0,
     delivery: 0,
     speed: 0,
+    scratch: 0,
   };
   allMisses.forEach((missEntry) => {
     missEntry.types.forEach((type) => {
@@ -70,9 +72,10 @@ export function SessionReportScreen() {
     const count = failureCounts[item.key];
     const pct = failureTotal > 0 ? (count / failureTotal) * 100 : 0;
     return { ...item, pct };
-  }).sort((a, b) => b.pct - a.pct);
+  })
+    .filter((entry) => entry.pct > 0.001)
+    .sort((a, b) => b.pct - a.pct);
   const topFailureLabels = failureBreakdown
-    .filter((entry) => entry.pct > 0)
     .slice(0, 2)
     .map((entry) => entry.label);
   let recoveryNumerator = 0;
@@ -163,7 +166,7 @@ export function SessionReportScreen() {
           <View style={styles.kpiGrid}>
             <View style={styles.kpiThird}><KpiCard label="Pot" value={Math.round((metrics?.potRate ?? 0) * 100)} icon={Target} delta={0} tone="primary" /></View>
             <View style={styles.kpiThird}><KpiCard label="Position" value={Math.round((metrics?.positionRate ?? 0) * 100)} icon={MapPin} delta={0} tone="accent" /></View>
-            <View style={styles.kpiThird}><KpiCard label="Rack" value={Math.round((metrics?.rackConversionRate ?? 0) * 100)} icon={Trophy} delta={0} tone="warning" /></View>
+            <View style={styles.kpiThird}><KpiCard label="Conversion" value={Math.round((metrics?.rackConversionRate ?? 0) * 100)} icon={Trophy} delta={0} tone="warning" /></View>
           </View>
         </View>
 
@@ -282,20 +285,22 @@ export function SessionReportScreen() {
             {topFailureLabels.length > 0 ? " cost you most this session." : " logged in this session."}
           </Text>
           <View style={styles.failureCard}>
-            <View style={styles.failureStackBar}>
-              {failureBreakdown.map((entry) => (
-                <View
-                  key={`stack-${entry.key}`}
-                  style={[
-                    styles.failureStackSegment,
-                    {
-                      width: `${entry.pct}%`,
-                      backgroundColor: entry.color,
-                    },
-                  ]}
-                />
-              ))}
-            </View>
+            {failureBreakdown.length > 0 && (
+              <View style={styles.failureStackBar}>
+                {failureBreakdown.map((entry) => (
+                  <View
+                    key={`stack-${entry.key}`}
+                    style={[
+                      styles.failureStackSegment,
+                      {
+                        width: `${entry.pct}%`,
+                        backgroundColor: entry.color,
+                      },
+                    ]}
+                  />
+                ))}
+              </View>
+            )}
             {failureBreakdown.map((entry) => (
               <View key={entry.key} style={[styles.failureRow, entry.pct <= 0.001 && styles.failureRowMuted]}>
                 <Text style={styles.failureLabel}>{entry.label}</Text>

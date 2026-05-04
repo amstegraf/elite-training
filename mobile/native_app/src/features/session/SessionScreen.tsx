@@ -23,8 +23,8 @@ const missTypes = [
 
 const outcomes = [
   { id: "playable", label: "Playable", tone: "success" },
-  { id: "potmiss", label: "Pot Miss", tone: "destructive" },
   { id: "noshot", label: "No Shot", tone: "warning" },
+  { id: "potmiss", label: "Pot Miss", tone: "destructive" },
 ];
 
 const fmt = (s: number) => {
@@ -50,7 +50,7 @@ export function SessionScreen() {
   const [sessionId, setSessionId] = useState<string | null>(route.params?.sessionId ?? null);
   const [, setTick] = useState(0);
   const [ball, setBall] = useState<number>(3);
-  const [miss, setMiss] = useState<MissType[]>(["alignment"]);
+  const [miss, setMiss] = useState<MissType>("alignment");
   const [outcome, setOutcome] = useState<MissOutcome>("playable");
   const [showEndRack, setShowEndRack] = useState(false);
   const [clearedBalls, setClearedBalls] = useState<number[]>([]);
@@ -291,15 +291,13 @@ export function SessionScreen() {
                 key={m.id}
                 onPress={() =>
                   setMiss((prev) =>
-                    prev.includes(m.id as MissType)
-                      ? prev.filter((x) => x !== m.id)
-                      : [...prev, m.id as MissType]
+                    m.id as MissType
                   )
                 }
-                style={[styles.chip, miss.includes(m.id as MissType) && styles.chipActive]}
+                style={[styles.chip, miss === (m.id as MissType) && styles.chipActive]}
               >
-                <Crosshair size={14} color={miss.includes(m.id as MissType) ? colors.primaryForeground : colors.foreground} />
-                <Text style={[styles.chipText, miss.includes(m.id as MissType) && styles.chipTextActive]}>{m.label}</Text>
+                <Crosshair size={14} color={miss === (m.id as MissType) ? colors.primaryForeground : colors.foreground} />
+                <Text style={[styles.chipText, miss === (m.id as MissType) && styles.chipTextActive]}>{m.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -309,15 +307,13 @@ export function SessionScreen() {
                 key={m.id}
                 onPress={() =>
                   setMiss((prev) =>
-                    prev.includes(m.id as MissType)
-                      ? prev.filter((x) => x !== m.id)
-                      : [...prev, m.id as MissType]
+                    m.id as MissType
                   )
                 }
-                style={[styles.chip, styles.chipNarrow, miss.includes(m.id as MissType) && styles.chipActive]}
+                style={[styles.chip, styles.chipNarrow, miss === (m.id as MissType) && styles.chipActive]}
               >
-                <Crosshair size={14} color={miss.includes(m.id as MissType) ? colors.primaryForeground : colors.foreground} />
-                <Text style={[styles.chipText, miss.includes(m.id as MissType) && styles.chipTextActive]}>{m.label}</Text>
+                <Crosshair size={14} color={miss === (m.id as MissType) ? colors.primaryForeground : colors.foreground} />
+                <Text style={[styles.chipText, miss === (m.id as MissType) && styles.chipTextActive]}>{m.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -367,8 +363,15 @@ export function SessionScreen() {
             activeOpacity={0.9}
             onPress={() => {
               if (!session || !session.currentRackId) return;
-              if (miss.length === 0) return;
-              logMiss(session.id, ball, miss, outcome);
+              logMiss(session.id, ball, [miss], outcome);
+              if (outcome === "pot_miss") {
+                const preselected = Array.from({ length: Math.max(0, ball - 1) }, (_, i) => i + 1)
+                  .filter((n) =>
+                    !currentRack?.misses.some((m) => m.ballNumber === n && m.outcome === "pot_miss")
+                  );
+                setClearedBalls(preselected);
+                setShowEndRack(true);
+              }
               animateLogMissFeedback();
             }}
           >
@@ -439,8 +442,11 @@ export function SessionScreen() {
                         <Text style={styles.previousTitle}>
                           {rack.pots}/{rack.balls} <Text style={styles.previousTitleMuted}>pots</Text>
                         </Text>
-                        <View style={[styles.pctPill, pctToneStyle]}>
-                          <Text style={styles.pctPillText}>{rack.pct}%</Text>
+                        <View style={styles.conversionWrap}>
+                          <Text style={styles.conversionLabel}>Conversion</Text>
+                          <View style={[styles.pctPill, pctToneStyle]}>
+                            <Text style={styles.pctPillText}>{rack.pct}%</Text>
+                          </View>
                         </View>
                       </View>
                       <View style={styles.previousBarTrack}>
@@ -807,6 +813,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 4,
+  },
+  conversionWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  conversionLabel: {
+    fontSize: 11,
+    color: colors.mutedForeground,
+    fontFamily: "Inter_600SemiBold",
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
   },
   previousTitle: {
     fontSize: 22,

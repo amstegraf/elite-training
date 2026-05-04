@@ -35,8 +35,9 @@ const PLANS: Plan[] = [
     dotColor: "#20b576",
     features: [
       "Unlimited sessions",
-      "Basic stats (Pot / Position / Conversion)",
+      "Unlimited Statistics",
       "Limited history (7-14 days)",
+      "Drill path (level progression)",
       "Manual drills",
       "Global ranking (after 50 sessions)",
       "Continental ranking",
@@ -56,11 +57,10 @@ const PLANS: Plan[] = [
     features: [
       "AI Coach (session + stats)",
       "Full history (cloud sync)",
-      "Advanced analytics (errors, trends, consistency)",
+      "Advanced analytics",
       "Drill library + tracking",
-      "Drill path gamification",
+      "Share your drills",
       "Tournaments & matches",
-      "Image -> Drill (AI table mapping)",
     ],
   },
   {
@@ -76,9 +76,10 @@ const PLANS: Plan[] = [
     dotColor: colors.danger,
     features: [
       "Everything in Pro",
+      "Image to Drill (AI table mapping)",
+      "Drill generator (AI-powered)",
       "Match mode (advanced)",
       "Pressure training modes",
-      "Drill generator (AI-powered)",
     ],
   },
 ];

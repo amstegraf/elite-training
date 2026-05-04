@@ -4,6 +4,9 @@ All notable changes to the native app are tracked here.
 
 ## v0.1.0-alpha (in progress)
 
+- Live session outcome flow updated: order is now Playable → No Shot → Pot Miss, and logging Pot Miss automatically opens the end-rack balls-potted modal.
+- Dashboard Recent list now shows latest 5 sessions and displays all three KPIs per row (Pot, Pos, Conversion).
+- Bugfix pass: subscription Free copy updated, failure breakdown now hides 0% rows and includes scratch, live session miss selection is single-select, conversion wording standardized, and dashboard now auto-scrolls to top on focus.
 - Subscription footer behavior refined: bottom area is now fixed and stable, swapping between `Current Plan` and `Upgrade CTA` in the same position to eliminate jump.
 - Dashboard tier progress now shows the explicit next tier name (e.g. "877 to next tier Semi-pro") with highlighted tier text.
 - Dashboard wording fix: changed KPI section title from "Last 7 days" to "Overall".

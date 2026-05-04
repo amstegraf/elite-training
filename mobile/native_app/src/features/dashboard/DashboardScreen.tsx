@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useCallback, useRef } from "react";
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { AppHeader } from "../../ui/AppHeader";
 import { KpiCard } from "../../ui/KpiCard";
 import { TierBadge } from "../../ui/TierBadge";
@@ -12,8 +12,9 @@ import { TIER_LABELS } from "../../domain/types";
 
 export function DashboardScreen() {
   const nav = useNavigation<any>();
+  const scrollRef = useRef<ScrollView | null>(null);
   const { activeProfile, activeSessions, completedSessions, global, baseline, tier, startSession } = useAppState();
-  const recent = completedSessionsSorted(completedSessions).slice(0, 3);
+  const recent = completedSessionsSorted(completedSessions).slice(0, 5);
 
   const potPct = global.potRate === null ? 0 : Math.round(global.potRate * 100);
   const posPct = global.positionRate === null ? 0 : Math.round(global.positionRate * 100);
@@ -39,6 +40,12 @@ export function DashboardScreen() {
     }
   };
 
+  useFocusEffect(
+    useCallback(() => {
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+    }, [])
+  );
+
   return (
     <View style={styles.container}>
       <AppHeader
@@ -52,7 +59,7 @@ export function DashboardScreen() {
         }
       />
 
-      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 }]} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollRef} contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 }]} showsVerticalScrollIndicator={false}>
         {/* Tier / Points Hero */}
         <View style={styles.heroSection}>
           <View style={styles.heroCard}>
@@ -111,7 +118,7 @@ export function DashboardScreen() {
               <KpiCard label="Position" value={posPct} icon={MapPin} delta={baseline.posDiff ?? 0} tone="accent" />
             </View>
             <View style={styles.kpiHalfWidth}>
-              <KpiCard label="Rack Conv." value={convPct} icon={Trophy} delta={baseline.convDiff ?? 0} tone="warning" />
+              <KpiCard label="Conversion" value={convPct} icon={Trophy} delta={baseline.convDiff ?? 0} tone="warning" />
             </View>
           </View>
         </View>
@@ -149,7 +156,9 @@ export function DashboardScreen() {
           <View style={styles.recentList}>
             {recent.map((s) => {
               const derived = computeSessionMetrics(s);
-              const k = derived.potRate === null ? 0 : Math.round(derived.potRate * 100);
+              const pot = derived.potRate === null ? 0 : Math.round(derived.potRate * 100);
+              const pos = derived.positionRate === null ? 0 : Math.round(derived.positionRate * 100);
+              const conv = derived.rackConversionRate === null ? 0 : Math.round(derived.rackConversionRate * 100);
               const d = new Date(s.startedAt).toLocaleString(undefined, {
                 month: "short",
                 day: "numeric",
@@ -168,8 +177,18 @@ export function DashboardScreen() {
                   </View>
                 </View>
                 <View style={styles.recentRight}>
-                  <Text style={styles.recentScore}>{k}<Text style={styles.recentScoreUnit}>%</Text></Text>
-                  <Text style={styles.recentScoreLabel}>POT</Text>
+                  <View style={styles.recentStatsRow}>
+                    <Text style={styles.recentStatLabel}>POT</Text>
+                    <Text style={styles.recentStatValue}>{pot}<Text style={styles.recentScoreUnit}>%</Text></Text>
+                  </View>
+                  <View style={styles.recentStatsRow}>
+                    <Text style={styles.recentStatLabel}>POS</Text>
+                    <Text style={styles.recentStatValue}>{pos}<Text style={styles.recentScoreUnit}>%</Text></Text>
+                  </View>
+                  <View style={styles.recentStatsRow}>
+                    <Text style={styles.recentStatLabel}>CONV</Text>
+                    <Text style={styles.recentStatValue}>{conv}<Text style={styles.recentScoreUnit}>%</Text></Text>
+                  </View>
                 </View>
               </TouchableOpacity>
             );})}
@@ -411,6 +430,23 @@ const styles = StyleSheet.create({
   },
   recentRight: {
     alignItems: "flex-end",
+    gap: 2,
+  },
+  recentStatsRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 6,
+  },
+  recentStatLabel: {
+    fontSize: 10,
+    fontFamily: "Inter_600SemiBold",
+    color: colors.mutedForeground,
+    letterSpacing: 0.4,
+  },
+  recentStatValue: {
+    fontSize: 14,
+    fontFamily: "Sora_700Bold",
+    color: colors.foreground,
   },
   recentScore: {
     fontSize: 18,

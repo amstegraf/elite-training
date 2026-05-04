@@ -87,7 +87,7 @@ export function SessionHistoryScreen() {
                 <Text style={styles.miniValue}>{pos}<Text style={styles.miniUnit}>%</Text></Text>
               </View>
               <View style={styles.miniStat}>
-                <Text style={styles.miniLabel}>RACK</Text>
+                <Text style={styles.miniLabel}>CONVERSION</Text>
                 <Text style={styles.miniValue}>{rack}<Text style={styles.miniUnit}>%</Text></Text>
               </View>
             </View>
