@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { colors } from "../core/theme/theme";
 import { GAME_BALL_COUNTS, GameBallCount } from "../domain/types";
@@ -11,8 +11,30 @@ interface GameTypeModalProps {
 }
 
 export function GameTypeModal({ visible, onSelect, onCancel }: GameTypeModalProps) {
+  const [isSelecting, setIsSelecting] = useState(false);
+
+  useEffect(() => {
+    if (!visible) {
+      setIsSelecting(false);
+    }
+  }, [visible]);
+
+  const handleSelect = useCallback(
+    (ballCount: GameBallCount) => {
+      if (isSelecting) return;
+      setIsSelecting(true);
+      onSelect(ballCount);
+    },
+    [isSelecting, onSelect]
+  );
+
+  const handleCancel = useCallback(() => {
+    if (isSelecting) return;
+    onCancel();
+  }, [isSelecting, onCancel]);
+
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleCancel}>
       <View style={styles.backdrop}>
         <View style={styles.card}>
           <Text style={styles.title}>Choose Game</Text>
@@ -21,16 +43,22 @@ export function GameTypeModal({ visible, onSelect, onCancel }: GameTypeModalProp
             {GAME_BALL_COUNTS.map((count) => (
               <TouchableOpacity
                 key={count}
-                style={styles.option}
+                style={[styles.option, isSelecting && styles.optionDisabled]}
                 activeOpacity={0.9}
-                onPress={() => onSelect(count)}
+                disabled={isSelecting}
+                onPress={() => handleSelect(count)}
               >
                 <PoolBall number={count} size="sm" />
                 <Text style={styles.optionLabel}>{count}-Ball</Text>
               </TouchableOpacity>
             ))}
           </View>
-          <TouchableOpacity style={styles.cancel} onPress={onCancel} activeOpacity={0.85}>
+          <TouchableOpacity
+            style={[styles.cancel, isSelecting && styles.optionDisabled]}
+            onPress={handleCancel}
+            activeOpacity={0.85}
+            disabled={isSelecting}
+          >
             <Text style={styles.cancelText}>Cancel</Text>
           </TouchableOpacity>
         </View>
@@ -79,6 +107,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
+  },
+  optionDisabled: {
+    opacity: 0.6,
   },
   optionLabel: {
     fontSize: 14,

@@ -4,6 +4,8 @@ All notable changes to the native app are tracked here.
 
 ## v0.1.0-alpha (in progress)
 
+- Drills list page updated to match latest prototype direction: added title search, type/category filter chips, and per-drill completion marker driven by saved drill results.
+- Game type picker (`8/9/10-ball`) now uses a single-tap guard to prevent multi-press race conditions that could create lag or inconsistent session starts when tapping options rapidly.
 - Dashboard now includes a prototype-style `My Drills` progress card powered by persisted drill run results (stars/progress/per-drill rows), drill completions are saved from drill detail outcomes, drill rating visuals switched from sparkles to stars, and `Recent` was renamed to `Recent Trainings`.
 - Session report AI Coach action now opens a prototype-style upsell modal first; subscription navigation happens from modal CTA ("Unlock AI Coach") instead of direct button tap.
 - Drill table now draws color-matched dashed guide lines from object balls to their `targetPocket` when pocket targets are defined in drill JSON.
