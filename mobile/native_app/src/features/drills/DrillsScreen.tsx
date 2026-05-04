@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { Activity, CheckCircle2, ChevronRight, Crown, Filter, Flame, History, Home, Search, Sparkles, Star, Target, Trophy } from "lucide-react-native";
+import { Activity, BarChart3, Calendar, CheckCircle2, ChevronRight, Crown, Filter, Flame, History, Home, Search, Sparkles, Star, Target, Trophy } from "lucide-react-native";
 import { AppHeader } from "../../ui/AppHeader";
 import { colors } from "../../core/theme/theme";
 import { listDrills } from "../../data/drills";
@@ -317,6 +317,22 @@ export function DrillsScreen() {
           >
             <Activity size={18} color={colors.mutedForeground} />
             <Text style={styles.floatingNavText}>Session</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.floatingNavItem}
+            activeOpacity={0.85}
+            onPress={() => nav.navigate("Home", { screen: "StatsTab" })}
+          >
+            <BarChart3 size={18} color={colors.mutedForeground} />
+            <Text style={styles.floatingNavText}>Stats</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.floatingNavItem}
+            activeOpacity={0.85}
+            onPress={() => nav.navigate("Home", { screen: "CalendarTab" })}
+          >
+            <Calendar size={18} color={colors.mutedForeground} />
+            <Text style={styles.floatingNavText}>Calendar</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.floatingNavItem}
@@ -706,15 +722,16 @@ const styles = StyleSheet.create({
   },
   floatingNav: {
     width: "100%",
-    maxWidth: 360,
-    height: 62,
-    borderRadius: 22,
+    maxWidth: 430,
+    height: 72,
+    borderRadius: 24,
     borderWidth: 1,
     borderColor: "rgba(226, 224, 221, 0.9)",
     backgroundColor: "rgba(255,255,255,0.96)",
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-evenly",
+    justifyContent: "space-between",
+    paddingHorizontal: 8,
     shadowColor: "#13151A",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.08,
@@ -725,7 +742,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    gap: 4,
+    gap: 5,
   },
   floatingNavText: {
     fontSize: 10,
