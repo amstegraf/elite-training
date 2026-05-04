@@ -72,7 +72,11 @@ export function GameTypeModal({
                 disabled={blocked}
                 onPress={() => handleSelect(count)}
               >
-                <PoolBall number={count} size="sm" />
+                <PoolBall
+                  number={count}
+                  size="sm"
+                  onPress={() => handleSelect(count)}
+                />
                 <Text style={styles.optionLabel}>
                   {isSelecting && selectedBall === count ? "Starting..." : `${count}-Ball`}
                 </Text>
