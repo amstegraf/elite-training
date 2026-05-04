@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Animated, Easing, StyleSheet, Text, View, ScrollView, TouchableOpacity, Modal } from "react-native";
+import { Alert, Animated, Easing, LayoutChangeEvent, StyleSheet, Text, View, ScrollView, TouchableOpacity, Modal, useWindowDimensions } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { AppHeader } from "../../ui/AppHeader";
 import { GameTypeModal } from "../../ui/GameTypeModal";
 import { PoolBall } from "../../ui/PoolBall";
 import { colors } from "../../core/theme/theme";
-import { Pause, Play, Undo2, Square, Flag, X, Check, Crosshair } from "lucide-react-native";
+import { Pause, Play, Undo2, Square, Flag, X, Check, Crosshair, Info, ArrowRight } from "lucide-react-native";
 import { useAppState } from "../../data/AppStateContext";
 import {
   inferBallsCleared,
@@ -34,9 +34,46 @@ const fmt = (s: number) => {
   return `${m}:${ss}`;
 };
 
+type TutorialKey = "intro" | "timer" | "ball" | "miss" | "outcome" | "actions";
+type TutorialStep = { key: TutorialKey; title: string; body: string };
+
+const TUTORIAL_STEPS: TutorialStep[] = [
+  {
+    key: "intro",
+    title: "Welcome to Ghost Play",
+    body: "You're playing the Ghost with ball-in-hand on every rack. Pot all 9 balls in sequence — any miss and the Ghost wins the rack. Let's walk through the screen.",
+  },
+  {
+    key: "timer",
+    title: "Session Timer & Rack",
+    body: "Track elapsed time and your live rack stats: balls remaining, pots and misses. Tap the play/pause to control the clock.",
+  },
+  {
+    key: "ball",
+    title: "Object Ball",
+    body: "Tap the ball you've missed. Nevermind the app while you're on a hot streak.",
+  },
+  {
+    key: "miss",
+    title: "Miss Type",
+    body: "Only when you miss, tag why: position, alignment, delivery or speed. This powers your weakness analytics.",
+  },
+  {
+    key: "outcome",
+    title: "Position Outcome",
+    body: "Log the cue-ball result on misses so you know how often the outcome was not ideal.",
+  },
+  {
+    key: "actions",
+    title: "Log & Rack Controls",
+    body: "Use Log Miss to record a failed attempt, Undo to fix mistakes, and End Rack when you clear all 9 like a  Legend or the Ghost wins.",
+  },
+];
+
 export function SessionScreen() {
   const nav = useNavigation<any>();
   const route = useRoute<any>();
+  const { height: windowHeight } = useWindowDimensions();
   const {
     ready,
     data,
@@ -57,6 +94,18 @@ export function SessionScreen() {
   const [showEndRack, setShowEndRack] = useState(false);
   const [showGameTypeModal, setShowGameTypeModal] = useState(false);
   const [clearedBalls, setClearedBalls] = useState<number[]>([]);
+  const [tutorialStep, setTutorialStep] = useState<number | null>(null);
+  const [sectionLayouts, setSectionLayouts] = useState<Record<Exclude<TutorialKey, "intro">, { y: number; height: number } | null>>({
+    timer: null,
+    ball: null,
+    miss: null,
+    outcome: null,
+    actions: null,
+  });
+  const [scrollY, setScrollY] = useState(0);
+  const [scrollTopInRoot, setScrollTopInRoot] = useState(0);
+  const tutorialAutoStartedRef = useRef(false);
+  const scrollViewRef = useRef<ScrollView | null>(null);
   const logBtnScale = useRef(new Animated.Value(1)).current;
   const missStatScale = useRef(new Animated.Value(1)).current;
   const potStatScale = useRef(new Animated.Value(1)).current;
@@ -148,6 +197,23 @@ export function SessionScreen() {
   }, [sessionBallCount]);
 
   useEffect(() => {
+    const shouldStartFromOnboarding = Boolean(route.params?.startTutorial);
+    if (!shouldStartFromOnboarding || !session || tutorialAutoStartedRef.current) return;
+    tutorialAutoStartedRef.current = true;
+    setTutorialStep(0);
+  }, [route.params?.startTutorial, session]);
+
+  useEffect(() => {
+    if (tutorialStep === null) return;
+    const active = TUTORIAL_STEPS[tutorialStep];
+    if (!active || active.key === "intro") return;
+    const layout = sectionLayouts[active.key];
+    if (!layout || !scrollViewRef.current) return;
+    const nextY = Math.max(0, layout.y - 120);
+    scrollViewRef.current.scrollTo({ y: nextY, animated: true });
+  }, [sectionLayouts, tutorialStep]);
+
+  useEffect(() => {
     Animated.sequence([
       Animated.timing(missStatScale, {
         toValue: 1.12,
@@ -198,34 +264,87 @@ export function SessionScreen() {
     ]).start();
   };
 
+  const activeTutorial = tutorialStep === null ? null : TUTORIAL_STEPS[tutorialStep];
+  const tutorialTargetLayout =
+    activeTutorial && activeTutorial.key !== "intro" ? sectionLayouts[activeTutorial.key] : null;
+  const tutorialTargetRect = tutorialTargetLayout
+    ? {
+        top: scrollTopInRoot + tutorialTargetLayout.y - scrollY - 6,
+        left: 14,
+        width: undefined,
+        height: tutorialTargetLayout.height + 12,
+      }
+    : null;
+  const spotlightInset = 10;
+  const spotlightTop = tutorialTargetRect ? Math.max(0, tutorialTargetRect.top) : 0;
+  const spotlightHeight = tutorialTargetRect
+    ? Math.max(0, Math.min(windowHeight - spotlightTop, tutorialTargetRect.height))
+    : 0;
+  const spotlightBottom = spotlightTop + spotlightHeight;
+  const hasSpotlight = Boolean(tutorialTargetRect && spotlightHeight > 0);
+  const showCardAboveSpotlight = hasSpotlight && spotlightBottom > windowHeight * 0.62;
+  const tutorialCardPositionStyle = hasSpotlight
+    ? showCardAboveSpotlight
+      ? { bottom: Math.max(16, windowHeight - spotlightTop + 12) }
+      : { top: Math.max(16, spotlightBottom + 12) }
+    : { bottom: 18 };
+
+  const setSectionLayout =
+    (key: Exclude<TutorialKey, "intro">) =>
+    (event: LayoutChangeEvent) => {
+      const { y, height } = event.nativeEvent.layout;
+      setSectionLayouts((prev) => ({ ...prev, [key]: { y, height } }));
+    };
+
+  const startTutorial = () => setTutorialStep(0);
+  const closeTutorial = () => setTutorialStep(null);
+  const nextTutorial = () => {
+    setTutorialStep((prev) => {
+      if (prev === null) return null;
+      return prev + 1 >= TUTORIAL_STEPS.length ? null : prev + 1;
+    });
+  };
+
   return (
     <View style={styles.container}>
       <AppHeader
         subtitle="Live Session"
-        title={`Rack ${rackNo}`}
+        title="Ghost Play"
         back
         right={
-          <TouchableOpacity
-            style={styles.endButton}
-            onPress={() => {
-              if (!session) return;
-              if (session.currentRackId) {
-                Alert.alert("End rack first", "Close the current rack before ending the session.");
-                return;
-              }
-              endSession(session.id);
-              nav.navigate("Report", { sessionId: session.id });
-            }}
-          >
-            <Square size={14} color={colors.danger} fill={colors.danger} />
-            <Text style={styles.endButtonText}>End</Text>
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity style={styles.infoButton} onPress={startTutorial} activeOpacity={0.85}>
+              <Info size={18} color={colors.foreground} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.endButton}
+              onPress={() => {
+                if (!session) return;
+                if (session.currentRackId) {
+                  Alert.alert("End rack first", "Close the current rack before ending the session.");
+                  return;
+                }
+                endSession(session.id);
+                nav.navigate("Report", { sessionId: session.id });
+              }}
+            >
+              <Square size={14} color={colors.danger} fill={colors.danger} />
+              <Text style={styles.endButtonText}>End</Text>
+            </TouchableOpacity>
+          </View>
         }
       />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={scrollViewRef}
+        onLayout={(event) => setScrollTopInRoot(event.nativeEvent.layout.y)}
+        onScroll={(event) => setScrollY(event.nativeEvent.contentOffset.y)}
+        scrollEventThrottle={16}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Timer Hero */}
-        <View style={styles.section}>
+        <View style={styles.section} onLayout={setSectionLayout("timer")}>
           <View style={styles.heroCard}>
             <View style={styles.heroGlow} />
             <View style={styles.timerRow}>
@@ -269,7 +388,7 @@ export function SessionScreen() {
         </View>
 
         {/* Object Ball Selector */}
-        <View style={styles.section}>
+        <View style={styles.section} onLayout={setSectionLayout("ball")}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Object Ball</Text>
             <Text style={styles.sectionHint}>Tap to select</Text>
@@ -291,7 +410,7 @@ export function SessionScreen() {
         </View>
 
         {/* Miss Type */}
-        <View style={styles.section}>
+        <View style={styles.section} onLayout={setSectionLayout("miss")}>
           <Text style={styles.sectionTitle}>Miss Type</Text>
           <View style={styles.chipRow}>
             {missTypes.slice(0, 3).map((m) => (
@@ -328,7 +447,7 @@ export function SessionScreen() {
         </View>
 
         {/* Outcome */}
-        <View style={styles.section}>
+        <View style={styles.section} onLayout={setSectionLayout("outcome")}>
           <Text style={styles.sectionTitle}>Position Outcome</Text>
           <View style={styles.outcomeGrid}>
             {outcomes.map((o) => {
@@ -364,7 +483,7 @@ export function SessionScreen() {
         </View>
 
         {/* Action Bar */}
-        <View style={styles.actionBar}>
+        <View style={styles.actionBar} onLayout={setSectionLayout("actions")}>
           <Animated.View style={{ transform: [{ scale: logBtnScale }] }}>
           <TouchableOpacity
             style={styles.logMissBtn}
@@ -490,6 +609,61 @@ export function SessionScreen() {
         )}
       </ScrollView>
 
+      {activeTutorial && (
+        <View style={styles.tutorialOverlay} pointerEvents="box-none">
+          {!hasSpotlight ? <View style={styles.tutorialDim} /> : null}
+          {hasSpotlight && (
+            <>
+              <View style={[styles.tutorialDimPanel, { top: 0, left: 0, right: 0, height: spotlightTop }]} />
+              <View style={[styles.tutorialDimPanel, { top: spotlightBottom, left: 0, right: 0, bottom: 0 }]} />
+              <View style={[styles.tutorialDimPanel, { top: spotlightTop, left: 0, width: spotlightInset, height: spotlightHeight }]} />
+              <View style={[styles.tutorialDimPanel, { top: spotlightTop, right: 0, width: spotlightInset, height: spotlightHeight }]} />
+            </>
+          )}
+          {hasSpotlight && (
+            <View
+              pointerEvents="none"
+              style={[
+                styles.tutorialSpotlight,
+                {
+                  top: spotlightTop,
+                  height: spotlightHeight,
+                },
+              ]}
+            />
+          )}
+          <View style={[styles.tutorialCardWrap, tutorialCardPositionStyle]} pointerEvents="box-none">
+            <View style={styles.tutorialCard}>
+              <View style={styles.tutorialTopRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.tutorialStepKicker}>
+                    Step {tutorialStep! + 1} of {TUTORIAL_STEPS.length}
+                  </Text>
+                  <Text style={styles.tutorialTitle}>{activeTutorial.title}</Text>
+                </View>
+                <TouchableOpacity style={styles.tutorialClose} onPress={closeTutorial} activeOpacity={0.85}>
+                  <X size={16} color={colors.foreground} />
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.tutorialBody}>{activeTutorial.body}</Text>
+              <View style={styles.tutorialFooter}>
+                <View style={styles.tutorialDots}>
+                  {TUTORIAL_STEPS.map((_, idx) => (
+                    <View key={idx} style={[styles.tutorialDot, idx === tutorialStep && styles.tutorialDotActive]} />
+                  ))}
+                </View>
+                <TouchableOpacity style={styles.tutorialNextBtn} onPress={nextTutorial} activeOpacity={0.9}>
+                  <Text style={styles.tutorialNextText}>
+                    {tutorialStep === TUTORIAL_STEPS.length - 1 ? "Got it" : "Next"}
+                  </Text>
+                  <ArrowRight size={14} color={colors.primaryForeground} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+      )}
+
       <Modal visible={showEndRack} transparent animationType="fade">
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
@@ -550,6 +724,19 @@ export function SessionScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 100 },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  infoButton: {
+    height: 40,
+    width: 40,
+    borderRadius: 16,
+    backgroundColor: colors.secondary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   endButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -995,5 +1182,110 @@ const styles = StyleSheet.create({
   modalConfirmText: {
     color: colors.primaryForeground,
     fontFamily: "Inter_600SemiBold",
+  },
+  tutorialOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 30,
+  },
+  tutorialDim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.62)",
+  },
+  tutorialDimPanel: {
+    position: "absolute",
+    backgroundColor: "rgba(0,0,0,0.62)",
+  },
+  tutorialSpotlight: {
+    position: "absolute",
+    left: 10,
+    right: 10,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: colors.accent,
+    backgroundColor: "transparent",
+  },
+  tutorialCardWrap: {
+    position: "absolute",
+    left: 16,
+    right: 16,
+  },
+  tutorialCard: {
+    borderRadius: 22,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 14,
+  },
+  tutorialTopRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+  },
+  tutorialStepKicker: {
+    fontSize: 10,
+    textTransform: "uppercase",
+    letterSpacing: 1.5,
+    color: colors.accent,
+    fontFamily: "Inter_700Bold",
+  },
+  tutorialTitle: {
+    marginTop: 3,
+    color: colors.foreground,
+    fontSize: 18,
+    lineHeight: 22,
+    fontFamily: "Sora_700Bold",
+  },
+  tutorialClose: {
+    width: 30,
+    height: 30,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.secondary,
+  },
+  tutorialBody: {
+    marginTop: 8,
+    color: colors.mutedForeground,
+    fontSize: 13,
+    lineHeight: 19,
+    fontFamily: "Inter_500Medium",
+  },
+  tutorialFooter: {
+    marginTop: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  tutorialDots: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  tutorialDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "rgba(120,126,145,0.35)",
+  },
+  tutorialDotActive: {
+    width: 22,
+    borderRadius: 4,
+    backgroundColor: colors.accent,
+  },
+  tutorialNextBtn: {
+    height: 38,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    backgroundColor: colors.primary,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  tutorialNextText: {
+    color: colors.primaryForeground,
+    fontSize: 13,
+    fontFamily: "Inter_700Bold",
   },
 });

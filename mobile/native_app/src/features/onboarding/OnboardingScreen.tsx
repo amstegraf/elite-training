@@ -118,13 +118,19 @@ export function OnboardingScreen() {
           const existing = activeSessions[0];
           if (existing) {
             setShowGameTypeModal(false);
-            nav.reset({ index: 1, routes: [{ name: "Home" }, { name: "Session", params: { sessionId: existing.id } }] });
+            nav.reset({
+              index: 1,
+              routes: [{ name: "Home" }, { name: "Session", params: { sessionId: existing.id, startTutorial: true } }],
+            });
             return true;
           }
           const sessionId = startSession(ballCount);
           if (sessionId) {
             setShowGameTypeModal(false);
-            nav.reset({ index: 1, routes: [{ name: "Home" }, { name: "Session", params: { sessionId } }] });
+            nav.reset({
+              index: 1,
+              routes: [{ name: "Home" }, { name: "Session", params: { sessionId, startTutorial: true } }],
+            });
             return true;
           }
           return false;

@@ -1,13 +1,14 @@
 import React, { useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { CheckCircle2, ChevronRight, Crown, Filter, Flame, Search, Sparkles, Star, Target, Trophy } from "lucide-react-native";
+import { Activity, CheckCircle2, ChevronRight, Crown, Filter, Flame, History, Home, Search, Sparkles, Star, Target, Trophy } from "lucide-react-native";
 import { AppHeader } from "../../ui/AppHeader";
 import { colors } from "../../core/theme/theme";
 import { listDrills } from "../../data/drills";
 import { DrillDifficulty } from "../../domain/drills";
 import { useAppState } from "../../data/AppStateContext";
 import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const difficultyLabel = (difficulty: DrillDifficulty) =>
   difficulty === 1 ? "Easy" : difficulty === 2 ? "Medium" : "Hard";
@@ -35,6 +36,7 @@ function DifficultyStars({ earned }: { earned: 0 | 1 | 2 | 3 }) {
 
 export function DrillsScreen() {
   const nav = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   const { drillResults } = useAppState();
   const drills = useMemo(() => listDrills(), []);
   const [query, setQuery] = useState("");
@@ -297,6 +299,35 @@ export function DrillsScreen() {
           </View>
         )}
       </ScrollView>
+
+      <View style={[styles.floatingNavWrap, { bottom: Math.max(insets.bottom, 12) }]}>
+        <View style={styles.floatingNav}>
+          <TouchableOpacity
+            style={styles.floatingNavItem}
+            activeOpacity={0.85}
+            onPress={() => nav.navigate("Home", { screen: "DashboardTab" })}
+          >
+            <Home size={18} color={colors.primary} />
+            <Text style={[styles.floatingNavText, styles.floatingNavTextActive]}>Home</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.floatingNavItem}
+            activeOpacity={0.85}
+            onPress={() => nav.navigate("Home", { screen: "SessionTab" })}
+          >
+            <Activity size={18} color={colors.mutedForeground} />
+            <Text style={styles.floatingNavText}>Session</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.floatingNavItem}
+            activeOpacity={0.85}
+            onPress={() => nav.navigate("Home", { screen: "HistoryTab" })}
+          >
+            <History size={18} color={colors.mutedForeground} />
+            <Text style={styles.floatingNavText}>History</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </View>
   );
 }
@@ -344,7 +375,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingBottom: 100,
+    paddingBottom: 150,
   },
   heroCard: {
     borderRadius: 24,
@@ -665,5 +696,45 @@ const styles = StyleSheet.create({
     color: colors.mutedForeground,
     fontFamily: "Inter_500Medium",
     textAlign: "center",
+  },
+  floatingNavWrap: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  floatingNav: {
+    width: "100%",
+    maxWidth: 360,
+    height: 62,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "rgba(226, 224, 221, 0.9)",
+    backgroundColor: "rgba(255,255,255,0.96)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-evenly",
+    shadowColor: "#13151A",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 5,
+  },
+  floatingNavItem: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+  },
+  floatingNavText: {
+    fontSize: 10,
+    color: colors.mutedForeground,
+    fontFamily: "Inter_600SemiBold",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  floatingNavTextActive: {
+    color: colors.primary,
   },
 });
