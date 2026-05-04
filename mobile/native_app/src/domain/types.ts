@@ -66,10 +66,24 @@ export interface AppSettings {
   preferences: UiPreferences;
 }
 
+export interface DrillResultRecord {
+  id: string;
+  profileId: string;
+  drillId: string;
+  drillName: string;
+  attempts: number;
+  completed: number;
+  stars: 0 | 1 | 2 | 3;
+  durationSeconds: number;
+  successPct: number;
+  finishedAt: string;
+}
+
 export interface AppStateData {
   profiles: Profile[];
   activeProfileId?: string;
   sessions: PrecisionSession[];
+  drillResults: DrillResultRecord[];
   settings: AppSettings;
 }
 
@@ -96,6 +110,7 @@ export const DEFAULT_TIER_SETTINGS: TierSettings = {
 export const DEFAULT_APP_STATE: AppStateData = {
   profiles: [],
   sessions: [],
+  drillResults: [],
   settings: {
     tier: DEFAULT_TIER_SETTINGS,
     preferences: {

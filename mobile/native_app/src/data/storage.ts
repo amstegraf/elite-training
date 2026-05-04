@@ -11,6 +11,7 @@ export async function loadState(): Promise<AppStateData> {
     return {
       ...DEFAULT_APP_STATE,
       ...parsed,
+      drillResults: Array.isArray(parsed.drillResults) ? parsed.drillResults : DEFAULT_APP_STATE.drillResults,
       settings: {
         ...DEFAULT_APP_STATE.settings,
         ...parsed.settings,

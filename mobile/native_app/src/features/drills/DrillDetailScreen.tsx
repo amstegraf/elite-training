@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { Check, RotateCcw, Sparkles, Target, Timer, Trophy, X } from "lucide-react-native";
+import { Check, RotateCcw, Star, Target, Timer, Trophy, X } from "lucide-react-native";
 import { AppHeader } from "../../ui/AppHeader";
 import { colors } from "../../core/theme/theme";
 import { getDrillById } from "../../data/drills";
 import { DrillDefinition, DrillDifficulty } from "../../domain/drills";
 import { DrillPoolTable } from "./components/PoolTable";
 import { LinearGradient } from "expo-linear-gradient";
+import { useAppState } from "../../data/AppStateContext";
 
 type AttemptResult = "completed" | "failed";
 
@@ -24,10 +25,11 @@ function DifficultyStars({ level }: { level: DrillDifficulty }) {
   return (
     <View style={styles.starRow}>
       {[1, 2, 3].map((idx) => (
-        <Sparkles
+        <Star
           key={idx}
           size={13}
           color={idx <= level ? colors.tierGold : "rgba(120, 126, 145, 0.45)"}
+          fill={idx <= level ? colors.tierGold : "rgba(120, 126, 145, 0.12)"}
         />
       ))}
     </View>
@@ -95,9 +97,11 @@ function useDrillState(drill: DrillDefinition | null) {
 export function DrillDetailScreen() {
   const nav = useNavigation<any>();
   const route = useRoute<any>();
+  const { saveDrillResult } = useAppState();
   const drillId = route.params?.drillId as string | undefined;
   const drill = useMemo(() => (drillId ? getDrillById(drillId) : null), [drillId]);
   const state = useDrillState(drill);
+  const hasSavedRunRef = useRef(false);
 
   if (!drill) {
     return (
@@ -144,16 +148,33 @@ export function DrillDetailScreen() {
     state.setResults((prev) => [...prev, result]);
   };
 
+  const persistFinishedRun = () => {
+    if (!drill || !state.finished || hasSavedRunRef.current) return;
+    saveDrillResult({
+      drillId: drill.id,
+      drillName: drill.name,
+      attempts: state.attemptLimit,
+      completed: state.completed,
+      stars: stars as 0 | 1 | 2 | 3,
+      durationSeconds: state.elapsed,
+    });
+    hasSavedRunRef.current = true;
+  };
+
   const start = () => {
+    hasSavedRunRef.current = false;
     state.resetRun();
     state.setActive(true);
   };
 
   const restart = () => {
+    persistFinishedRun();
+    hasSavedRunRef.current = false;
     state.resetRun();
   };
 
   const done = () => {
+    persistFinishedRun();
     state.setActive(false);
     state.setResults([]);
     state.setShowResultModal(false);
@@ -307,7 +328,10 @@ export function DrillDetailScreen() {
           <View style={styles.modalCard}>
             <TouchableOpacity
               style={styles.modalClose}
-              onPress={() => state.setShowResultModal(false)}
+              onPress={() => {
+                persistFinishedRun();
+                state.setShowResultModal(false);
+              }}
               activeOpacity={0.85}
             >
               <X size={16} color={colors.foreground} />
@@ -336,7 +360,7 @@ export function DrillDetailScreen() {
                     shadowRadius: 15,
                   }}
                 >
-                  <Sparkles
+                  <Star
                     size={48}
                     fill={idx <= stars ? "hsl(42, 95%, 50%)" : "rgba(120, 126, 145, 0.15)"}
                     color={idx <= stars ? "hsl(42, 95%, 50%)" : "rgba(120, 126, 145, 0.35)"}
@@ -367,7 +391,10 @@ export function DrillDetailScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.modalPrimaryBtn}
-                onPress={() => state.setShowResultModal(false)}
+                onPress={() => {
+                  persistFinishedRun();
+                  state.setShowResultModal(false);
+                }}
                 activeOpacity={0.9}
               >
                 <Text style={styles.modalPrimaryBtnText}>Continue</Text>

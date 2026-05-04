@@ -10,6 +10,7 @@ import { computeTier } from "../domain/tier";
 import {
   AppStateData,
   DEFAULT_APP_STATE,
+  DrillResultRecord,
   GameBallCount,
   MissEvent,
   MissOutcome,
@@ -29,6 +30,7 @@ type AppStateContextValue = {
   activeProfile: Profile | null;
   activeSessions: PrecisionSession[];
   completedSessions: PrecisionSession[];
+  drillResults: DrillResultRecord[];
   global: ReturnType<typeof computeGlobalMetrics>;
   baseline: ReturnType<typeof baselineComparison>;
   tier: ReturnType<typeof computeTier>;
@@ -56,6 +58,14 @@ type AppStateContextValue = {
   deleteProfile: (id: string) => void;
   deleteSession: (sessionId: string) => void;
   toggleSessionPause: (sessionId: string, pause: boolean) => void;
+  saveDrillResult: (payload: {
+    drillId: string;
+    drillName: string;
+    attempts: number;
+    completed: number;
+    stars: 0 | 1 | 2 | 3;
+    durationSeconds: number;
+  }) => void;
 };
 
 const AppStateContext = createContext<AppStateContextValue | undefined>(undefined);
@@ -119,6 +129,12 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   );
   const activeSessions = sessionsForActive.filter((s) => s.status === "in_progress");
   const completedSessions = sessionsForActive.filter((s) => s.status === "completed");
+  const drillResults = useMemo(
+    () => data.drillResults
+      .filter((entry) => entry.profileId === data.activeProfileId)
+      .sort((a, b) => b.finishedAt.localeCompare(a.finishedAt)),
+    [data.activeProfileId, data.drillResults]
+  );
   const global = useMemo(() => computeGlobalMetrics(completedSessions), [completedSessions]);
   const baseline = useMemo(() => baselineComparison(completedSessions), [completedSessions]);
   const tier = useMemo(
@@ -154,9 +170,10 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       if (prev.profiles.length <= 1) return prev;
       const profiles = prev.profiles.filter((p) => p.id !== id);
       const sessions = prev.sessions.filter((s) => s.profileId !== id);
+      const drillResults = prev.drillResults.filter((entry) => entry.profileId !== id);
       const activeProfileId =
         prev.activeProfileId === id ? profiles[0]?.id ?? undefined : prev.activeProfileId;
-      return { ...prev, profiles, sessions, activeProfileId };
+      return { ...prev, profiles, sessions, drillResults, activeProfileId };
     });
   };
 
@@ -326,6 +343,37 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     }));
   };
 
+  const saveDrillResult = (payload: {
+    drillId: string;
+    drillName: string;
+    attempts: number;
+    completed: number;
+    stars: 0 | 1 | 2 | 3;
+    durationSeconds: number;
+  }) => {
+    setData((prev) => {
+      if (!prev.activeProfileId) return prev;
+      const attempts = Math.max(1, Math.round(payload.attempts));
+      const completed = Math.max(0, Math.min(attempts, Math.round(payload.completed)));
+      const successPct = attempts > 0 ? Math.max(0, Math.min(100, (completed / attempts) * 100)) : 0;
+      const stars = Math.max(0, Math.min(3, Math.round(payload.stars))) as 0 | 1 | 2 | 3;
+      const durationSeconds = Math.max(0, Math.round(payload.durationSeconds));
+      const row: DrillResultRecord = {
+        id: uid(),
+        profileId: prev.activeProfileId,
+        drillId: payload.drillId,
+        drillName: payload.drillName.trim() || "Drill",
+        attempts,
+        completed,
+        stars,
+        durationSeconds,
+        successPct,
+        finishedAt: isoNow(),
+      };
+      return { ...prev, drillResults: [row, ...prev.drillResults] };
+    });
+  };
+
   const updateTierSetting = (
     key: keyof AppStateData["settings"]["tier"],
     value: unknown
@@ -388,6 +436,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     activeProfile,
     activeSessions,
     completedSessions,
+    drillResults,
     global,
     baseline,
     tier,
@@ -406,6 +455,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     deleteProfile,
     deleteSession,
     toggleSessionPause,
+    saveDrillResult,
   };
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;

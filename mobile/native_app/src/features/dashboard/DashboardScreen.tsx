@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { AppHeader } from "../../ui/AppHeader";
@@ -7,17 +7,20 @@ import { KpiCard } from "../../ui/KpiCard";
 import { TierBadge } from "../../ui/TierBadge";
 import { ProfileMenu } from "./ProfileMenu";
 import { colors } from "../../core/theme/theme";
-import { Play, Target, MapPin, Trophy, Flame, ChevronRight, Bell } from "lucide-react-native";
+import { Play, Target, MapPin, Trophy, Flame, ChevronRight, Bell, Star, Crosshair } from "lucide-react-native";
 import { useAppState } from "../../data/AppStateContext";
 import { computeSessionMetrics, completedSessionsSorted, formatDurationLabel } from "../../domain/metrics";
 import { TIER_LABELS } from "../../domain/types";
+import { listDrills } from "../../data/drills";
+import { LinearGradient } from "expo-linear-gradient";
 
 export function DashboardScreen() {
   const nav = useNavigation<any>();
   const scrollRef = useRef<ScrollView | null>(null);
-  const { activeProfile, activeSessions, completedSessions, global, baseline, tier, startSession } = useAppState();
+  const { activeProfile, activeSessions, completedSessions, drillResults, global, baseline, tier, startSession } = useAppState();
   const [showGameTypeModal, setShowGameTypeModal] = React.useState(false);
   const recent = completedSessionsSorted(completedSessions).slice(0, 5);
+  const drills = useMemo(() => listDrills(), []);
 
   const potPct = global.potRate === null ? 0 : Math.round(global.potRate * 100);
   const posPct = global.positionRate === null ? 0 : Math.round(global.positionRate * 100);
@@ -30,6 +33,22 @@ export function DashboardScreen() {
     pointsToNext === null || currentTierIdx < 0 || currentTierIdx >= TIER_LABELS.length - 1
       ? null
       : TIER_LABELS[currentTierIdx + 1];
+  const drillRows = useMemo(() => {
+    return drills.map((drill) => {
+      const runs = drillResults.filter((result) => result.drillId === drill.id);
+      const stars = runs.reduce((best, row) => Math.max(best, row.stars), 0);
+      return {
+        id: drill.id,
+        name: drill.name,
+        stars,
+        max: 3,
+        hue: drill.hue,
+      };
+    });
+  }, [drills, drillResults]);
+  const earnedStars = drillRows.reduce((sum, row) => sum + row.stars, 0);
+  const totalStars = drillRows.reduce((sum, row) => sum + row.max, 0);
+  const drillPct = totalStars > 0 ? (earnedStars / totalStars) * 100 : 0;
 
   const handleStart = () => {
     const existing = activeSessions[0];
@@ -132,6 +151,102 @@ export function DashboardScreen() {
           </View>
         </View>
 
+        {/* Drills progress */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>My Drills</Text>
+            <TouchableOpacity onPress={() => nav.navigate("Drills")} style={styles.sectionLinkRow}>
+              <Text style={styles.sectionLink}>All</Text>
+              <ChevronRight size={14} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
+
+          <LinearGradient
+            colors={["#351049", "#2f1347", "#25153f"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.drillsCard}
+          >
+            <View style={styles.drillsGlowOne} />
+            <View style={styles.drillsGlowTwo} />
+
+            <View style={styles.drillsTopRow}>
+              <View>
+                <Text style={styles.drillsKicker}>Stars Collected</Text>
+                <View style={styles.drillsScoreRow}>
+                  <Star size={24} color={colors.tierGold} fill={colors.tierGold} />
+                  <Text style={styles.drillsScoreValue}>{earnedStars}</Text>
+                  <Text style={styles.drillsScoreMax}>/ {Math.max(totalStars, 1)}</Text>
+                </View>
+                <Text style={styles.drillsSubtext}>
+                  {drillRows.length} drills · {Math.round(drillPct)}% mastered
+                </Text>
+              </View>
+              <View style={styles.drillsCrosshairWrap}>
+                <Crosshair size={18} color={colors.tierGold} />
+              </View>
+            </View>
+
+            <View style={styles.drillsBarTrack}>
+              <LinearGradient
+                colors={["#f4c847", "#f7864a", "#ee5b8f"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[styles.drillsBarFill, { width: `${Math.max(0, Math.min(100, drillPct))}%` }]}
+              />
+            </View>
+
+            <View style={styles.drillRows}>
+              {drillRows.map((row) => (
+                <TouchableOpacity
+                  key={row.id}
+                  style={styles.drillRow}
+                  activeOpacity={0.86}
+                  onPress={() => nav.navigate("DrillDetail", { drillId: row.id })}
+                >
+                  <View
+                    style={[
+                      styles.drillRowIcon,
+                      {
+                        backgroundColor: `hsla(${row.hue}, 82%, 62%, 0.17)`,
+                        borderColor: `hsla(${row.hue}, 82%, 62%, 0.35)`,
+                      },
+                    ]}
+                  >
+                    <Target size={13} color={`hsl(${row.hue}, 82%, 68%)`} />
+                  </View>
+                  <Text style={styles.drillRowName} numberOfLines={1}>
+                    {row.name}
+                  </Text>
+                  <View style={styles.drillRowStars}>
+                    {Array.from({ length: row.max }).map((_, idx) => (
+                      <Star
+                        key={`${row.id}-${idx}`}
+                        size={13}
+                        color={idx < row.stars ? colors.tierGold : "rgba(255,255,255,0.2)"}
+                        fill={idx < row.stars ? colors.tierGold : "rgba(255,255,255,0.02)"}
+                      />
+                    ))}
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TouchableOpacity style={styles.trainDrillsBtn} activeOpacity={0.9} onPress={() => nav.navigate("Drills")}>
+              <LinearGradient
+                colors={["#f4c847", "#f7864a", "#ee5b8f"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.trainDrillsBtnBg}
+              >
+                <Crosshair size={15} color={colors.foreground} />
+                <Text style={styles.trainDrillsText}>Train Drills</Text>
+                <ChevronRight size={15} color={colors.foreground} />
+              </LinearGradient>
+            </TouchableOpacity>
+          </LinearGradient>
+        </View>
+
         {/* Start Session CTA */}
         <View style={styles.section}>
           <TouchableOpacity
@@ -155,7 +270,7 @@ export function DashboardScreen() {
         {/* Recent Sessions */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent</Text>
+            <Text style={styles.sectionTitle}>Recent Trainings</Text>
             <TouchableOpacity onPress={() => nav.navigate("HistoryTab")} style={styles.sectionLinkRow}>
               <Text style={styles.sectionLink}>All</Text>
               <ChevronRight size={14} color={colors.primary} />
@@ -405,6 +520,140 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(247, 245, 240, 0.15)",
     alignItems: "center",
     justifyContent: "center",
+  },
+  drillsCard: {
+    borderRadius: 24,
+    padding: 18,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+  },
+  drillsGlowOne: {
+    position: "absolute",
+    top: -38,
+    right: -20,
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    backgroundColor: "rgba(255, 193, 74, 0.2)",
+  },
+  drillsGlowTwo: {
+    position: "absolute",
+    bottom: -52,
+    left: -30,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: "rgba(205, 84, 190, 0.18)",
+  },
+  drillsTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  drillsKicker: {
+    fontSize: 11,
+    textTransform: "uppercase",
+    letterSpacing: 1.2,
+    color: "rgba(255,255,255,0.72)",
+    fontFamily: "Inter_600SemiBold",
+  },
+  drillsScoreRow: {
+    marginTop: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  drillsScoreValue: {
+    fontSize: 34,
+    lineHeight: 38,
+    color: "#fff",
+    fontFamily: "Sora_800ExtraBold",
+  },
+  drillsScoreMax: {
+    marginTop: 7,
+    fontSize: 16,
+    color: "rgba(255,255,255,0.7)",
+    fontFamily: "Inter_600SemiBold",
+  },
+  drillsSubtext: {
+    marginTop: 2,
+    fontSize: 12,
+    color: "rgba(255,255,255,0.72)",
+    fontFamily: "Inter_500Medium",
+  },
+  drillsCrosshairWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    borderWidth: 1,
+    borderColor: "rgba(255, 201, 72, 0.5)",
+    backgroundColor: "rgba(255, 201, 72, 0.14)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  drillsBarTrack: {
+    marginTop: 14,
+    height: 8,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    overflow: "hidden",
+  },
+  drillsBarFill: {
+    height: "100%",
+    borderRadius: 999,
+  },
+  drillRows: {
+    marginTop: 14,
+    gap: 8,
+  },
+  drillRow: {
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.11)",
+    backgroundColor: "rgba(255,255,255,0.06)",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+  },
+  drillRowIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 9,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  drillRowName: {
+    flex: 1,
+    color: "#fff",
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+  },
+  drillRowStars: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+  },
+  trainDrillsBtn: {
+    marginTop: 14,
+    borderRadius: 14,
+    overflow: "hidden",
+  },
+  trainDrillsBtnBg: {
+    height: 44,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 6,
+  },
+  trainDrillsText: {
+    color: colors.foreground,
+    fontSize: 13,
+    fontFamily: "Sora_700Bold",
   },
   recentList: {
     gap: 8,

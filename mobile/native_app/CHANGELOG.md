@@ -4,6 +4,7 @@ All notable changes to the native app are tracked here.
 
 ## v0.1.0-alpha (in progress)
 
+- Dashboard now includes a prototype-style `My Drills` progress card powered by persisted drill run results (stars/progress/per-drill rows), drill completions are saved from drill detail outcomes, drill rating visuals switched from sparkles to stars, and `Recent` was renamed to `Recent Trainings`.
 - Session report AI Coach action now opens a prototype-style upsell modal first; subscription navigation happens from modal CTA ("Unlock AI Coach") instead of direct button tap.
 - Drill table now draws color-matched dashed guide lines from object balls to their `targetPocket` when pocket targets are defined in drill JSON.
 - Drill UI polish: upgraded drill table visuals with proper pockets and rail diamonds, added animated result stars in completion modal, and improved modal action button spacing/padding to match prototype.

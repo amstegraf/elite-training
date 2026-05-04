@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { Sparkles, Target } from "lucide-react-native";
+import { Star, Target } from "lucide-react-native";
 import { AppHeader } from "../../ui/AppHeader";
 import { colors } from "../../core/theme/theme";
 import { listDrills } from "../../data/drills";
@@ -14,10 +14,11 @@ function DifficultyStars({ level }: { level: DrillDifficulty }) {
   return (
     <View style={styles.starRow}>
       {[1, 2, 3].map((idx) => (
-        <Sparkles
+        <Star
           key={idx}
           size={12}
           color={idx <= level ? colors.tierGold : "rgba(120, 126, 145, 0.45)"}
+          fill={idx <= level ? colors.tierGold : "rgba(120, 126, 145, 0.12)"}
         />
       ))}
     </View>

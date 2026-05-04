@@ -40,6 +40,7 @@ export interface DrillMetadata {
   focus?: string[];
   objective?: string;
   goal?: string;
+  hue?: number;
 }
 
 export interface DrillDefinition {
@@ -61,6 +62,7 @@ export interface DrillListItem {
   category: string;
   attemptLimit: number;
   estMinutes: number;
+  hue: number;
 }
 
 const toRecord = (value: unknown): Record<string, unknown> | null =>
@@ -191,6 +193,7 @@ export function parseDrillDefinition(input: unknown): DrillDefinition {
       : [],
     objective: toString(metadataRaw.objective) ?? undefined,
     goal: toString(metadataRaw.goal) ?? undefined,
+    hue: Math.max(0, Math.min(360, Math.round(toNumber(metadataRaw.hue) ?? 280))),
   };
 
   return {
@@ -225,5 +228,6 @@ export function toDrillListItem(drill: DrillDefinition): DrillListItem {
     category: drill.category,
     attemptLimit: drill.rules.attemptLimit,
     estMinutes: drill.metadata.estMinutes ?? 8,
+    hue: drill.metadata.hue ?? 280,
   };
 }

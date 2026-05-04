@@ -14,36 +14,10 @@
       }
     },
     "balls": [
-      {
-        "id": "cue",
-        "type": "cue",
-        "x": 220,
-        "y": 250
-      },
-      {
-        "id": "1",
-        "type": "object",
-        "number": 1,
-        "x": 550,
-        "y": 310,
-        "targetPocket": "top_right"
-      },
-      {
-        "id": "2",
-        "type": "object",
-        "number": 2,
-        "x": 700,
-        "y": 190,
-        "targetPocket": "top_right"
-      },
-      {
-        "id": "3",
-        "type": "object",
-        "number": 3,
-        "x": 850,
-        "y": 275,
-        "targetPocket": "top_right"
-      }
+      { "id": "cue", "type": "cue", "x": 220, "y": 250 },
+      { "id": "1", "type": "object", "number": 1, "x": 550, "y": 310, "targetPocket": "top_right" },
+      { "id": "2", "type": "object", "number": 2, "x": 700, "y": 190, "targetPocket": "top_right" },
+      { "id": "3", "type": "object", "number": 3, "x": 850, "y": 275, "targetPocket": "top_right" }
     ],
     "rules": {
       "order": ["1", "2", "3"],
@@ -55,9 +29,181 @@
       "isPublic": true,
       "version": 1,
       "estMinutes": 8,
+      "hue": 280,
       "focus": ["Cue ball control", "Stop and follow shots", "Soft pocket speed"],
       "objective": "Pocket 1, 2, 3 in order without scratching",
       "goal": "3-ball position control"
+    }
+  },
+  {
+    "id": "drill_002",
+    "name": "Straight Line Stop Shots",
+    "difficulty": 1,
+    "category": "cue_control",
+    "description": "Practice stop shots in a straight line.",
+    "table": {
+      "type": "pool_9ft",
+      "coordinateSystem": {
+        "origin": "bottom_left",
+        "width": 1000,
+        "height": 500
+      }
+    },
+    "balls": [
+      { "id": "cue", "type": "cue", "x": 200, "y": 250 },
+      { "id": "1", "type": "object", "number": 1, "x": 400, "y": 250, "targetPocket": "top_middle" },
+      { "id": "2", "type": "object", "number": 2, "x": 600, "y": 250, "targetPocket": "top_middle" }
+    ],
+    "rules": {
+      "order": ["1", "2"],
+      "attemptLimit": 5,
+      "successCondition": "all_balls_pocketed"
+    },
+    "metadata": {
+      "createdBy": "admin",
+      "isPublic": true,
+      "version": 1,
+      "estMinutes": 5,
+      "focus": ["Stop shot", "Cue ball control"],
+      "objective": "Stop cue ball after each shot",
+      "goal": "Basic stop shot control"
+    }
+  },
+  {
+    "id": "drill_003",
+    "name": "Angle Position Drill",
+    "difficulty": 2,
+    "category": "position_control",
+    "description": "Work on angles and cue ball paths.",
+    "table": {
+      "type": "pool_9ft",
+      "coordinateSystem": {
+        "origin": "bottom_left",
+        "width": 1000,
+        "height": 500
+      }
+    },
+    "balls": [
+      { "id": "cue", "type": "cue", "x": 300, "y": 150 },
+      { "id": "1", "type": "object", "number": 1, "x": 500, "y": 300, "targetPocket": "top_left" },
+      { "id": "2", "type": "object", "number": 2, "x": 750, "y": 200, "targetPocket": "top_right" }
+    ],
+    "rules": {
+      "order": ["1", "2"],
+      "attemptLimit": 5,
+      "successCondition": "all_balls_pocketed"
+    },
+    "metadata": {
+      "createdBy": "admin",
+      "isPublic": true,
+      "version": 1,
+      "estMinutes": 6,
+      "focus": ["Angles", "Position routes"],
+      "objective": "Control cue ball through angles",
+      "goal": "Angle-based position play"
+    }
+  },
+  {
+    "id": "drill_004",
+    "name": "Cross Table Control",
+    "difficulty": 3,
+    "category": "position_control",
+    "description": "Move cue ball across table with control.",
+    "table": {
+      "type": "pool_9ft",
+      "coordinateSystem": {
+        "origin": "bottom_left",
+        "width": 1000,
+        "height": 500
+      }
+    },
+    "balls": [
+      { "id": "cue", "type": "cue", "x": 200, "y": 100 },
+      { "id": "1", "type": "object", "number": 1, "x": 600, "y": 400, "targetPocket": "top_right" },
+      { "id": "2", "type": "object", "number": 2, "x": 850, "y": 150, "targetPocket": "bottom_right" }
+    ],
+    "rules": {
+      "order": ["1", "2"],
+      "attemptLimit": 5,
+      "successCondition": "all_balls_pocketed"
+    },
+    "metadata": {
+      "createdBy": "admin",
+      "isPublic": true,
+      "version": 1,
+      "estMinutes": 7,
+      "focus": ["Speed control", "Table movement"],
+      "objective": "Cross table cue ball positioning",
+      "goal": "Long distance control"
+    }
+  },
+  {
+    "id": "drill_005",
+    "name": "Corner Pocket Precision",
+    "difficulty": 2,
+    "category": "potting",
+    "description": "Focus on precise potting to corners.",
+    "table": {
+      "type": "pool_9ft",
+      "coordinateSystem": {
+        "origin": "bottom_left",
+        "width": 1000,
+        "height": 500
+      }
+    },
+    "balls": [
+      { "id": "cue", "type": "cue", "x": 400, "y": 250 },
+      { "id": "1", "type": "object", "number": 1, "x": 650, "y": 350, "targetPocket": "top_right" },
+      { "id": "2", "type": "object", "number": 2, "x": 650, "y": 150, "targetPocket": "bottom_right" }
+    ],
+    "rules": {
+      "order": ["1", "2"],
+      "attemptLimit": 5,
+      "successCondition": "all_balls_pocketed"
+    },
+    "metadata": {
+      "createdBy": "admin",
+      "isPublic": true,
+      "version": 1,
+      "estMinutes": 6,
+      "focus": ["Precision", "Potting"],
+      "objective": "Accurate corner pocket shots",
+      "goal": "Potting accuracy"
+    }
+  },
+  {
+    "id": "drill_006",
+    "name": "Zig-Zag Position",
+    "difficulty": 3,
+    "category": "position_control",
+    "description": "Navigate cue ball in zig-zag pattern.",
+    "table": {
+      "type": "pool_9ft",
+      "coordinateSystem": {
+        "origin": "bottom_left",
+        "width": 1000,
+        "height": 500
+      }
+    },
+    "balls": [
+      { "id": "cue", "type": "cue", "x": 150, "y": 250 },
+      { "id": "1", "type": "object", "number": 1, "x": 400, "y": 400, "targetPocket": "top_left" },
+      { "id": "2", "type": "object", "number": 2, "x": 600, "y": 100, "targetPocket": "bottom_right" },
+      { "id": "3", "type": "object", "number": 3, "x": 850, "y": 350, "targetPocket": "top_right" }
+    ],
+    "rules": {
+      "order": ["1", "2", "3"],
+      "attemptLimit": 5,
+      "successCondition": "all_balls_pocketed"
+    },
+    "metadata": {
+      "createdBy": "admin",
+      "isPublic": true,
+      "version": 1,
+      "estMinutes": 9,
+      "focus": ["Cue ball pathing", "Speed control"],
+      "objective": "Zig-zag cue ball movement",
+      "goal": "Advanced positioning"
     }
   }
 ]
