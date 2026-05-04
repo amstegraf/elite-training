@@ -20,6 +20,7 @@ const ballColors: Record<number, { bg: string; text: string }> = {
   7: { bg: "hsl(0, 55%, 28%)", text: "#fff" },
   8: { bg: "hsl(220, 15%, 10%)", text: "#fff" },
   9: { bg: "hsl(48, 95%, 55%)", text: "hsl(220, 25%, 10%)" }, // Stripe
+  10: { bg: "hsl(218, 75%, 42%)", text: "#fff" }, // Blue stripe
 };
 
 export const PoolBall = ({ number, size = "md", active, hasLoggedMiss, onPress }: PoolBallProps) => {

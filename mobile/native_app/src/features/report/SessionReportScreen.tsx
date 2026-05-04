@@ -2,6 +2,7 @@ import React from "react";
 import { Alert, StyleSheet, Text, View, ScrollView, TouchableOpacity } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { AppHeader } from "../../ui/AppHeader";
+import { GameTypeModal } from "../../ui/GameTypeModal";
 import { KpiCard } from "../../ui/KpiCard";
 import { PoolBall } from "../../ui/PoolBall";
 import { colors } from "../../core/theme/theme";
@@ -22,6 +23,7 @@ export function SessionReportScreen() {
   const nav = useNavigation<any>();
   const route = useRoute<any>();
   const { completedSessions, startSession, deleteSession, data } = useAppState();
+  const [showGameTypeModal, setShowGameTypeModal] = React.useState(false);
   const sorted = completedSessionsSorted(completedSessions);
   const selected =
     sorted.find((s) => s.id === route.params?.sessionId) ??
@@ -95,7 +97,11 @@ export function SessionReportScreen() {
   const recoveryRate =
     recoveryDenominator > 0 ? (recoveryNumerator / recoveryDenominator) * 100 : null;
   const handleNewSession = () => {
-    const createdId = startSession();
+    setShowGameTypeModal(true);
+  };
+  const handleCreateSession = (ballCount: 8 | 9 | 10) => {
+    setShowGameTypeModal(false);
+    const createdId = startSession(ballCount);
     if (!createdId) return;
     nav.navigate("Session", { sessionId: createdId });
   };
@@ -246,11 +252,11 @@ export function SessionReportScreen() {
             </View>
             <View style={styles.consistencyBarsRow}>
               {racks.map((rack, idx) => {
-                const ratio = Math.max(0, Math.min(1, rack.pots / 9));
+                const ratio = Math.max(0, Math.min(1, rack.balls > 0 ? rack.pots / rack.balls : 0));
                 const barColor =
-                  rack.pots >= 8
+                  ratio >= 0.88
                     ? colors.primary
-                    : rack.pots >= 6
+                    : ratio >= 0.66
                       ? colors.warning
                       : colors.danger;
                 return (
@@ -420,6 +426,11 @@ export function SessionReportScreen() {
           </View>
         </View>
       </ScrollView>
+      <GameTypeModal
+        visible={showGameTypeModal}
+        onSelect={handleCreateSession}
+        onCancel={() => setShowGameTypeModal(false)}
+      />
     </View>
   );
 }

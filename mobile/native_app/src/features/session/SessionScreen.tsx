@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Animated, Easing, StyleSheet, Text, View, ScrollView, TouchableOpacity, Modal } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { AppHeader } from "../../ui/AppHeader";
+import { GameTypeModal } from "../../ui/GameTypeModal";
 import { PoolBall } from "../../ui/PoolBall";
 import { colors } from "../../core/theme/theme";
 import { Pause, Play, Undo2, Square, Flag, X, Check, Crosshair } from "lucide-react-native";
@@ -53,6 +54,7 @@ export function SessionScreen() {
   const [miss, setMiss] = useState<MissType>("alignment");
   const [outcome, setOutcome] = useState<MissOutcome>("playable");
   const [showEndRack, setShowEndRack] = useState(false);
+  const [showGameTypeModal, setShowGameTypeModal] = useState(false);
   const [clearedBalls, setClearedBalls] = useState<number[]>([]);
   const logBtnScale = useRef(new Animated.Value(1)).current;
   const missStatScale = useRef(new Animated.Value(1)).current;
@@ -70,8 +72,7 @@ export function SessionScreen() {
       setSessionId(activeSessions[0].id);
       return;
     }
-    const id = startSession();
-    if (id) setSessionId(id);
+    setShowGameTypeModal(true);
   }, [activeSessions, sessionId, startSession]);
 
   const session = useMemo(
@@ -90,10 +91,12 @@ export function SessionScreen() {
 
   const seconds = session ? sessionDurationSeconds(session) : 0;
   const rackNo = currentRack?.rackNumber ?? (session?.racks.length ?? 0) + 1;
+  const sessionBallCount = session?.ballCount ?? 9;
   const rackMisses = currentRack?.misses.length ?? 0;
-  const suggestedBall = suggestedNextBallNumber(currentRack);
-  const inferredPots = currentRack ? inferBallsCleared(currentRack) : 0;
-  const rackPots = currentRack ? Math.max(0, Math.min(9, inferredPots === 0 ? suggestedBall - 1 : inferredPots)) : 0;
+  const suggestedBall = suggestedNextBallNumber(currentRack, sessionBallCount);
+  const inferredPots = currentRack ? inferBallsCleared(currentRack, sessionBallCount) : 0;
+  const rackPots = currentRack ? Math.max(0, Math.min(sessionBallCount, inferredPots === 0 ? suggestedBall - 1 : inferredPots)) : 0;
+  const selectorBallSize = sessionBallCount >= 10 ? "xs" : "sm";
   const hasOpenRack = Boolean(session?.currentRackId);
   const canStartRack = Boolean(session) && !hasOpenRack;
   const canEndRack = Boolean(session) && hasOpenRack;
@@ -108,8 +111,8 @@ export function SessionScreen() {
     const rows = (session?.racks ?? [])
       .filter((rack) => Boolean(rack.endedAt))
       .map((rack) => {
-        const balls = 9;
-        const pots = Math.max(0, Math.min(9, inferBallsCleared(rack)));
+        const balls = sessionBallCount;
+        const pots = Math.max(0, Math.min(sessionBallCount, inferBallsCleared(rack, sessionBallCount)));
         const misses = rack.misses.length;
         const skipped = Math.max(0, balls - pots - misses);
         const pct = balls > 0 ? Math.round((pots / balls) * 100) : 0;
@@ -131,13 +134,17 @@ export function SessionScreen() {
       })
       .sort((a, b) => b.rackNumber - a.rackNumber);
     return rows;
-  }, [session?.racks]);
+  }, [session?.racks, sessionBallCount]);
 
   useEffect(() => {
     if (currentRack) {
-      setBall(suggestedNextBallNumber(currentRack));
+      setBall(suggestedNextBallNumber(currentRack, sessionBallCount));
     }
-  }, [currentRack?.id, currentRack?.misses.length]);
+  }, [currentRack?.id, currentRack?.misses.length, sessionBallCount]);
+
+  useEffect(() => {
+    setBall((prev) => Math.min(Math.max(1, prev), sessionBallCount));
+  }, [sessionBallCount]);
 
   useEffect(() => {
     Animated.sequence([
@@ -242,7 +249,7 @@ export function SessionScreen() {
             <View style={styles.statsGrid}>
               <View style={styles.statBox}>
                 <Text style={styles.statLabel}>Balls</Text>
-                <Text style={styles.statValue}>{rackPots}/9</Text>
+                <Text style={styles.statValue}>{rackPots}/{sessionBallCount}</Text>
               </View>
               <View style={styles.statBox}>
                 <Text style={styles.statLabel}>Pots</Text>
@@ -268,11 +275,11 @@ export function SessionScreen() {
           </View>
           <View style={styles.ballCard}>
             <View style={styles.ballGrid}>
-              {Array.from({ length: 9 }, (_, i) => i + 1).map((n) => (
+              {Array.from({ length: sessionBallCount }, (_, i) => i + 1).map((n) => (
                 <PoolBall
                   key={n}
                   number={n}
-                  size="sm"
+                  size={selectorBallSize}
                   active={ball === n}
                   hasLoggedMiss={loggedMissBalls.has(n)}
                   onPress={() => setBall(n)}
@@ -487,11 +494,11 @@ export function SessionScreen() {
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>Balls potted</Text>
             <View style={styles.modalGrid}>
-              {Array.from({ length: 9 }, (_, i) => i + 1).map((n) => (
+              {Array.from({ length: sessionBallCount }, (_, i) => i + 1).map((n) => (
                 <PoolBall
                   key={n}
                   number={n}
-                  size="sm"
+                  size={selectorBallSize}
                   active={clearedBalls.includes(n)}
                   onPress={() =>
                     setClearedBalls((prev) =>
@@ -520,6 +527,18 @@ export function SessionScreen() {
           </View>
         </View>
       </Modal>
+      <GameTypeModal
+        visible={showGameTypeModal}
+        onSelect={(ballCount) => {
+          setShowGameTypeModal(false);
+          const id = startSession(ballCount);
+          if (id) setSessionId(id);
+        }}
+        onCancel={() => {
+          setShowGameTypeModal(false);
+          nav.navigate("Home");
+        }}
+      />
     </View>
   );
 }

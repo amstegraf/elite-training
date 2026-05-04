@@ -2,6 +2,7 @@ import React, { useCallback, useRef } from "react";
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { AppHeader } from "../../ui/AppHeader";
+import { GameTypeModal } from "../../ui/GameTypeModal";
 import { KpiCard } from "../../ui/KpiCard";
 import { TierBadge } from "../../ui/TierBadge";
 import { ProfileMenu } from "./ProfileMenu";
@@ -15,6 +16,7 @@ export function DashboardScreen() {
   const nav = useNavigation<any>();
   const scrollRef = useRef<ScrollView | null>(null);
   const { activeProfile, activeSessions, completedSessions, global, baseline, tier, startSession } = useAppState();
+  const [showGameTypeModal, setShowGameTypeModal] = React.useState(false);
   const recent = completedSessionsSorted(completedSessions).slice(0, 5);
 
   const potPct = global.potRate === null ? 0 : Math.round(global.potRate * 100);
@@ -35,7 +37,12 @@ export function DashboardScreen() {
       nav.navigate("Session", { sessionId: existing.id });
       return;
     }
-    const createdId = startSession();
+    setShowGameTypeModal(true);
+  };
+
+  const handleGameTypeSelected = (ballCount: 8 | 9 | 10) => {
+    setShowGameTypeModal(false);
+    const createdId = startSession(ballCount);
     if (createdId) {
       nav.navigate("Session", { sessionId: createdId });
     }
@@ -136,7 +143,7 @@ export function DashboardScreen() {
               <View>
                 <Text style={styles.ctaSubtext}>Ready to train?</Text>
                 <Text style={styles.ctaTitle}>{activeSessions.length > 0 ? "Resume Session" : "Start Session"}</Text>
-                <Text style={styles.ctaDesc}>9-Ball · Standard Drill</Text>
+                <Text style={styles.ctaDesc}>8/9/10-Ball · Standard Drill</Text>
               </View>
               <View style={styles.ctaIconContainer}>
                 <Play size={28} color={colors.primaryForeground} fill={colors.primaryForeground} style={{ marginLeft: 4 }} />
@@ -202,6 +209,11 @@ export function DashboardScreen() {
           </View>
         </View>
       </ScrollView>
+      <GameTypeModal
+        visible={showGameTypeModal}
+        onSelect={handleGameTypeSelected}
+        onCancel={() => setShowGameTypeModal(false)}
+      />
     </View>
   );
 }

@@ -80,6 +80,11 @@ def parse_args() -> argparse.Namespace:
         help="Version segment to increment (default: patch).",
     )
     parser.add_argument(
+        "--no-bump",
+        action="store_true",
+        help="Do not create a versioned APK; update only cue-path-latest.apk.",
+    )
+    parser.add_argument(
         "--install-usb",
         action="store_true",
         help="Build and install release via USB (`gradlew.bat installRelease`, no Metro).",
@@ -182,19 +187,24 @@ def main() -> int:
         return 0
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    version = next_version(OUTPUT_DIR, bump=args.bump)
-    output_apk = OUTPUT_DIR / f"cue-path-v{version}.apk"
     latest_apk = OUTPUT_DIR / "cue-path-latest.apk"
 
     if not APK_SOURCE.exists():
         print(f"\nExpected APK not found at: {APK_SOURCE}", file=sys.stderr)
         return 1
 
-    shutil.copy2(APK_SOURCE, output_apk)
     shutil.copy2(APK_SOURCE, latest_apk)
+    output_apk = None
+    if not args.no_bump:
+        version = next_version(OUTPUT_DIR, bump=args.bump)
+        output_apk = OUTPUT_DIR / f"cue-path-v{version}.apk"
+        shutil.copy2(APK_SOURCE, output_apk)
 
     print("\nBuild complete.")
-    print(f"Versioned APK: {output_apk}")
+    if output_apk:
+        print(f"Versioned APK: {output_apk}")
+    else:
+        print("Versioned APK: skipped (--no-bump)")
     print(f"Latest APK:    {latest_apk}")
     return 0
 

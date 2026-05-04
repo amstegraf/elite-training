@@ -13,6 +13,7 @@ import { colors } from "../../core/theme/theme";
 import { markOnboardingCompleted } from "./storage";
 import { useNavigation } from "@react-navigation/native";
 import { useAppState } from "../../data/AppStateContext";
+import { GameTypeModal } from "../../ui/GameTypeModal";
 
 type VisualKind = "welcome" | "miss" | "how" | "cta";
 
@@ -54,23 +55,12 @@ export function OnboardingScreen() {
   const nav = useNavigation<any>();
   const { startSession, activeSessions } = useAppState();
   const [idx, setIdx] = useState(0);
+  const [showGameTypeModal, setShowGameTypeModal] = useState(false);
   const isLast = idx === steps.length - 1;
   const step = steps[idx];
 
-  const completeAndGo = async (target: "Home" | "Session") => {
+  const completeAndGoHome = async () => {
     await markOnboardingCompleted();
-    if (target === "Session") {
-      const existing = activeSessions[0];
-      if (existing) {
-        nav.reset({ index: 1, routes: [{ name: "Home" }, { name: "Session", params: { sessionId: existing.id } }] });
-        return;
-      }
-      const sessionId = startSession();
-      if (sessionId) {
-        nav.reset({ index: 1, routes: [{ name: "Home" }, { name: "Session", params: { sessionId } }] });
-        return;
-      }
-    }
     nav.reset({ index: 0, routes: [{ name: "Home" }] });
   };
 
@@ -94,7 +84,7 @@ export function OnboardingScreen() {
           ))}
         </View>
         {!isLast && (
-          <Pressable onPress={() => completeAndGo("Home")} style={styles.skipBtn}>
+          <Pressable onPress={completeAndGoHome} style={styles.skipBtn}>
             <Text style={styles.skipText}>Skip</Text>
           </Pressable>
         )}
@@ -109,7 +99,7 @@ export function OnboardingScreen() {
 
       <View style={styles.footer}>
         {isLast ? (
-          <TouchableOpacity style={styles.finalBtn} activeOpacity={0.92} onPress={() => completeAndGo("Session")}>
+          <TouchableOpacity style={styles.finalBtn} activeOpacity={0.92} onPress={() => setShowGameTypeModal(true)}>
             <Play size={20} color={colors.foreground} fill={colors.foreground} />
             <Text style={styles.finalBtnText}>Start First Session</Text>
           </TouchableOpacity>
@@ -120,6 +110,25 @@ export function OnboardingScreen() {
           </TouchableOpacity>
         )}
       </View>
+      <GameTypeModal
+        visible={showGameTypeModal}
+        onSelect={async (ballCount) => {
+          setShowGameTypeModal(false);
+          await markOnboardingCompleted();
+          const existing = activeSessions[0];
+          if (existing) {
+            nav.reset({ index: 1, routes: [{ name: "Home" }, { name: "Session", params: { sessionId: existing.id } }] });
+            return;
+          }
+          const sessionId = startSession(ballCount);
+          if (sessionId) {
+            nav.reset({ index: 1, routes: [{ name: "Home" }, { name: "Session", params: { sessionId } }] });
+            return;
+          }
+          nav.reset({ index: 0, routes: [{ name: "Home" }] });
+        }}
+        onCancel={() => setShowGameTypeModal(false)}
+      />
     </SafeAreaView>
   );
 }

@@ -1,6 +1,8 @@
 export type MissType = "position" | "alignment" | "delivery" | "speed" | "scratch";
 export type MissOutcome = "playable" | "pot_miss" | "no_shot_position";
 export type SessionStatus = "in_progress" | "completed";
+export type GameBallCount = 8 | 9 | 10;
+export const GAME_BALL_COUNTS: readonly GameBallCount[] = [8, 9, 10] as const;
 
 export interface MissEvent {
   id: string;
@@ -22,6 +24,7 @@ export interface RackRecord {
 export interface PrecisionSession {
   id: string;
   profileId: string;
+  ballCount?: GameBallCount;
   startedAt: string;
   endedAt?: string;
   status: SessionStatus;

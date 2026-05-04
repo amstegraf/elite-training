@@ -1,4 +1,4 @@
-import type { MissEvent, MissOutcome, MissType, PrecisionSession, RackRecord } from "../domain/types";
+import type { GameBallCount, MissEvent, MissOutcome, MissType, PrecisionSession, RackRecord } from "../domain/types";
 import { uid } from "../domain/metrics";
 
 const MISS_TYPE_MAP: Record<string, MissType> = {
@@ -57,7 +57,19 @@ const normalizeOutcome = (value: unknown): MissEvent["outcome"] => {
   return MISS_OUTCOME_MAP[value] ?? "no_shot_position";
 };
 
-const normalizeMiss = (miss: unknown, fallbackCreatedAt: string): MissEvent | null => {
+const resolveBallCount = (row: GenericRecord): GameBallCount => {
+  const numeric =
+    asNumber(row.ballCount) ??
+    asNumber(row.ball_count) ??
+    asNumber(row.totalBalls) ??
+    asNumber(row.total_balls);
+  const discipline = asString(row.gameType) ?? asString(row.game_type) ?? asString(row.discipline) ?? asString(row.game);
+  if (numeric === 8 || discipline?.includes("8")) return 8;
+  if (numeric === 10 || discipline?.includes("10")) return 10;
+  return 9;
+};
+
+const normalizeMiss = (miss: unknown, fallbackCreatedAt: string, ballCount: GameBallCount): MissEvent | null => {
   const row = asRecord(miss);
   if (!row) return null;
   const ball =
@@ -68,7 +80,7 @@ const normalizeMiss = (miss: unknown, fallbackCreatedAt: string): MissEvent | nu
   if (ball === undefined) return null;
   return {
     id: asString(row.id) ?? uid(),
-    ballNumber: clamp(Math.round(ball), 1, 9),
+    ballNumber: clamp(Math.round(ball), 1, ballCount),
     types: normalizeTypes(row.types),
     outcome: normalizeOutcome(row.outcome),
     createdAt: asString(row.createdAt) ?? asString(row.created_at) ?? fallbackCreatedAt,
@@ -79,6 +91,7 @@ const normalizeRack = (
   rack: unknown,
   index: number,
   sessionStart: string,
+  ballCount: GameBallCount,
   sessionEnd?: string,
 ): RackRecord | null => {
   const row = asRecord(rack);
@@ -87,7 +100,7 @@ const normalizeRack = (
   const fallbackCreatedAt =
     asString(row.endedAt) ?? asString(row.ended_at) ?? sessionEnd ?? sessionStart;
   const misses = missesRaw
-    .map((entry) => normalizeMiss(entry, fallbackCreatedAt))
+    .map((entry) => normalizeMiss(entry, fallbackCreatedAt, ballCount))
     .filter((entry): entry is MissEvent => Boolean(entry));
   const ballsCleared =
     asNumber(row.ballsCleared) ??
@@ -104,7 +117,7 @@ const normalizeRack = (
     startedAt: asString(row.startedAt) ?? asString(row.started_at) ?? sessionStart,
     endedAt: asString(row.endedAt) ?? asString(row.ended_at),
     ballsCleared:
-      ballsCleared === undefined ? undefined : clamp(Math.round(ballsCleared), 0, 9),
+      ballsCleared === undefined ? undefined : clamp(Math.round(ballsCleared), 0, ballCount),
     misses,
   };
 };
@@ -118,9 +131,10 @@ const normalizeSession = (
   if (!row) return null;
   const startedAt = asString(row.startedAt) ?? asString(row.started_at) ?? defaultStartedAt;
   const endedAt = asString(row.endedAt) ?? asString(row.ended_at);
+  const ballCount = resolveBallCount(row);
   const racksRaw = Array.isArray(row.racks) ? row.racks : [];
   const racks = racksRaw
-    .map((rack, idx) => normalizeRack(rack, idx, startedAt, endedAt))
+    .map((rack, idx) => normalizeRack(rack, idx, startedAt, ballCount, endedAt))
     .filter((rack): rack is RackRecord => Boolean(rack));
   if (!racks.length) return null;
   const sourceStatus = asString(row.status);
@@ -131,6 +145,7 @@ const normalizeSession = (
     id: asString(row.id) ?? uid(),
     // Bind imported desktop sessions to the active mobile profile so they appear immediately.
     profileId,
+    ballCount,
     startedAt,
     endedAt,
     status,

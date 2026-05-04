@@ -4,6 +4,9 @@ All notable changes to the native app are tracked here.
 
 ## v0.1.0-alpha (in progress)
 
+- Build script updated: added `--no-bump` so APK export can update only `cue-path-latest.apk` without creating a new versioned file.
+- Game-type modal updated to use clickable pool-ball visuals for 8/9/10 selection instead of box buttons.
+- Added 8-ball and 10-ball support: game-type chooser (8/9/10) now appears before creating new sessions, sessions persist selected ball count, metrics/report/live rack visuals adapt to that count, and ball `10` now renders as blue striped.
 - Subscription Supporter card layout fix: removed "Pay what you want" text from the card, set subtitle to "Back the project", and replaced right-side price block with a heart icon only.
 - Subscription plans updated with new `Supporter` tier, preserving existing selection/highlight behavior and using revised copy (title `Supporter` + only lifetime badge and "help shape the future" benefits).
 - Session report KPI label shortened from `Conversion` to `CONV.` to prevent layout shift in the 3-card row.

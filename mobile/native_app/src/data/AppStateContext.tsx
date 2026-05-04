@@ -10,6 +10,7 @@ import { computeTier } from "../domain/tier";
 import {
   AppStateData,
   DEFAULT_APP_STATE,
+  GameBallCount,
   MissEvent,
   MissOutcome,
   MissType,
@@ -33,7 +34,7 @@ type AppStateContextValue = {
   tier: ReturnType<typeof computeTier>;
   createProfile: (name: string) => void;
   setActiveProfile: (id: string) => void;
-  startSession: () => string | null;
+  startSession: (ballCount?: GameBallCount) => string | null;
   endSession: (sessionId: string) => void;
   startRack: (sessionId: string) => void;
   endRack: (sessionId: string, ballsCleared?: number) => void;
@@ -166,12 +167,14 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     }));
   };
 
-  const startSession = (): string | null => {
+  const startSession = (ballCount: GameBallCount = 9): string | null => {
     if (!data.activeProfileId) return null;
+    const resolvedBallCount: GameBallCount = ballCount === 8 || ballCount === 10 ? ballCount : 9;
     const rack = { id: uid(), rackNumber: 1, startedAt: isoNow(), misses: [] };
     const s: PrecisionSession = {
       id: uid(),
       profileId: data.activeProfileId,
+      ballCount: resolvedBallCount,
       startedAt: isoNow(),
       status: "in_progress",
       durationSeconds: 0,
@@ -225,10 +228,11 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       sessions: withSession(prev.sessions, sessionId, (s) => {
         const rack = s.racks.find((r) => r.id === s.currentRackId);
         if (!rack) return s;
-        const inferred = defaultBallsClearedForRack(rack);
+        const ballCount = s.ballCount ?? 9;
+        const inferred = defaultBallsClearedForRack(rack, ballCount);
         const safeBalls =
           typeof ballsCleared === "number"
-            ? Math.max(0, Math.min(9, Math.round(ballsCleared)))
+            ? Math.max(0, Math.min(ballCount, Math.round(ballsCleared)))
             : (inferred ?? 0);
         return {
           ...s,

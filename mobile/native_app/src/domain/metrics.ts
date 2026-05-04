@@ -1,4 +1,4 @@
-import { PrecisionSession, RackRecord } from "./types";
+import { GameBallCount, PrecisionSession, RackRecord } from "./types";
 
 export interface SessionDerived {
   totalRacks: number;
@@ -28,28 +28,37 @@ export function missBreaksRun(outcome: string): boolean {
   return outcome === "pot_miss";
 }
 
-export function defaultBallsClearedForRack(rack: RackRecord): number | null {
-  if (rack.misses.length === 0) return 9;
+export function resolveSessionBallCount(
+  session?: Pick<PrecisionSession, "ballCount"> | null
+): GameBallCount {
+  const count = session?.ballCount;
+  if (count === 8 || count === 9 || count === 10) return count;
+  return 9;
+}
+
+export function defaultBallsClearedForRack(rack: RackRecord, ballCount = 9): number | null {
+  if (rack.misses.length === 0) return ballCount;
   const breaking = rack.misses
     .filter((m) => missBreaksRun(m.outcome))
     .map((m) => m.ballNumber);
   if (breaking.length === 0) return null;
-  return Math.max(0, Math.min(9, Math.min(...breaking) - 1));
+  return Math.max(0, Math.min(ballCount, Math.min(...breaking) - 1));
 }
 
-export function suggestedNextBallNumber(rack: RackRecord | null): number {
+export function suggestedNextBallNumber(rack: RackRecord | null, ballCount = 9): number {
   if (!rack || rack.misses.length === 0) return 1;
   const last = rack.misses[rack.misses.length - 1]?.ballNumber ?? 1;
-  return Math.min(9, Math.max(1, last + 1));
+  return Math.min(ballCount, Math.max(1, last + 1));
 }
 
-export function inferBallsCleared(rack: RackRecord): number {
-  if (typeof rack.ballsCleared === "number") return rack.ballsCleared;
-  const inferred = defaultBallsClearedForRack(rack);
+export function inferBallsCleared(rack: RackRecord, ballCount = 9): number {
+  if (typeof rack.ballsCleared === "number") return Math.max(0, Math.min(ballCount, rack.ballsCleared));
+  const inferred = defaultBallsClearedForRack(rack, ballCount);
   return inferred ?? 0;
 }
 
 export function deriveSession(session: PrecisionSession): SessionDerived {
+  const ballCount = resolveSessionBallCount(session);
   const endedRacks = session.racks.filter((r) => r.endedAt);
   let totalBallsCleared = 0;
   let racksCompleted = 0;
@@ -57,9 +66,9 @@ export function deriveSession(session: PrecisionSession): SessionDerived {
   let positionRelatedMisses = 0;
 
   endedRacks.forEach((r) => {
-    const bc = inferBallsCleared(r);
+    const bc = inferBallsCleared(r, ballCount);
     totalBallsCleared += bc;
-    if (bc >= 9) racksCompleted += 1;
+    if (bc >= ballCount) racksCompleted += 1;
     r.misses.forEach((m) => {
       if (m.outcome === "pot_miss") potMissCount += 1;
       if (
@@ -215,18 +224,19 @@ export function computeSessionMetrics(session: PrecisionSession): SessionMetrics
 }
 
 export function buildRackReportRows(session: PrecisionSession): RackReportRow[] {
+  const ballCount = resolveSessionBallCount(session);
   return session.racks
     .filter((r) => r.endedAt)
     .sort((a, b) => a.rackNumber - b.rackNumber)
     .map((rack) => {
-      const pots = inferBallsCleared(rack);
+      const pots = inferBallsCleared(rack, ballCount);
       return {
         id: rack.id,
         rackNumber: rack.rackNumber,
-        balls: 9,
+        balls: ballCount,
         pots,
         misses: rack.misses.length,
-        outcome: pots >= 9 ? "win" : "loss",
+        outcome: pots >= ballCount ? "win" : "loss",
         startedAt: rack.startedAt,
         endedAt: rack.endedAt,
       };
