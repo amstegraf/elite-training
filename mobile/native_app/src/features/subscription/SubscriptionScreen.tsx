@@ -3,9 +3,9 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 import { useNavigation } from "@react-navigation/native";
 import { AppHeader } from "../../ui/AppHeader";
 import { colors } from "../../core/theme/theme";
-import { Check, Crown, Ellipsis, Sparkles, Zap } from "lucide-react-native";
+import { Check, Crown, Ellipsis, Heart, Sparkles, Zap } from "lucide-react-native";
 
-type PlanId = "free" | "pro" | "elite";
+type PlanId = "free" | "pro" | "elite" | "supporter";
 
 type Plan = {
   id: PlanId;
@@ -82,6 +82,22 @@ const PLANS: Plan[] = [
       "Pressure training modes",
     ],
   },
+  {
+    id: "supporter",
+    name: "Supporter",
+    tagline: "Back the project",
+    price: "",
+    icon: Heart,
+    borderColor: "rgba(32, 181, 118, 0.55)",
+    tintBg: "rgba(32, 181, 118, 0.1)",
+    selectedBg: "rgba(32, 181, 118, 0.24)",
+    dotColor: colors.primaryGlow,
+    features: [
+      "Lifetime Supporter badge on your profile",
+      "Help shape the future of Cue Path",
+      "Priority on bug reports and feature requests",
+    ],
+  },
 ];
 
 export function SubscriptionScreen() {
@@ -139,10 +155,16 @@ export function SubscriptionScreen() {
                     </View>
                     <Text style={styles.planTagline}>{plan.tagline}</Text>
                   </View>
-                  <View style={styles.planPriceWrap}>
-                    <Text style={styles.planPrice}>{plan.price}</Text>
-                    {plan.period ? <Text style={styles.planPeriod}>{plan.period}</Text> : null}
-                  </View>
+                  {plan.id === "supporter" ? (
+                    <View style={styles.supporterRightIcon}>
+                      <Heart size={22} color={colors.primaryForeground} fill={colors.primaryForeground} />
+                    </View>
+                  ) : (
+                    <View style={styles.planPriceWrap}>
+                      <Text style={styles.planPrice}>{plan.price}</Text>
+                      {plan.period ? <Text style={styles.planPeriod}>{plan.period}</Text> : null}
+                    </View>
+                  )}
                 </View>
 
                 <View style={styles.featureList}>
@@ -300,6 +322,15 @@ const styles = StyleSheet.create({
   planPriceWrap: { alignItems: "flex-end", marginLeft: 8 },
   planPrice: { fontSize: 36, lineHeight: 40, color: colors.foreground, fontFamily: "Sora_700Bold" },
   planPeriod: { fontSize: 12, color: colors.mutedForeground, fontFamily: "Inter_600SemiBold" },
+  supporterRightIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    marginLeft: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primary,
+  },
   featureList: { gap: 10, marginTop: 14 },
   featureRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   featureIcon: {

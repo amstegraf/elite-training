@@ -4,6 +4,8 @@ All notable changes to the native app are tracked here.
 
 ## v0.1.0-alpha (in progress)
 
+- Subscription Supporter card layout fix: removed "Pay what you want" text from the card, set subtitle to "Back the project", and replaced right-side price block with a heart icon only.
+- Subscription plans updated with new `Supporter` tier, preserving existing selection/highlight behavior and using revised copy (title `Supporter` + only lifetime badge and "help shape the future" benefits).
 - Session report KPI label shortened from `Conversion` to `CONV.` to prevent layout shift in the 3-card row.
 - Added prototype-style onboarding flow with persisted completion flag (`cuepath.onboarded`): first launch opens onboarding, completion/skips prevent re-showing, and final CTA starts first session; welcome step now uses the real app icon visual.
 - Profile menu anchor alignment fix: now uses page-based trigger measurement and removed duplicate overlay avatar so menu aligns with the real header avatar.
