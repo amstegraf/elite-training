@@ -14,6 +14,7 @@ import { ProfilesScreen } from "../features/profiles/ProfilesScreen";
 import { SettingsScreen } from "../features/settings/SettingsScreen";
 import { StatsScreen } from "../features/stats/StatsScreen";
 import { SubscriptionScreen } from "../features/subscription/SubscriptionScreen";
+import { OnboardingScreen } from "../features/onboarding/OnboardingScreen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const Tabs = createBottomTabNavigator();
@@ -66,7 +67,11 @@ function RootTabs() {
   );
 }
 
-export function AppNavigator() {
+interface AppNavigatorProps {
+  initialRouteName?: "Onboarding" | "Home";
+}
+
+export function AppNavigator({ initialRouteName = "Home" }: AppNavigatorProps) {
   return (
     <NavigationContainer
       theme={{
@@ -82,11 +87,13 @@ export function AppNavigator() {
       }}
     >
       <Stack.Navigator
+        initialRouteName={initialRouteName}
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: colors.background },
         }}
       >
+        <Stack.Screen name="Onboarding" component={OnboardingScreen} />
         <Stack.Screen name="Home" component={RootTabs} />
         <Stack.Screen name="Session" component={SessionScreen} />
         <Stack.Screen name="Report" component={SessionReportScreen} />

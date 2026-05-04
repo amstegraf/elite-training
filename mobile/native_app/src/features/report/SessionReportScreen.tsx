@@ -167,7 +167,7 @@ export function SessionReportScreen() {
           <View style={styles.kpiGrid}>
             <View style={styles.kpiThird}><KpiCard label="Pot" value={Math.round((metrics?.potRate ?? 0) * 100)} icon={Target} delta={0} tone="primary" /></View>
             <View style={styles.kpiThird}><KpiCard label="Position" value={Math.round((metrics?.positionRate ?? 0) * 100)} icon={MapPin} delta={0} tone="accent" /></View>
-            <View style={styles.kpiThird}><KpiCard label="Conversion" value={Math.round((metrics?.rackConversionRate ?? 0) * 100)} icon={Trophy} delta={0} tone="warning" /></View>
+            <View style={styles.kpiThird}><KpiCard label="CONV." value={Math.round((metrics?.rackConversionRate ?? 0) * 100)} icon={Trophy} delta={0} tone="warning" /></View>
           </View>
         </View>
 

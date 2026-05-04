@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AppStateProvider } from "./src/data/AppStateContext";
 import { SplashScreen as AppSplash } from "./src/features/splash/SplashScreen";
 import { AppNavigator } from "./src/navigation/AppNavigator";
+import { hasCompletedOnboarding } from "./src/features/onboarding/storage";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -21,6 +22,8 @@ import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from "@expo-goog
 function Root() {
   const [showSplash, setShowSplash] = useState(true);
   const [nativeHidden, setNativeHidden] = useState(false);
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
+  const [onboardingDone, setOnboardingDone] = useState(true);
   const [fontsLoaded] = useFonts({
     Sora_400Regular,
     Sora_600SemiBold,
@@ -30,6 +33,20 @@ function Root() {
     Inter_500Medium,
     Inter_600SemiBold,
   });
+
+  useEffect(() => {
+    let mounted = true;
+    hasCompletedOnboarding()
+      .then((done) => {
+        if (mounted) setOnboardingDone(done);
+      })
+      .finally(() => {
+        if (mounted) setOnboardingChecked(true);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (fontsLoaded) {
@@ -43,12 +60,12 @@ function Root() {
     }
   }, [fontsLoaded]);
 
-  const loading = !nativeHidden || showSplash;
+  const loading = !nativeHidden || showSplash || !onboardingChecked;
 
   return (
     <>
       <StatusBar style="light" />
-      {loading ? <AppSplash /> : <AppNavigator />}
+      {loading ? <AppSplash /> : <AppNavigator initialRouteName={onboardingDone ? "Home" : "Onboarding"} />}
     </>
   );
 }
