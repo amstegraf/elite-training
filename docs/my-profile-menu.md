@@ -59,9 +59,3 @@ Recommended Profile Menu
 -   Data export
 
 * * * * *
-
-What to avoid
--------------
-
--   Duplicates of main navigation (Stats, History, Calendar already exist)
--   Anything session-related (belongs in main flow)

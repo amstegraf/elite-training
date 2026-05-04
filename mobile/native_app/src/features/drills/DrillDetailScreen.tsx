@@ -7,6 +7,7 @@ import { colors } from "../../core/theme/theme";
 import { getDrillById } from "../../data/drills";
 import { DrillDefinition, DrillDifficulty } from "../../domain/drills";
 import { DrillPoolTable } from "./components/PoolTable";
+import { LinearGradient } from "expo-linear-gradient";
 
 type AttemptResult = "completed" | "failed";
 
