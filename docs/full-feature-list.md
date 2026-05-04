@@ -82,22 +82,25 @@ Tiers
 -   Basic stats (pot / pos / conv)
 -   Limited history (e.g. 7--14 days)
 -   Manual drills only
+-   Global ranking (Only after 50 recorded session)
+-   Continental ranking
 
 * * * * *
 
 ### 🟡 Pro
 
 -   AI Coach (session + stats)
--   Full history
+-   Full history in cloud
 -   Advanced analytics (error distribution, trends, consistency)
 -   Drill library + tracking
+-   Drill path gamification
+-   Tournaments and matches
+-   Image → drill (AI table mapping)
 
 * * * * *
 
 ### 🔴 Elite
 
--   Image → drill (AI table mapping)
--   Match mode + opponent tracking
+-   Match mode
 -   Pressure training modes
 -   Drill generator (AI)
--   (Future) Video analysis

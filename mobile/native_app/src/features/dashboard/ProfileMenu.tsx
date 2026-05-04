@@ -25,7 +25,7 @@ import {
 } from "lucide-react-native";
 import { colors } from "../../core/theme/theme";
 
-type MenuRoute = "Profiles" | "Subscription" | "StatsTab" | "HistoryTab" | "Settings";
+type MenuRoute = "Profiles" | "Subscription" | "StatsTab" | "HistoryTab" | "Settings" | "Drills";
 
 type MenuItem = {
   label: string;
@@ -44,7 +44,7 @@ const groups: MenuItem[][] = [
     { label: "Rankings", icon: Medal },
   ],
   [
-    { label: "My Drills", icon: Target },
+    { label: "My Drills", icon: Target, route: "Drills" },
     { label: "Saved Sessions", icon: Bookmark, route: "HistoryTab" },
   ],
   [

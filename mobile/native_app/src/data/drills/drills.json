@@ -1,0 +1,63 @@
+[
+  {
+    "id": "drill_001",
+    "name": "Three-Ball Position",
+    "difficulty": 2,
+    "category": "position_control",
+    "description": "Set up the 1, 2 and 3 balls as shown. Run them in numerical order while leaving the cue ball in a comfortable position for the next shot. Focus on speed control over angles.",
+    "table": {
+      "type": "pool_9ft",
+      "coordinateSystem": {
+        "origin": "bottom_left",
+        "width": 1000,
+        "height": 500
+      }
+    },
+    "balls": [
+      {
+        "id": "cue",
+        "type": "cue",
+        "x": 220,
+        "y": 250
+      },
+      {
+        "id": "1",
+        "type": "object",
+        "number": 1,
+        "x": 550,
+        "y": 310,
+        "targetPocket": "top_right"
+      },
+      {
+        "id": "2",
+        "type": "object",
+        "number": 2,
+        "x": 700,
+        "y": 190,
+        "targetPocket": "top_right"
+      },
+      {
+        "id": "3",
+        "type": "object",
+        "number": 3,
+        "x": 850,
+        "y": 275,
+        "targetPocket": "top_right"
+      }
+    ],
+    "rules": {
+      "order": ["1", "2", "3"],
+      "attemptLimit": 5,
+      "successCondition": "all_balls_pocketed"
+    },
+    "metadata": {
+      "createdBy": "admin",
+      "isPublic": true,
+      "version": 1,
+      "estMinutes": 8,
+      "focus": ["Cue ball control", "Stop and follow shots", "Soft pocket speed"],
+      "objective": "Pocket 1, 2, 3 in order without scratching",
+      "goal": "3-ball position control"
+    }
+  }
+]

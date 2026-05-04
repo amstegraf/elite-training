@@ -15,6 +15,8 @@ import { SettingsScreen } from "../features/settings/SettingsScreen";
 import { StatsScreen } from "../features/stats/StatsScreen";
 import { SubscriptionScreen } from "../features/subscription/SubscriptionScreen";
 import { OnboardingScreen } from "../features/onboarding/OnboardingScreen";
+import { DrillsScreen } from "../features/drills/DrillsScreen";
+import { DrillDetailScreen } from "../features/drills/DrillDetailScreen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const Tabs = createBottomTabNavigator();
@@ -99,6 +101,8 @@ export function AppNavigator({ initialRouteName = "Home" }: AppNavigatorProps) {
         <Stack.Screen name="Report" component={SessionReportScreen} />
         <Stack.Screen name="Subscription" component={SubscriptionScreen} />
         <Stack.Screen name="Profiles" component={ProfilesScreen} />
+        <Stack.Screen name="Drills" component={DrillsScreen} />
+        <Stack.Screen name="DrillDetail" component={DrillDetailScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
       </Stack.Navigator>
     </NavigationContainer>

@@ -4,6 +4,7 @@ All notable changes to the native app are tracked here.
 
 ## v0.1.0-alpha (in progress)
 
+- Implemented drill feature from prototype with JSON-backed structure: added My Drills entry (profile menu), new Drills list + Drill detail/play screens, table layout renderer, attempt/timer/result flow, and local dummy drill loader with schema validation for future scaling.
 - Build script updated: added `--no-bump` so APK export can update only `cue-path-latest.apk` without creating a new versioned file.
 - Game-type modal updated to use clickable pool-ball visuals for 8/9/10 selection instead of box buttons.
 - Added 8-ball and 10-ball support: game-type chooser (8/9/10) now appears before creating new sessions, sessions persist selected ball count, metrics/report/live rack visuals adapt to that count, and ball `10` now renders as blue striped.
