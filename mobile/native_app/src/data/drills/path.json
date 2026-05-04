@@ -1,0 +1,103 @@
+{
+  "version": 1,
+  "chapters": [
+    {
+      "id": "chapter_bronze",
+      "tier": "Bronze",
+      "name": "Apprentice Path",
+      "tagline": "Forge the fundamentals",
+      "order": 1,
+      "nodes": [
+        {
+          "id": "bronze_1",
+          "title": "Straight Line Stop Shots",
+          "kind": "drill",
+          "drillId": "drill_002",
+          "maxStars": 3,
+          "icon": "crosshair",
+          "offsetVariant": 0
+        },
+        {
+          "id": "bronze_2",
+          "title": "Corner Pocket Precision",
+          "kind": "drill",
+          "drillId": "drill_005",
+          "maxStars": 3,
+          "icon": "crosshair",
+          "offsetVariant": 1,
+          "unlock": {
+            "requiresNodeId": "bronze_1"
+          }
+        }
+      ]
+    },
+    {
+      "id": "chapter_silver",
+      "tier": "Silver",
+      "name": "Striker Path",
+      "tagline": "Sharpen the cue",
+      "order": 2,
+      "unlock": {
+        "requiresChapterId": "chapter_bronze",
+        "minStars": 2
+      },
+      "nodes": [
+        {
+          "id": "silver_1",
+          "title": "Three-Ball Position",
+          "kind": "drill",
+          "drillId": "drill_001",
+          "maxStars": 3,
+          "icon": "crosshair",
+          "offsetVariant": 2
+        },
+        {
+          "id": "silver_2",
+          "title": "Angle Position Drill",
+          "kind": "drill",
+          "drillId": "drill_003",
+          "maxStars": 3,
+          "icon": "crosshair",
+          "offsetVariant": 3,
+          "unlock": {
+            "requiresNodeId": "silver_1"
+          }
+        }
+      ]
+    },
+    {
+      "id": "chapter_gold",
+      "tier": "Gold",
+      "name": "Tactician Path",
+      "tagline": "Outthink the table",
+      "order": 3,
+      "unlock": {
+        "requiresChapterId": "chapter_silver",
+        "minStars": 4
+      },
+      "nodes": [
+        {
+          "id": "gold_1",
+          "title": "Cross Table Control",
+          "kind": "drill",
+          "drillId": "drill_004",
+          "maxStars": 3,
+          "icon": "crosshair",
+          "offsetVariant": 4
+        },
+        {
+          "id": "gold_2",
+          "title": "Zig-Zag Position",
+          "kind": "drill",
+          "drillId": "drill_006",
+          "maxStars": 3,
+          "icon": "crosshair",
+          "offsetVariant": 1,
+          "unlock": {
+            "requiresNodeId": "gold_1"
+          }
+        }
+      ]
+    }
+  ]
+}

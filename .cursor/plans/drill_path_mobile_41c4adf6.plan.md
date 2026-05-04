@@ -4,22 +4,22 @@ overview: Implement a new mobile Drill Path journey screen based on the prototyp
 todos:
   - id: add-path-domain
     content: Add path JSON/types/parser/loader with drillId reference validation and unlock rules.
-    status: pending
+    status: completed
   - id: derive-path-progress
     content: Implement status and progress derivation from persisted drillResults + path rules.
-    status: pending
+    status: completed
   - id: build-drills-path-screen
     content: Create DrillsPath UI with chapter cards, serpentine nodes, and progress hero.
-    status: pending
+    status: completed
   - id: animate-current-node
     content: Implement looping pulse-ring animation for the current Continue node.
-    status: pending
+    status: completed
   - id: wire-navigation-and-cta
     content: Register DrillsPath route and add entry CTA from drills/dashboard flows.
-    status: pending
+    status: completed
   - id: validate-and-log
     content: Run type/lint/tests, then update changelog for Drill Path feature.
-    status: pending
+    status: completed
 isProject: false
 ---
 
