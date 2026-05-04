@@ -2,7 +2,7 @@ import React from "react";
 import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Home, Activity, History, Calendar, BarChart3, User, Settings } from "lucide-react-native";
 import { colors } from "../core/theme/theme";
 import { DashboardScreen } from "../features/dashboard/DashboardScreen";

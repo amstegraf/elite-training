@@ -42,11 +42,59 @@ If the QR connection fails, try:
 Optional (USB/emulator Android run):
 - `npx expo run:android`
 
-## iOS preparation notes
-- `app.json` already defines `ios.bundleIdentifier`
-- `eas.json` added for EAS build flow
-- Run `npx expo prebuild` when needed for native project generation
-- Configure Apple signing in EAS before App Store builds
+## iOS from Windows (iPhone, no Mac)
+This project is already iOS-capable in Expo. Use EAS cloud builds for iOS from Windows.
+
+### Prerequisites
+1. Install dependencies:
+   - `npm install`
+2. Install EAS CLI and sign in:
+   - `npm install -g eas-cli`
+   - `eas login`
+3. Apple setup:
+   - Active Apple Developer membership
+   - Bundle ID `com.elitetraining.cuepath` (already set in `app.json`)
+   - Let EAS manage credentials when prompted
+
+### Build profiles in this repo
+- `development`: internal iPhone build with development client
+- `preview`: internal tester build
+- `simulator`: iOS simulator build artifact (requires Mac for simulator runtime)
+- `production`: store/TestFlight-ready profile with auto increment
+
+### Cloud builds (recommended)
+Run from `mobile/native_app`:
+- iOS preview/internal:
+  - `eas build -p ios --profile preview`
+- iOS development client:
+  - `eas build -p ios --profile development`
+- iOS production:
+  - `eas build -p ios --profile production`
+- Android preview/internal:
+  - `eas build -p android --profile preview`
+
+### Local EAS builds (optional)
+Use local only when you specifically need local builders:
+- `eas build --local -p ios --profile preview`
+- `eas build --local -p android --profile preview`
+
+For iOS, local build tooling still requires macOS + Xcode.
+
+### Install on iPhone
+1. Open the completed build link from EAS in Safari on your iPhone.
+2. Install the internal build (or distribute through TestFlight for production flow).
+3. Trust the profile if iOS prompts for enterprise/developer trust.
+
+### iPhone smoke checklist
+- Launch app and complete onboarding flow.
+- Start a session, log misses, end rack/session, and open report.
+- Verify dashboard/history/calendar/stat screens render correctly.
+- Confirm persistence after app restart (session and settings data retained).
+- Check bottom tab safe area and header spacing on a notch device.
+
+### Notes
+- `npm run ios` / `expo run:ios` is for local macOS/Xcode workflows.
+- On Windows, prefer EAS cloud for iOS build and signing.
 
 ## Design reference
 The implementation uses `pool-elite-prototype` as visual and flow reference for:
