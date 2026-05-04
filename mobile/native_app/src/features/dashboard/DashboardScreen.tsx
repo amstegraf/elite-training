@@ -7,7 +7,7 @@ import { KpiCard } from "../../ui/KpiCard";
 import { TierBadge } from "../../ui/TierBadge";
 import { ProfileMenu } from "./ProfileMenu";
 import { colors } from "../../core/theme/theme";
-import { Play, Target, MapPin, Trophy, Flame, ChevronRight, Bell, Star, Crosshair } from "lucide-react-native";
+import { Play, Target, MapPin, Trophy, Flame, ChevronRight, Bell, Star, Crosshair, Crown } from "lucide-react-native";
 import { useAppState } from "../../data/AppStateContext";
 import { computeSessionMetrics, completedSessionsSorted, formatDurationLabel } from "../../domain/metrics";
 import { TIER_LABELS } from "../../domain/types";
@@ -294,6 +294,16 @@ export function DashboardScreen() {
                 <Text style={styles.trainDrillsText}>Train Drills</Text>
                 <ChevronRight size={15} color={colors.foreground} />
               </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.pathDrillsBtn}
+              activeOpacity={0.88}
+              onPress={() => nav.navigate("DrillsPath")}
+            >
+              <Crown size={14} color="rgba(255,255,255,0.86)" />
+              <Text style={styles.pathDrillsText}>Open Drill Path</Text>
+              <ChevronRight size={14} color="rgba(255,255,255,0.78)" />
             </TouchableOpacity>
           </LinearGradient>
         </View>
@@ -686,6 +696,23 @@ const styles = StyleSheet.create({
   trainDrillsText: {
     color: colors.foreground,
     fontSize: 13,
+    fontFamily: "Sora_700Bold",
+  },
+  pathDrillsBtn: {
+    marginTop: 8,
+    height: 42,
+    borderRadius: 13,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.18)",
+    backgroundColor: "rgba(255,255,255,0.06)",
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 6,
+  },
+  pathDrillsText: {
+    color: "rgba(255,255,255,0.9)",
+    fontSize: 12,
     fontFamily: "Sora_700Bold",
   },
   recentList: {

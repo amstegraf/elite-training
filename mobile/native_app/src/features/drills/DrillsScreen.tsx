@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { CheckCircle2, ChevronRight, Filter, Flame, Search, Sparkles, Star, Target, Trophy } from "lucide-react-native";
+import { CheckCircle2, ChevronRight, Crown, Filter, Flame, Search, Sparkles, Star, Target, Trophy } from "lucide-react-native";
 import { AppHeader } from "../../ui/AppHeader";
 import { colors } from "../../core/theme/theme";
 import { listDrills } from "../../data/drills";
@@ -13,7 +13,7 @@ const difficultyLabel = (difficulty: DrillDifficulty) =>
   difficulty === 1 ? "Easy" : difficulty === 2 ? "Medium" : "Hard";
 
 function diffTone(d: DrillDifficulty) {
-  if (d === 1) return { color: colors.success, bg: "rgba(32, 181, 118, 0.12)", border: "rgba(32, 181, 118, 0.4)" };
+  if (d === 1) return { color: colors.primary, bg: "rgba(32, 181, 118, 0.12)", border: "rgba(32, 181, 118, 0.4)" };
   if (d === 2) return { color: colors.tierGold, bg: "rgba(234, 179, 8, 0.12)", border: "rgba(234, 179, 8, 0.4)" };
   return { color: colors.danger, bg: "rgba(255, 75, 75, 0.12)", border: "rgba(255, 75, 75, 0.4)" };
 }
@@ -96,6 +96,28 @@ export function DrillsScreen() {
   return (
     <View style={styles.container}>
       <AppHeader title="Drills" subtitle="Library" back />
+
+      <TouchableOpacity
+        style={styles.pathCtaWrap}
+        activeOpacity={0.9}
+        onPress={() => nav.navigate("DrillsPath")}
+      >
+        <LinearGradient
+          colors={["#2c1246", "#2a184f", "#1f1b44"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.pathCta}
+        >
+          <View style={styles.pathCtaIcon}>
+            <Crown size={16} color={colors.tierGold} />
+          </View>
+          <View style={styles.pathCtaTextWrap}>
+            <Text style={styles.pathCtaTitle}>Drill Path</Text>
+            <Text style={styles.pathCtaSubtitle}>Embark on your chapter journey</Text>
+          </View>
+          <ChevronRight size={16} color="rgba(255,255,255,0.82)" />
+        </LinearGradient>
+      </TouchableOpacity>
       
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Mastery Hero Card */}
@@ -243,7 +265,9 @@ export function DrillsScreen() {
                   </View>
 
                   <Text style={styles.cardTitle} numberOfLines={1}>{drill.name}</Text>
-                  <Text style={styles.cardTagline} numberOfLines={1}>{drill.metadata.goal ?? drill.description}</Text>
+                  <Text style={styles.cardTagline} numberOfLines={1}>
+                    {drill.attemptLimit} attempts challenge
+                  </Text>
 
                   <View style={styles.cardBottomRow}>
                     <DifficultyStars earned={bestStars} />
@@ -281,6 +305,42 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#faf9f6", // matching the web light bg
+  },
+  pathCtaWrap: {
+    paddingHorizontal: 20,
+    marginBottom: 10,
+  },
+  pathCta: {
+    borderRadius: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.09)",
+  },
+  pathCtaIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(247, 201, 72, 0.45)",
+    backgroundColor: "rgba(247, 201, 72, 0.12)",
+  },
+  pathCtaTextWrap: { flex: 1 },
+  pathCtaTitle: {
+    fontSize: 14,
+    color: "#fff",
+    fontFamily: "Sora_700Bold",
+  },
+  pathCtaSubtitle: {
+    marginTop: 1,
+    fontSize: 11,
+    color: "rgba(255,255,255,0.72)",
+    fontFamily: "Inter_500Medium",
   },
   scrollContent: {
     paddingHorizontal: 20,
