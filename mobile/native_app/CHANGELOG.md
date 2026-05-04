@@ -4,6 +4,9 @@ All notable changes to the native app are tracked here.
 
 ## v0.1.0-alpha (in progress)
 
+- Profile menu anchor alignment fix: now uses page-based trigger measurement and removed duplicate overlay avatar so menu aligns with the real header avatar.
+- Profile menu polish: dropdown now anchors directly beneath the avatar trigger and the avatar gets an active highlight ring while menu is open.
+- Dashboard now includes a prototype-style profile avatar menu next to player name with grouped items; linked routes wired where available (Profile, Subscription, Stats, Saved Sessions, Settings).
 - Session report rack timeline now uses real pool-ball visuals (potted colored, misses red-marked, early-end balls greyed) and shows a trophy cup badge on 9/9 racks.
 - Live session outcome flow updated: order is now Playable → No Shot → Pot Miss, and logging Pot Miss automatically opens the end-rack balls-potted modal.
 - Dashboard Recent list now shows latest 5 sessions and displays all three KPIs per row (Pot, Pos, Conversion).

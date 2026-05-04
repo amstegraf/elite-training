@@ -9,10 +9,11 @@ interface AppHeaderProps {
   title: string;
   subtitle?: string;
   back?: boolean;
+  left?: ReactNode;
   right?: ReactNode;
 }
 
-export const AppHeader = ({ title, subtitle, back, right }: AppHeaderProps) => {
+export const AppHeader = ({ title, subtitle, back, left, right }: AppHeaderProps) => {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   return (
@@ -27,6 +28,7 @@ export const AppHeader = ({ title, subtitle, back, right }: AppHeaderProps) => {
             <ChevronLeft size={22} color={colors.foreground} />
           </TouchableOpacity>
         )}
+        {left}
         <View style={styles.titleContainer}>
           {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
           <Text style={styles.title} numberOfLines={1}>{title}</Text>

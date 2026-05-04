@@ -4,6 +4,7 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { AppHeader } from "../../ui/AppHeader";
 import { KpiCard } from "../../ui/KpiCard";
 import { TierBadge } from "../../ui/TierBadge";
+import { ProfileMenu } from "./ProfileMenu";
 import { colors } from "../../core/theme/theme";
 import { Play, Target, MapPin, Trophy, Flame, ChevronRight, Bell } from "lucide-react-native";
 import { useAppState } from "../../data/AppStateContext";
@@ -51,6 +52,7 @@ export function DashboardScreen() {
       <AppHeader
         subtitle="Welcome back"
         title={activeProfile?.name ?? "Player"}
+        left={<ProfileMenu name={activeProfile?.name ?? "Player"} />}
         right={
           <TouchableOpacity style={styles.bellButton} activeOpacity={0.8}>
             <Bell size={18} color={colors.foreground} />
