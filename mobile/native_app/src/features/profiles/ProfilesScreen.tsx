@@ -1,15 +1,17 @@
 import React, { useMemo, useState } from "react";
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Modal, TextInput, Alert } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { AppHeader } from "../../ui/AppHeader";
 import { TierBadge } from "../../ui/TierBadge";
 import { colors } from "../../core/theme/theme";
-import { Plus, Check, MoreVertical } from "lucide-react-native";
+import { Plus, Check, MoreVertical, Sparkles, Lock, X } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAppState } from "../../data/AppStateContext";
 import { computeGlobalMetrics } from "../../domain/metrics";
 import { computeTier } from "../../domain/tier";
 
 export function ProfilesScreen() {
+  const nav = useNavigation<any>();
   const {
     data,
     activeProfile,
@@ -19,6 +21,7 @@ export function ProfilesScreen() {
     deleteProfile,
   } = useAppState();
   const [showCreate, setShowCreate] = useState(false);
+  const [showProfileUpsell, setShowProfileUpsell] = useState(false);
   const [nameInput, setNameInput] = useState("");
   const [editingProfileId, setEditingProfileId] = useState<string | null>(null);
   const players = useMemo(
@@ -111,11 +114,7 @@ export function ProfilesScreen() {
           </TouchableOpacity>
         ))}
 
-        <TouchableOpacity style={styles.addButton} activeOpacity={0.8} onPress={() => {
-          setEditingProfileId(null);
-          setNameInput("");
-          setShowCreate(true);
-        }}>
+        <TouchableOpacity style={styles.addButton} activeOpacity={0.8} onPress={() => setShowProfileUpsell(true)}>
           <Plus size={18} color={colors.mutedForeground} />
           <Text style={styles.addButtonText}>Add new player</Text>
         </TouchableOpacity>
@@ -155,6 +154,73 @@ export function ProfilesScreen() {
                 <Text style={styles.modalConfirmText}>Save</Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        transparent
+        visible={showProfileUpsell}
+        animationType="fade"
+        onRequestClose={() => setShowProfileUpsell(false)}
+      >
+        <View style={styles.upsellBackdrop}>
+          <View style={styles.upsellCard}>
+            <TouchableOpacity
+              style={styles.upsellCloseBtn}
+              activeOpacity={0.85}
+              onPress={() => setShowProfileUpsell(false)}
+            >
+              <X size={16} color="rgba(255,255,255,0.75)" />
+            </TouchableOpacity>
+
+            <View style={styles.upsellHeaderRow}>
+              <View style={styles.upsellIconWrap}>
+                <Sparkles size={20} color="#FFFFFF" />
+              </View>
+              <View>
+                <Text style={styles.upsellTitle}>Multi-player Profiles</Text>
+                <Text style={styles.upsellSubtitle}>Train with multiple players</Text>
+              </View>
+            </View>
+
+            <View style={styles.upsellBadgeRow}>
+              <View style={styles.upsellLockPill}>
+                <Lock size={12} color="#FFFFFF" />
+                <Text style={styles.upsellLockText}>Premium</Text>
+              </View>
+            </View>
+
+            <View style={styles.upsellFeatureList}>
+              {[
+                "Create and manage multiple players",
+                "Track stats and tiers per profile",
+                "Separate session history per player",
+              ].map((feature) => (
+                <View key={feature} style={styles.upsellFeatureRow}>
+                  <View style={styles.upsellCheckWrap}>
+                    <Check size={12} color="#FFFFFF" />
+                  </View>
+                  <Text style={styles.upsellFeatureText}>{feature}</Text>
+                </View>
+              ))}
+            </View>
+
+            <TouchableOpacity
+              style={styles.upsellUnlockBtn}
+              activeOpacity={0.9}
+              onPress={() => {
+                setShowProfileUpsell(false);
+                nav.navigate("Subscription");
+              }}
+            >
+              <Sparkles size={15} color="#FFFFFF" />
+              <Text style={styles.upsellUnlockText}>See all features</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.upsellLaterBtn} onPress={() => setShowProfileUpsell(false)} activeOpacity={0.85}>
+              <Text style={styles.upsellLaterText}>Maybe later</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -327,5 +393,135 @@ const styles = StyleSheet.create({
   modalConfirmText: {
     color: colors.primaryForeground,
     fontFamily: "Inter_600SemiBold",
+  },
+  upsellBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(9, 8, 17, 0.58)",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 20,
+  },
+  upsellCard: {
+    width: "100%",
+    maxWidth: 360,
+    borderRadius: 26,
+    backgroundColor: "#1E1230",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.07)",
+    padding: 18,
+  },
+  upsellCloseBtn: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    height: 30,
+    width: 30,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.07)",
+    zIndex: 2,
+  },
+  upsellHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginTop: 4,
+  },
+  upsellIconWrap: {
+    height: 42,
+    width: 42,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(167, 139, 250, 0.25)",
+    borderWidth: 1,
+    borderColor: "rgba(167, 139, 250, 0.45)",
+  },
+  upsellTitle: {
+    fontSize: 18,
+    fontFamily: "Sora_700Bold",
+    color: "#FFFFFF",
+  },
+  upsellSubtitle: {
+    marginTop: 2,
+    fontSize: 12,
+    color: "rgba(255,255,255,0.72)",
+    fontFamily: "Inter_500Medium",
+  },
+  upsellBadgeRow: {
+    marginTop: 14,
+    flexDirection: "row",
+  },
+  upsellLockPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: "rgba(167, 139, 250, 0.28)",
+    borderWidth: 1,
+    borderColor: "rgba(167, 139, 250, 0.52)",
+  },
+  upsellLockText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+  },
+  upsellFeatureList: {
+    marginTop: 14,
+    gap: 9,
+  },
+  upsellFeatureRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  upsellCheckWrap: {
+    height: 20,
+    width: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(52, 211, 153, 0.32)",
+    borderWidth: 1,
+    borderColor: "rgba(52, 211, 153, 0.55)",
+  },
+  upsellFeatureText: {
+    flex: 1,
+    color: "rgba(255,255,255,0.86)",
+    fontSize: 13,
+    fontFamily: "Inter_500Medium",
+  },
+  upsellUnlockBtn: {
+    marginTop: 16,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: "rgba(167, 139, 250, 0.84)",
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 8,
+  },
+  upsellUnlockText: {
+    color: "#FFFFFF",
+    fontFamily: "Sora_700Bold",
+    fontSize: 14,
+  },
+  upsellLaterBtn: {
+    marginTop: 8,
+    height: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.06)",
+  },
+  upsellLaterText: {
+    color: "rgba(255,255,255,0.78)",
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 13,
   },
 });

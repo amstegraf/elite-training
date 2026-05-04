@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { colors } from "../core/theme/theme";
 import { GAME_BALL_COUNTS, GameBallCount } from "../domain/types";
 import { PoolBall } from "./PoolBall";
@@ -11,21 +11,27 @@ interface GameTypeModalProps {
 }
 
 export function GameTypeModal({ visible, onSelect, onCancel }: GameTypeModalProps) {
+  const lockRef = useRef(false);
   const [isSelecting, setIsSelecting] = useState(false);
+  const [selectedBall, setSelectedBall] = useState<GameBallCount | null>(null);
 
   useEffect(() => {
     if (!visible) {
+      lockRef.current = false;
       setIsSelecting(false);
+      setSelectedBall(null);
     }
   }, [visible]);
 
   const handleSelect = useCallback(
     (ballCount: GameBallCount) => {
-      if (isSelecting) return;
+      if (lockRef.current) return;
+      lockRef.current = true;
       setIsSelecting(true);
+      setSelectedBall(ballCount);
       onSelect(ballCount);
     },
-    [isSelecting, onSelect]
+    [onSelect]
   );
 
   const handleCancel = useCallback(() => {
@@ -43,13 +49,22 @@ export function GameTypeModal({ visible, onSelect, onCancel }: GameTypeModalProp
             {GAME_BALL_COUNTS.map((count) => (
               <TouchableOpacity
                 key={count}
-                style={[styles.option, isSelecting && styles.optionDisabled]}
+                style={[
+                  styles.option,
+                  selectedBall === count && styles.optionSelected,
+                  isSelecting && selectedBall !== count && styles.optionDisabled,
+                ]}
                 activeOpacity={0.9}
                 disabled={isSelecting}
                 onPress={() => handleSelect(count)}
               >
                 <PoolBall number={count} size="sm" />
-                <Text style={styles.optionLabel}>{count}-Ball</Text>
+                <Text style={styles.optionLabel}>
+                  {isSelecting && selectedBall === count ? "Starting..." : `${count}-Ball`}
+                </Text>
+                {isSelecting && selectedBall === count ? (
+                  <ActivityIndicator size="small" color={colors.primary} />
+                ) : null}
               </TouchableOpacity>
             ))}
           </View>
@@ -107,6 +122,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
+  },
+  optionSelected: {
+    backgroundColor: "rgba(26,117,80,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(26,117,80,0.35)",
   },
   optionDisabled: {
     opacity: 0.6,

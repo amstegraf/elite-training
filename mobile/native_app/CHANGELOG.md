@@ -4,6 +4,10 @@ All notable changes to the native app are tracked here.
 
 ## v0.1.0-alpha (in progress)
 
+- Game-type start flow polished: selected 8/9/10 option now shows immediate `Starting...` feedback with spinner and uses a synchronous one-tap lock to avoid multi-tap start races; live-session end-rack ball picker now auto-selects `1..N` when ball `N` is tapped.
+- Profiles screen now shows a premium upsell modal (AI Coach-style CTA pattern) when tapping `Add new player`, with direct navigation to `Subscription`.
+- Dashboard section order updated so `Start Session` CTA now appears before the `My Drills` card.
+- Dashboard My Drills list now shows a maximum of 5 rows: it prioritizes the latest drills actually played, then backfills with the latest added drills when fewer than 5 played entries exist.
 - Drills list page updated to match latest prototype direction: added title search, type/category filter chips, and per-drill completion marker driven by saved drill results.
 - Game type picker (`8/9/10-ball`) now uses a single-tap guard to prevent multi-press race conditions that could create lag or inconsistent session starts when tapping options rapidly.
 - Dashboard now includes a prototype-style `My Drills` progress card powered by persisted drill run results (stars/progress/per-drill rows), drill completions are saved from drill detail outcomes, drill rating visuals switched from sparkles to stars, and `Recent` was renamed to `Recent Trainings`.

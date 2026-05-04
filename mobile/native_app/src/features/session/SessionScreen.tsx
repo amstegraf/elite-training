@@ -408,7 +408,7 @@ export function SessionScreen() {
               disabled={!canEndRack}
               onPress={() => {
                 if (!session || !session.currentRackId) return;
-                const guessed = suggestedNextBallNumber(currentRack) - 1;
+                const guessed = suggestedNextBallNumber(currentRack, sessionBallCount) - 1;
                 const preselected = Array.from({ length: Math.max(0, guessed) }, (_, i) => i + 1)
                   .filter((n) =>
                     !currentRack?.misses.some((m) => m.ballNumber === n && m.outcome === "pot_miss")
@@ -500,11 +500,10 @@ export function SessionScreen() {
                   number={n}
                   size={selectorBallSize}
                   active={clearedBalls.includes(n)}
-                  onPress={() =>
-                    setClearedBalls((prev) =>
-                      prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n].sort((a, b) => a - b)
-                    )
-                  }
+                  onPress={() => {
+                    // In 9/10-ball flow, selecting ball N means 1..N were potted.
+                    setClearedBalls(Array.from({ length: n }, (_, i) => i + 1));
+                  }}
                 />
               ))}
             </View>

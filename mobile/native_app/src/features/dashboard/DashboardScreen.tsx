@@ -33,6 +33,7 @@ export function DashboardScreen() {
     pointsToNext === null || currentTierIdx < 0 || currentTierIdx >= TIER_LABELS.length - 1
       ? null
       : TIER_LABELS[currentTierIdx + 1];
+  const drillById = useMemo(() => new Map(drills.map((drill) => [drill.id, drill])), [drills]);
   const drillRows = useMemo(() => {
     return drills.map((drill) => {
       const runs = drillResults.filter((result) => result.drillId === drill.id);
@@ -46,6 +47,33 @@ export function DashboardScreen() {
       };
     });
   }, [drills, drillResults]);
+  const drillRowById = useMemo(() => new Map(drillRows.map((row) => [row.id, row])), [drillRows]);
+  const dashboardDrillRows = useMemo(() => {
+    const selectedIds: string[] = [];
+    const seen = new Set<string>();
+
+    // First priority: latest taken drills (unique by drillId)
+    for (const run of drillResults) {
+      if (!drillById.has(run.drillId) || seen.has(run.drillId)) continue;
+      selectedIds.push(run.drillId);
+      seen.add(run.drillId);
+      if (selectedIds.length >= 5) break;
+    }
+
+    // Fallback: latest added drills until we reach 5
+    if (selectedIds.length < 5) {
+      for (const drill of [...drills].reverse()) {
+        if (seen.has(drill.id)) continue;
+        selectedIds.push(drill.id);
+        seen.add(drill.id);
+        if (selectedIds.length >= 5) break;
+      }
+    }
+
+    return selectedIds
+      .map((id) => drillRowById.get(id))
+      .filter((row): row is NonNullable<typeof row> => Boolean(row));
+  }, [drillById, drillResults, drillRowById, drills]);
   const earnedStars = drillRows.reduce((sum, row) => sum + row.stars, 0);
   const totalStars = drillRows.reduce((sum, row) => sum + row.max, 0);
   const drillPct = totalStars > 0 ? (earnedStars / totalStars) * 100 : 0;
@@ -151,6 +179,26 @@ export function DashboardScreen() {
           </View>
         </View>
 
+        {/* Start Session CTA */}
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={styles.ctaCard}
+            activeOpacity={0.9}
+            onPress={handleStart}
+          >
+            <View style={styles.ctaRow}>
+              <View>
+                <Text style={styles.ctaSubtext}>Ready to train?</Text>
+                <Text style={styles.ctaTitle}>{activeSessions.length > 0 ? "Resume Session" : "Start Session"}</Text>
+                <Text style={styles.ctaDesc}>8/9/10-Ball · Standard Drill</Text>
+              </View>
+              <View style={styles.ctaIconContainer}>
+                <Play size={28} color={colors.primaryForeground} fill={colors.primaryForeground} style={{ marginLeft: 4 }} />
+              </View>
+            </View>
+          </TouchableOpacity>
+        </View>
+
         {/* Drills progress */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -197,7 +245,7 @@ export function DashboardScreen() {
             </View>
 
             <View style={styles.drillRows}>
-              {drillRows.map((row) => (
+              {dashboardDrillRows.map((row) => (
                 <TouchableOpacity
                   key={row.id}
                   style={styles.drillRow}
@@ -245,26 +293,6 @@ export function DashboardScreen() {
               </LinearGradient>
             </TouchableOpacity>
           </LinearGradient>
-        </View>
-
-        {/* Start Session CTA */}
-        <View style={styles.section}>
-          <TouchableOpacity
-            style={styles.ctaCard}
-            activeOpacity={0.9}
-            onPress={handleStart}
-          >
-            <View style={styles.ctaRow}>
-              <View>
-                <Text style={styles.ctaSubtext}>Ready to train?</Text>
-                <Text style={styles.ctaTitle}>{activeSessions.length > 0 ? "Resume Session" : "Start Session"}</Text>
-                <Text style={styles.ctaDesc}>8/9/10-Ball · Standard Drill</Text>
-              </View>
-              <View style={styles.ctaIconContainer}>
-                <Play size={28} color={colors.primaryForeground} fill={colors.primaryForeground} style={{ marginLeft: 4 }} />
-              </View>
-            </View>
-          </TouchableOpacity>
         </View>
 
         {/* Recent Sessions */}
