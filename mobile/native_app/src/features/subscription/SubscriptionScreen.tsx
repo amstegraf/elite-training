@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 import { useNavigation } from "@react-navigation/native";
 import { AppHeader } from "../../ui/AppHeader";
 import { colors } from "../../core/theme/theme";
-import { Check, Crown, Ellipsis, Heart, Sparkles, Zap } from "lucide-react-native";
+import { Check, Crown, Ellipsis, Heart, Lock, Sparkles, Zap } from "lucide-react-native";
 
 type PlanId = "free" | "pro" | "elite" | "supporter";
 
@@ -19,6 +19,7 @@ type Plan = {
   selectedBg: string;
   dotColor: string;
   features: string[];
+  beta?: boolean;
 };
 
 const PLANS: Plan[] = [
@@ -62,6 +63,7 @@ const PLANS: Plan[] = [
       "Share your drills",
       "Tournaments & matches",
     ],
+    beta: true,
   },
   {
     id: "elite",
@@ -82,6 +84,7 @@ const PLANS: Plan[] = [
       "Match mode (advanced)",
       "Pressure training modes",
     ],
+    beta: true,
   },
   {
     id: "supporter",
@@ -153,6 +156,12 @@ export function SubscriptionScreen() {
                           <Text style={styles.currentPillText}>Current</Text>
                         </View>
                       )}
+                      {plan.beta && (
+                        <View style={styles.betaPill}>
+                          <Lock size={9} color={colors.accent} />
+                          <Text style={styles.betaPillText}>Beta</Text>
+                        </View>
+                      )}
                     </View>
                     <Text style={styles.planTagline}>{plan.tagline}</Text>
                   </View>
@@ -178,6 +187,12 @@ export function SubscriptionScreen() {
                     </View>
                   ))}
                 </View>
+                {plan.beta && (
+                  <View style={styles.comingSoonPill}>
+                    <Lock size={10} color={colors.accent} />
+                    <Text style={styles.comingSoonPillText}>Coming soon</Text>
+                  </View>
+                )}
               </TouchableOpacity>
             );
           })}
@@ -196,6 +211,19 @@ export function SubscriptionScreen() {
             </View>
             <View style={styles.activeBadge}>
               <Text style={styles.activeBadgeText}>Active</Text>
+            </View>
+          </View>
+        ) : selected.beta ? (
+          <View style={styles.betaFooterCard}>
+            <View style={styles.betaFooterIcon}>
+              <Lock size={16} color={colors.accent} />
+            </View>
+            <View style={styles.betaFooterTextWrap}>
+              <Text style={styles.betaFooterTitle}>{selected.name} is in Beta</Text>
+              <Text style={styles.betaFooterBody}>Not available for purchase yet.</Text>
+            </View>
+            <View style={styles.soonBadge}>
+              <Text style={styles.soonBadgeText}>Soon</Text>
             </View>
           </View>
         ) : (
@@ -265,6 +293,53 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
     color: colors.primary,
   },
+  betaFooterCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    minHeight: 61,
+    borderRadius: 18,
+    backgroundColor: "rgba(235, 232, 225, 0.65)",
+    borderWidth: 1,
+    borderColor: "rgba(226, 224, 221, 0.8)",
+    padding: 12,
+    gap: 10,
+  },
+  betaFooterIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255, 147, 67, 0.15)",
+  },
+  betaFooterTextWrap: {
+    flex: 1,
+  },
+  betaFooterTitle: {
+    fontSize: 14,
+    lineHeight: 16,
+    color: colors.foreground,
+    fontFamily: "Inter_700Bold",
+  },
+  betaFooterBody: {
+    marginTop: 2,
+    fontSize: 12,
+    color: colors.mutedForeground,
+    fontFamily: "Inter_500Medium",
+  },
+  soonBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    backgroundColor: "rgba(255, 147, 67, 0.15)",
+  },
+  soonBadgeText: {
+    fontSize: 11,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    fontFamily: "Inter_700Bold",
+    color: colors.accent,
+  },
   upgradeButton: {
     height: 61,
     borderRadius: 16,
@@ -319,6 +394,24 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     fontFamily: "Inter_700Bold",
   },
+  betaPill: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(255, 147, 67, 0.45)",
+    backgroundColor: "rgba(255, 147, 67, 0.15)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  betaPillText: {
+    fontSize: 10,
+    color: colors.accent,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    fontFamily: "Inter_700Bold",
+  },
   planTagline: { marginTop: 2, fontSize: 15, color: colors.mutedForeground, fontFamily: "Inter_500Medium" },
   planPriceWrap: { alignItems: "flex-end", marginLeft: 8 },
   planPrice: { fontSize: 36, lineHeight: 40, color: colors.foreground, fontFamily: "Sora_700Bold" },
@@ -342,4 +435,25 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   featureText: { flex: 1, color: colors.foreground, fontSize: 13, fontFamily: "Inter_500Medium" },
+  comingSoonPill: {
+    position: "absolute",
+    right: 12,
+    bottom: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    borderWidth: 1,
+    borderColor: "rgba(255, 147, 67, 0.45)",
+    backgroundColor: "rgba(255,255,255,0.9)",
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  comingSoonPillText: {
+    fontSize: 9,
+    color: colors.accent,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    fontFamily: "Inter_700Bold",
+  },
 });
