@@ -1,25 +1,32 @@
 import React, { useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { CheckCircle2, Search, Star, Target } from "lucide-react-native";
+import { CheckCircle2, ChevronRight, Filter, Flame, Search, Sparkles, Star, Target, Trophy } from "lucide-react-native";
 import { AppHeader } from "../../ui/AppHeader";
 import { colors } from "../../core/theme/theme";
 import { listDrills } from "../../data/drills";
 import { DrillDifficulty } from "../../domain/drills";
 import { useAppState } from "../../data/AppStateContext";
+import { LinearGradient } from "expo-linear-gradient";
 
 const difficultyLabel = (difficulty: DrillDifficulty) =>
   difficulty === 1 ? "Easy" : difficulty === 2 ? "Medium" : "Hard";
 
-function DifficultyStars({ level }: { level: DrillDifficulty }) {
+function diffTone(d: DrillDifficulty) {
+  if (d === 1) return { color: colors.success, bg: "rgba(32, 181, 118, 0.12)", border: "rgba(32, 181, 118, 0.4)" };
+  if (d === 2) return { color: colors.tierGold, bg: "rgba(234, 179, 8, 0.12)", border: "rgba(234, 179, 8, 0.4)" };
+  return { color: colors.danger, bg: "rgba(255, 75, 75, 0.12)", border: "rgba(255, 75, 75, 0.4)" };
+}
+
+function DifficultyStars({ earned }: { earned: 0 | 1 | 2 | 3 }) {
   return (
     <View style={styles.starRow}>
       {[1, 2, 3].map((idx) => (
         <Star
           key={idx}
           size={12}
-          color={idx <= level ? colors.tierGold : "rgba(120, 126, 145, 0.45)"}
-          fill={idx <= level ? colors.tierGold : "rgba(120, 126, 145, 0.12)"}
+          color={idx <= earned ? colors.tierGold : "rgba(120, 126, 145, 0.35)"}
+          fill={idx <= earned ? colors.tierGold : "rgba(120, 126, 145, 0.12)"}
         />
       ))}
     </View>
@@ -31,7 +38,8 @@ export function DrillsScreen() {
   const { drillResults } = useAppState();
   const drills = useMemo(() => listDrills(), []);
   const [query, setQuery] = useState("");
-  const [selectedType, setSelectedType] = useState<string>("all");
+  const [selectedType, setSelectedType] = useState<string>("All");
+  const [showMastered, setShowMastered] = useState(false);
 
   const drillStats = useMemo(() => {
     const grouped = new Map<
@@ -58,35 +66,100 @@ export function DrillsScreen() {
 
   const typeOptions = useMemo(() => {
     const categories = Array.from(new Set(drills.map((drill) => drill.category)));
-    return ["all", ...categories];
+    return ["All", ...categories];
   }, [drills]);
 
   const filteredDrills = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     return drills.filter((drill) => {
-      const typeMatch = selectedType === "all" || drill.category === selectedType;
+      const typeMatch = selectedType === "All" || drill.category === selectedType;
       const textMatch =
         normalizedQuery.length === 0 || drill.name.toLowerCase().includes(normalizedQuery);
-      return typeMatch && textMatch;
+      
+      const stats = drillStats.get(drill.id);
+      const isMastered = (stats?.bestStars ?? 0) === 3;
+      const masteredMatch = !showMastered || isMastered;
+
+      return typeMatch && textMatch && masteredMatch;
     });
-  }, [drills, query, selectedType]);
+  }, [drills, query, selectedType, showMastered, drillStats]);
+
+  let totalEarned = 0;
+  let completedCount = 0;
+  drillStats.forEach((stats) => {
+    totalEarned += stats.bestStars;
+    if (stats.bestStars === 3) completedCount++;
+  });
+  const totalMax = drills.length * 3;
+  const pct = totalMax > 0 ? (totalEarned / totalMax) * 100 : 0;
 
   return (
     <View style={styles.container}>
-      <AppHeader title="My Drills" subtitle="Drill Library" back />
-      <View style={styles.filtersWrap}>
-        <View style={styles.searchBox}>
-          <Search size={16} color={colors.mutedForeground} />
+      <AppHeader title="Drills" subtitle="Library" back />
+      
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Mastery Hero Card */}
+        <LinearGradient
+          colors={["rgba(26,117,80,0.15)", "#ffffff", "rgba(234,179,8,0.1)"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.heroCard}
+        >
+          <View style={styles.heroInner}>
+            <LinearGradient
+              colors={["hsl(40, 95%, 55%)", "hsl(25, 95%, 50%)"]}
+              style={styles.heroTrophyWrap}
+            >
+              <Trophy size={24} color="#111" strokeWidth={2.5} />
+            </LinearGradient>
+            
+            <View style={styles.heroCenter}>
+              <Text style={styles.heroKicker}>MASTERY</Text>
+              <Text style={styles.heroValue}>
+                {totalEarned}<Text style={styles.heroValueMuted}>/{totalMax} stars</Text>
+              </Text>
+              <View style={styles.progressBarWrap}>
+                <LinearGradient
+                  colors={["hsl(45, 95%, 60%)", "hsl(30, 95%, 60%)", "hsl(340, 85%, 65%)"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={[styles.progressBarFill, { width: `${pct}%` }]}
+                />
+              </View>
+            </View>
+
+            <View style={styles.heroRight}>
+              <Text style={styles.heroKicker}>MASTERED</Text>
+              <Text style={styles.heroValue}>{completedCount}</Text>
+            </View>
+          </View>
+        </LinearGradient>
+
+        {/* Search */}
+        <View style={styles.searchWrap}>
+          <Search size={18} color={colors.mutedForeground} style={styles.searchIcon} />
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Search drills by title"
+            placeholder="Search drills, focus, category..."
             placeholderTextColor={colors.mutedForeground}
             style={styles.searchInput}
             autoCapitalize="none"
             autoCorrect={false}
           />
+          <TouchableOpacity 
+            style={[styles.filterBtn, showMastered && styles.filterBtnActive]} 
+            onPress={() => setShowMastered(!showMastered)}
+            activeOpacity={0.8}
+          >
+            <Filter size={14} color={showMastered ? colors.tierGold : colors.mutedForeground} />
+            <Text style={[styles.filterBtnText, showMastered && styles.filterBtnTextActive]}>
+              {showMastered ? "Mastered" : "All"}
+            </Text>
+          </TouchableOpacity>
         </View>
+
+        {/* Filter Chips */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
           {typeOptions.map((option) => {
             const active = selectedType === option;
@@ -98,94 +171,105 @@ export function DrillsScreen() {
                 activeOpacity={0.85}
               >
                 <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>
-                  {option === "all" ? "All types" : option.replaceAll("_", " ")}
+                  {option.toUpperCase()}
                 </Text>
               </TouchableOpacity>
             );
           })}
         </ScrollView>
-      </View>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+
+        {/* List Header */}
+        <View style={styles.listHeaderRow}>
+          <Text style={styles.listCount}>
+            <Text style={styles.listCountBold}>{filteredDrills.length}</Text> drill{filteredDrills.length === 1 ? "" : "s"}
+          </Text>
+          <View style={styles.listSort}>
+            <Sparkles size={12} color={colors.tierGold} />
+            <Text style={styles.listSortText}>Sorted by mastery</Text>
+          </View>
+        </View>
+
+        {/* Drill Cards */}
         {filteredDrills.map((drill) => {
           const stats = drillStats.get(drill.id);
           const bestStars = stats?.bestStars ?? 0;
-          const runs = stats?.attempts ?? 0;
-          const completionCount = stats?.completions ?? 0;
-          const isCompleted = bestStars >= 2;
+          const isMastered = bestStars === 3;
+          const pctScore = stats && stats.attempts > 0 
+            ? Math.round((stats.completions / stats.attempts) * 100) 
+            : undefined;
+
           return (
             <TouchableOpacity
               key={drill.id}
               activeOpacity={0.9}
-              style={styles.card}
+              style={[styles.card, isMastered && styles.cardMastered]}
               onPress={() => nav.navigate("DrillDetail", { drillId: drill.id })}
             >
-              <View style={styles.cardTopRow}>
-                <View style={styles.left}>
-                  <Text style={styles.name}>{drill.name}</Text>
-                  <Text style={styles.category}>{drill.category.replaceAll("_", " ")}</Text>
+              {isMastered && (
+                <View style={styles.masteredBadgeFloat}>
+                  <CheckCircle2 size={11} color={colors.tierGold} />
+                  <Text style={styles.masteredBadgeFloatText}>MASTERED</Text>
                 </View>
-                {isCompleted ? (
-                  <View style={styles.completedBadge}>
-                    <CheckCircle2 size={12} color={colors.primary} />
-                    <Text style={styles.completedText}>Completed</Text>
+              )}
+              
+              <View style={styles.cardContent}>
+                {/* Left Icon */}
+                <View style={styles.cardIconWrap}>
+                  <View style={[
+                    styles.cardIconInner,
+                    isMastered ? styles.cardIconMastered : bestStars > 0 ? styles.cardIconAttempted : styles.cardIconUnattempted
+                  ]}>
+                    {isMastered ? (
+                      <CheckCircle2 size={20} color="#111" strokeWidth={2.5} />
+                    ) : bestStars > 0 ? (
+                      <Flame size={18} color={colors.primary} strokeWidth={2.5} />
+                    ) : (
+                      <Target size={18} color={colors.mutedForeground} strokeWidth={2.5} />
+                    )}
                   </View>
-                ) : null}
-              </View>
-              <View style={styles.statPillRow}>
-                <View style={styles.statPill}>
-                  <Text style={styles.statPillText}>{drill.attemptLimit} attempts</Text>
                 </View>
-                {runs > 0 ? (
-                  <View style={styles.statPill}>
-                    <Text style={styles.statPillText}>{completionCount}/{runs} cleared</Text>
+
+                {/* Main Info */}
+                <View style={styles.cardInfo}>
+                  <View style={styles.cardTagsRow}>
+                    <View style={[styles.diffBadge, { backgroundColor: diffTone(drill.difficulty).bg, borderColor: diffTone(drill.difficulty).border }]}>
+                      <Text style={[styles.diffBadgeText, { color: diffTone(drill.difficulty).color }]}>
+                        {difficultyLabel(drill.difficulty)}
+                      </Text>
+                    </View>
+                    <Text style={styles.cardTagsText}>
+                      {drill.category.toUpperCase()} · {drill.estMinutes} MIN
+                    </Text>
                   </View>
-                ) : null}
-              </View>
-              <View style={styles.metaRow}>
-                <View style={styles.metaItem}>
-                  <DifficultyStars level={drill.difficulty} />
-                  <Text style={styles.metaText}>{difficultyLabel(drill.difficulty)}</Text>
+
+                  <Text style={styles.cardTitle} numberOfLines={1}>{drill.name}</Text>
+                  <Text style={styles.cardTagline} numberOfLines={1}>{drill.metadata.goal ?? drill.description}</Text>
+
+                  <View style={styles.cardBottomRow}>
+                    <DifficultyStars earned={bestStars} />
+                    {pctScore !== undefined ? (
+                      <Text style={styles.cardBestText}>
+                        Best <Text style={styles.cardBestTextBold}>{pctScore}%</Text>
+                      </Text>
+                    ) : (
+                      <Text style={styles.cardBestTextItalic}>Not attempted</Text>
+                    )}
+                  </View>
                 </View>
-                <View style={styles.metaItem}>
-                  <Target size={12} color={colors.primary} />
-                  <Text style={styles.metaText}>~{drill.estMinutes} min</Text>
-                </View>
-                <View style={styles.metaItem}>
-                  <Star
-                    size={12}
-                    color={bestStars > 0 ? colors.tierGold : colors.mutedForeground}
-                    fill={bestStars > 0 ? colors.tierGold : "transparent"}
-                  />
-                  <Text style={styles.metaText}>{bestStars}/3 best</Text>
+
+                {/* Chevron */}
+                <View style={styles.cardChevron}>
+                  <ChevronRight size={18} color={colors.mutedForeground} />
                 </View>
               </View>
             </TouchableOpacity>
           );
         })}
-        {filteredDrills.length === 0 && drills.length > 0 && (
+
+        {filteredDrills.length === 0 && (
           <View style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>No drills match your filters</Text>
-            <Text style={styles.emptyBody}>
-              Try another title search or change the selected type filter.
-            </Text>
-            {(query.length > 0 || selectedType !== "all") && (
-              <TouchableOpacity
-                style={styles.clearFiltersBtn}
-                onPress={() => {
-                  setQuery("");
-                  setSelectedType("all");
-                }}
-                activeOpacity={0.85}
-              >
-                <Text style={styles.clearFiltersText}>Clear filters</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
-        {drills.length === 0 && filteredDrills.length === 0 && (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>No drills available</Text>
-            <Text style={styles.emptyBody}>Add drill JSON entries to load your drill library.</Text>
+            <Text style={styles.emptyTitle}>No drills found</Text>
+            <Text style={styles.emptyBody}>Try a different search or category.</Text>
           </View>
         )}
       </ScrollView>
@@ -196,160 +280,323 @@ export function DrillsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
-  },
-  filtersWrap: {
-    paddingHorizontal: 20,
-    gap: 10,
-    marginBottom: 10,
-  },
-  searchBox: {
-    height: 44,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "rgba(226,224,221,0.75)",
-    backgroundColor: colors.card,
-    paddingHorizontal: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    color: colors.foreground,
-    fontFamily: "Inter_500Medium",
-    paddingVertical: 0,
-  },
-  filterRow: {
-    gap: 8,
-    paddingRight: 20,
-  },
-  filterChip: {
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
-  },
-  filterChipActive: {
-    borderColor: "rgba(26,117,80,0.5)",
-    backgroundColor: "rgba(26,117,80,0.12)",
-  },
-  filterChipText: {
-    textTransform: "capitalize",
-    fontSize: 12,
-    color: colors.mutedForeground,
-    fontFamily: "Inter_600SemiBold",
-  },
-  filterChipTextActive: {
-    color: colors.primary,
+    backgroundColor: "#faf9f6", // matching the web light bg
   },
   scrollContent: {
     paddingHorizontal: 20,
     paddingBottom: 100,
-    gap: 10,
   },
-  card: {
-    borderRadius: 22,
+  heroCard: {
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: "rgba(226,224,221,0.75)",
-    backgroundColor: colors.card,
-    padding: 14,
-    shadowColor: "#13151A",
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 2,
+    borderColor: "rgba(26,117,80,0.3)",
+    padding: 20,
+    marginBottom: 20,
+    overflow: "hidden",
   },
-  cardTopRow: {
+  heroInner: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: 8,
+    alignItems: "center",
+    gap: 16,
   },
-  left: {
+  heroTrophyWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "hsl(40, 95%, 55%)",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  heroCenter: {
     flex: 1,
   },
-  name: {
-    fontSize: 18,
-    fontFamily: "Sora_700Bold",
-    color: colors.foreground,
-  },
-  category: {
-    marginTop: 2,
+  heroKicker: {
+    fontSize: 10,
     textTransform: "uppercase",
-    fontSize: 11,
-    letterSpacing: 1.2,
+    letterSpacing: 1.5,
+    color: colors.primary,
+    fontFamily: "Inter_700Bold",
+  },
+  heroValue: {
+    marginTop: 2,
+    fontSize: 24,
+    color: "#111",
+    fontFamily: "Sora_800ExtraBold",
+  },
+  heroValueMuted: {
+    fontSize: 16,
+    color: colors.mutedForeground,
+    fontFamily: "Inter_600SemiBold",
+  },
+  progressBarWrap: {
+    marginTop: 8,
+    height: 8,
+    width: "100%",
+    backgroundColor: "rgba(120, 126, 145, 0.15)",
+    borderRadius: 4,
+    overflow: "hidden",
+  },
+  progressBarFill: {
+    height: "100%",
+    borderRadius: 4,
+  },
+  heroRight: {
+    alignItems: "flex-end",
+  },
+  searchWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+    position: "relative",
+  },
+  searchIcon: {
+    position: "absolute",
+    left: 14,
+    zIndex: 2,
+  },
+  searchInput: {
+    flex: 1,
+    height: 48,
+    backgroundColor: "#f4f3ee",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(226,224,221,0.8)",
+    paddingLeft: 42,
+    paddingRight: 90, // space for filter btn
+    fontSize: 14,
+    color: "#111",
+    fontFamily: "Inter_500Medium",
+  },
+  filterBtn: {
+    position: "absolute",
+    right: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    height: 36,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(226,224,221,0.8)",
+    backgroundColor: "#ffffff",
+  },
+  filterBtnActive: {
+    backgroundColor: "rgba(234, 179, 8, 0.15)",
+    borderColor: "rgba(234, 179, 8, 0.4)",
+  },
+  filterBtnText: {
+    fontSize: 12,
     fontFamily: "Inter_600SemiBold",
     color: colors.mutedForeground,
   },
-  completedBadge: {
-    borderRadius: 999,
+  filterBtnTextActive: {
+    color: colors.tierGold,
+  },
+  filterRow: {
+    gap: 10,
+    marginBottom: 20,
+    paddingRight: 20,
+  },
+  filterChip: {
+    height: 38,
+    paddingHorizontal: 16,
+    borderRadius: 19,
     borderWidth: 1,
-    borderColor: "rgba(26,117,80,0.5)",
-    backgroundColor: "rgba(26,117,80,0.12)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    borderColor: "rgba(226,224,221,0.8)",
+    backgroundColor: "#f4f3ee",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  filterChipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  filterChipText: {
+    fontSize: 11,
+    fontFamily: "Inter_700Bold",
+    color: colors.mutedForeground,
+    letterSpacing: 0.5,
+  },
+  filterChipTextActive: {
+    color: "#ffffff",
+  },
+  listHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  listCount: {
+    fontSize: 12,
+    color: colors.mutedForeground,
+    fontFamily: "Inter_500Medium",
+  },
+  listCountBold: {
+    fontFamily: "Inter_700Bold",
+    color: "#111",
+  },
+  listSort: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
   },
-  completedText: {
-    fontSize: 11,
-    color: colors.primary,
-    fontFamily: "Inter_600SemiBold",
+  listSortText: {
+    fontSize: 12,
+    color: colors.mutedForeground,
+    fontFamily: "Inter_500Medium",
   },
-  statPillRow: {
-    marginTop: 8,
+  card: {
+    backgroundColor: "#ffffff",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(226,224,221,0.8)",
+    padding: 16,
+    marginBottom: 12,
+  },
+  cardMastered: {
+    borderColor: "rgba(234,179,8,0.4)",
+    backgroundColor: "#fffdf9",
+  },
+  masteredBadgeFloat: {
+    position: "absolute",
+    top: 14,
+    right: 14,
     flexDirection: "row",
     alignItems: "center",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  statPill: {
-    borderRadius: 999,
-    paddingHorizontal: 10,
+    gap: 4,
+    paddingHorizontal: 8,
     paddingVertical: 4,
-    backgroundColor: "rgba(26,117,80,0.11)",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(234,179,8,0.4)",
+    backgroundColor: "rgba(234,179,8,0.15)",
   },
-  statPillText: {
-    fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
-    color: colors.primary,
+  masteredBadgeFloatText: {
+    fontSize: 9,
+    fontFamily: "Inter_700Bold",
+    color: colors.tierGold,
+    letterSpacing: 0.5,
   },
-  metaRow: {
-    marginTop: 10,
+  cardContent: {
     flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: 16,
+    alignItems: "flex-start",
+    gap: 14,
   },
-  metaItem: {
+  cardIconWrap: {
+    marginTop: 2,
+  },
+  cardIconInner: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+  },
+  cardIconMastered: {
+    backgroundColor: "hsl(40, 95%, 55%)",
+    borderColor: "rgba(234,179,8,0.5)",
+    shadowColor: "hsl(40, 95%, 55%)",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  cardIconAttempted: {
+    backgroundColor: "rgba(26,117,80,0.12)",
+    borderColor: "rgba(26,117,80,0.3)",
+  },
+  cardIconUnattempted: {
+    backgroundColor: "#f4f3ee",
+    borderColor: "rgba(226,224,221,0.8)",
+  },
+  cardInfo: {
+    flex: 1,
+  },
+  cardTagsRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
+    marginBottom: 6,
+  },
+  diffBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  diffBadgeText: {
+    fontSize: 9,
+    fontFamily: "Inter_700Bold",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  cardTagsText: {
+    fontSize: 10,
+    fontFamily: "Inter_600SemiBold",
+    color: colors.mutedForeground,
+    letterSpacing: 0.5,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontFamily: "Sora_700Bold",
+    color: "#111",
+  },
+  cardTagline: {
+    marginTop: 4,
+    fontSize: 12,
+    fontFamily: "Inter_500Medium",
+    color: colors.mutedForeground,
+  },
+  cardBottomRow: {
+    marginTop: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   starRow: {
     flexDirection: "row",
     gap: 2,
   },
-  metaText: {
-    fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
+  cardBestText: {
+    fontSize: 11,
+    fontFamily: "Inter_500Medium",
     color: colors.mutedForeground,
   },
+  cardBestTextBold: {
+    fontFamily: "Inter_700Bold",
+    color: "#111",
+  },
+  cardBestTextItalic: {
+    fontSize: 11,
+    fontFamily: "Inter_500Medium",
+    color: colors.mutedForeground,
+    fontStyle: "italic",
+  },
+  cardChevron: {
+    justifyContent: "center",
+    paddingTop: 24,
+  },
   emptyCard: {
-    borderRadius: 22,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
-    padding: 16,
+    borderColor: "rgba(226,224,221,0.8)",
+    backgroundColor: "#f4f3ee",
+    padding: 24,
+    alignItems: "center",
   },
   emptyTitle: {
     fontSize: 16,
-    color: colors.foreground,
+    color: "#111",
     fontFamily: "Sora_700Bold",
   },
   emptyBody: {
@@ -357,18 +604,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.mutedForeground,
     fontFamily: "Inter_500Medium",
-  },
-  clearFiltersBtn: {
-    marginTop: 10,
-    height: 38,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.secondary,
-  },
-  clearFiltersText: {
-    color: colors.foreground,
-    fontFamily: "Inter_600SemiBold",
-    fontSize: 13,
+    textAlign: "center",
   },
 });
