@@ -4,6 +4,7 @@ All notable changes to the native app are tracked here.
 
 ## v0.1.0-alpha (in progress)
 
+- Session report rack timeline now uses real pool-ball visuals (potted colored, misses red-marked, early-end balls greyed) and shows a trophy cup badge on 9/9 racks.
 - Live session outcome flow updated: order is now Playable → No Shot → Pot Miss, and logging Pot Miss automatically opens the end-rack balls-potted modal.
 - Dashboard Recent list now shows latest 5 sessions and displays all three KPIs per row (Pot, Pos, Conversion).
 - Bugfix pass: subscription Free copy updated, failure breakdown now hides 0% rows and includes scratch, live session miss selection is single-select, conversion wording standardized, and dashboard now auto-scrolls to top on focus.

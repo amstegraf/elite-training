@@ -4,7 +4,7 @@ import { colors } from "../core/theme/theme";
 
 interface PoolBallProps {
   number: number;
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
   active?: boolean;
   hasLoggedMiss?: boolean;
   onPress?: () => void;
@@ -27,6 +27,7 @@ export const PoolBall = ({ number, size = "md", active, hasLoggedMiss, onPress }
   const colorDef = ballColors[number] || ballColors[1];
   
   const sizeMap = {
+    xs: 22,
     sm: 36,
     md: 48,
     lg: 64,

@@ -3,6 +3,7 @@ import { Alert, StyleSheet, Text, View, ScrollView, TouchableOpacity } from "rea
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { AppHeader } from "../../ui/AppHeader";
 import { KpiCard } from "../../ui/KpiCard";
+import { PoolBall } from "../../ui/PoolBall";
 import { colors } from "../../core/theme/theme";
 import { Target, MapPin, Trophy, Share2, ArrowUpRight, Clock, Sparkles, ChevronRight, Info } from "lucide-react-native";
 import { useAppState } from "../../data/AppStateContext";
@@ -336,9 +337,18 @@ export function SessionReportScreen() {
                 <View key={r.id} style={styles.timelineRow}>
                   {i < racks.length - 1 && <View style={styles.timelineLine} />}
                   <View style={styles.timelineLeft}>
-                    <View style={[styles.timelineNode, isWin ? styles.timelineNodeWin : styles.timelineNodeLoss]}>
-                      <Text style={[styles.timelineNodeText, isWin ? styles.timelineNodeTextWin : styles.timelineNodeTextLoss]}>{r.rackNumber}</Text>
-                    </View>
+                    {r.pots >= r.balls ? (
+                      <View style={styles.timelineNodeCup}>
+                        <Trophy size={16} color={colors.tierGold} fill={colors.tierGold} />
+                        <View style={styles.timelineNodeCupBadge}>
+                          <Text style={styles.timelineNodeCupBadgeText}>{r.rackNumber}</Text>
+                        </View>
+                      </View>
+                    ) : (
+                      <View style={[styles.timelineNode, isWin ? styles.timelineNodeWin : styles.timelineNodeLoss]}>
+                        <Text style={[styles.timelineNodeText, isWin ? styles.timelineNodeTextWin : styles.timelineNodeTextLoss]}>{r.rackNumber}</Text>
+                      </View>
+                    )}
                   </View>
                   <View style={styles.timelineContent}>
                     <View style={styles.timelineHeader}>
@@ -361,27 +371,20 @@ export function SessionReportScreen() {
                     <View style={styles.ballRow}>
                       {Array.from({ length: r.balls }).map((_, k) => {
                         const status = k < r.pots ? "pot" : k < r.pots + r.misses ? "miss" : "skip";
+                        const ballNo = k + 1;
                         return (
-                          <View
-                            key={`${r.id}-${k + 1}`}
-                            style={[
-                              styles.ballCell,
-                              status === "pot" && styles.ballCellPot,
-                              status === "miss" && styles.ballCellMiss,
-                              status === "skip" && styles.ballCellSkip,
-                            ]}
-                          >
-                            <Text
-                              style={[
-                                styles.ballCellText,
-                                status === "pot" && styles.ballCellTextPot,
-                                status === "miss" && styles.ballCellTextMiss,
-                                status === "skip" && styles.ballCellTextSkip,
-                              ]}
-                            >
-                              {k + 1}
-                            </Text>
-                          </View>
+                          status === "skip" ? (
+                            <View key={`${r.id}-${ballNo}`} style={styles.ballSkipped}>
+                              <Text style={styles.ballSkippedText}>{ballNo}</Text>
+                            </View>
+                          ) : (
+                            <PoolBall
+                              key={`${r.id}-${ballNo}`}
+                              number={ballNo}
+                              size="xs"
+                              hasLoggedMiss={status === "miss"}
+                            />
+                          )
                         );
                       })}
                     </View>
@@ -807,6 +810,41 @@ const styles = StyleSheet.create({
   },
   timelineNodeTextWin: { color: colors.primaryGlow },
   timelineNodeTextLoss: { color: colors.danger },
+  timelineNodeCup: {
+    height: 32,
+    width: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "rgba(214, 162, 18, 0.65)",
+    backgroundColor: "rgba(214, 162, 18, 0.2)",
+    shadowColor: colors.tierGold,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  timelineNodeCupBadge: {
+    position: "absolute",
+    right: -5,
+    bottom: -5,
+    minWidth: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: colors.tierGold,
+    borderWidth: 1,
+    borderColor: colors.card,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 3,
+  },
+  timelineNodeCupBadgeText: {
+    fontSize: 9,
+    fontFamily: "Sora_700Bold",
+    color: colors.background,
+    lineHeight: 11,
+  },
   timelineContent: {
     flex: 1,
   },
@@ -850,39 +888,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 4,
     marginTop: 8,
-    flexWrap: "wrap",
+    flexWrap: "nowrap",
   },
-  ballCell: {
+  ballSkipped: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    borderWidth: 1,
+    borderWidth: 1.2,
+    borderColor: "rgba(120, 126, 145, 0.35)",
+    backgroundColor: "rgba(120, 126, 145, 0.14)",
     alignItems: "center",
     justifyContent: "center",
   },
-  ballCellPot: {
-    backgroundColor: "rgba(32, 181, 118, 0.2)",
-    borderColor: "rgba(32, 181, 118, 0.55)",
-  },
-  ballCellMiss: {
-    backgroundColor: "rgba(255, 75, 75, 0.16)",
-    borderColor: "rgba(255, 75, 75, 0.55)",
-  },
-  ballCellSkip: {
-    backgroundColor: "rgba(120, 126, 145, 0.12)",
-    borderColor: "rgba(120, 126, 145, 0.3)",
-  },
-  ballCellText: {
+  ballSkippedText: {
     fontSize: 10,
     fontFamily: "Inter_700Bold",
-  },
-  ballCellTextPot: {
-    color: colors.primary,
-  },
-  ballCellTextMiss: {
-    color: colors.danger,
-  },
-  ballCellTextSkip: {
     color: colors.mutedForeground,
   },
   ballLegendRow: {
