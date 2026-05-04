@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Animated, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Check, RotateCcw, Sparkles, Target, Timer, Trophy, X } from "lucide-react-native";
 import { AppHeader } from "../../ui/AppHeader";
@@ -113,6 +113,30 @@ export function DrillDetailScreen() {
   const pct = state.attemptLimit > 0 ? (state.completed / state.attemptLimit) * 100 : 0;
   const stars = pct >= 90 ? 3 : pct >= 60 ? 2 : pct >= 30 ? 1 : 0;
   const label = finishedLabel(stars);
+  const starScales = useRef([new Animated.Value(0.6), new Animated.Value(0.6), new Animated.Value(0.6)]).current;
+  const starOpacity = useRef([new Animated.Value(0), new Animated.Value(0), new Animated.Value(0)]).current;
+
+  useEffect(() => {
+    if (!(state.finished && state.showResultModal)) return;
+    starScales.forEach((v) => v.setValue(0.6));
+    starOpacity.forEach((v) => v.setValue(0));
+    const animations = [0, 1, 2].flatMap((idx) => [
+      Animated.sequence([
+        Animated.delay(idx * 120),
+        Animated.timing(starOpacity[idx], { toValue: 1, duration: 180, useNativeDriver: true }),
+      ]),
+      Animated.sequence([
+        Animated.delay(idx * 120),
+        Animated.spring(starScales[idx], {
+          toValue: 1,
+          friction: 5,
+          tension: 140,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]);
+    Animated.parallel(animations).start();
+  }, [state.finished, state.showResultModal, starOpacity, starScales]);
 
   const recordAttempt = (result: AttemptResult) => {
     if (state.finished) return;
@@ -287,24 +311,43 @@ export function DrillDetailScreen() {
             >
               <X size={16} color={colors.foreground} />
             </TouchableOpacity>
-            <View style={styles.modalIconWrap}>
-              <Trophy size={28} color={colors.foreground} />
-            </View>
+
+            <LinearGradient
+              colors={["hsl(40, 95%, 55%)", "hsl(25, 95%, 50%)"]}
+              style={styles.modalIconWrap}
+            >
+              <Trophy size={26} color="#111" strokeWidth={2.5} />
+            </LinearGradient>
+
             <Text style={styles.modalKicker}>Drill complete</Text>
             <Text style={styles.modalTitle}>{label}</Text>
+
             <View style={styles.modalStars}>
               {[1, 2, 3].map((idx) => (
-                <Sparkles
+                <Animated.View
                   key={idx}
-                  size={32}
-                  color={idx <= stars ? colors.tierGold : "rgba(120, 126, 145, 0.35)"}
-                />
+                  style={{
+                    opacity: starOpacity[idx - 1],
+                    transform: [{ scale: starScales[idx - 1] }],
+                    shadowColor: idx <= stars ? "hsl(40, 95%, 55%)" : "transparent",
+                    shadowOffset: { width: 0, height: 0 },
+                    shadowOpacity: 0.8,
+                    shadowRadius: 15,
+                  }}
+                >
+                  <Sparkles
+                    size={48}
+                    fill={idx <= stars ? "hsl(42, 95%, 50%)" : "rgba(120, 126, 145, 0.15)"}
+                    color={idx <= stars ? "hsl(42, 95%, 50%)" : "rgba(120, 126, 145, 0.35)"}
+                  />
+                </Animated.View>
               ))}
             </View>
+
             <View style={styles.modalStatsRow}>
               <View style={styles.modalStat}>
                 <Text style={styles.modalStatLabel}>Score</Text>
-                <Text style={styles.modalStatValue}>{state.completed}/{state.attemptLimit}</Text>
+                <Text style={styles.modalStatValue}>{state.completed}<Text style={styles.modalStatValueMuted}>/{state.attemptLimit}</Text></Text>
               </View>
               <View style={styles.modalStat}>
                 <Text style={styles.modalStatLabel}>Success</Text>
@@ -315,16 +358,18 @@ export function DrillDetailScreen() {
                 <Text style={styles.modalStatValue}>{formatTime(state.elapsed)}</Text>
               </View>
             </View>
-            <View style={styles.actionRow}>
-              <TouchableOpacity style={styles.secondaryBtn} onPress={restart} activeOpacity={0.9}>
-                <Text style={styles.secondaryBtnText}>Retry</Text>
+
+            <View style={styles.modalActionRow}>
+              <TouchableOpacity style={styles.modalSecondaryBtn} onPress={restart} activeOpacity={0.9}>
+                <RotateCcw size={16} color={colors.foreground} />
+                <Text style={styles.modalSecondaryBtnText}>Retry</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.primaryBtnCompact}
+                style={styles.modalPrimaryBtn}
                 onPress={() => state.setShowResultModal(false)}
                 activeOpacity={0.9}
               >
-                <Text style={styles.primaryBtnText}>Continue</Text>
+                <Text style={styles.modalPrimaryBtnText}>Continue</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -531,84 +576,128 @@ const styles = StyleSheet.create({
   resultSuccessText: { color: colors.primary, fontFamily: "Sora_700Bold", fontSize: 16 },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.35)",
+    backgroundColor: "rgba(0,0,0,0.45)",
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 20,
   },
   modalCard: {
     width: "100%",
-    maxWidth: 420,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: "rgba(26,117,80,0.35)",
-    backgroundColor: colors.card,
-    padding: 18,
+    maxWidth: 380,
+    borderRadius: 28,
+    backgroundColor: "#ffffff",
+    padding: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
   },
   modalClose: {
     position: "absolute",
-    top: 10,
-    right: 10,
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    top: 16,
+    right: 16,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.secondary,
+    backgroundColor: "#f4f3ee",
     zIndex: 5,
   },
   modalIconWrap: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
-    backgroundColor: colors.tierGold,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "center",
+    shadowColor: "hsl(40, 95%, 55%)",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.6,
+    shadowRadius: 15,
+    elevation: 8,
   },
   modalKicker: {
-    marginTop: 10,
+    marginTop: 20,
     textAlign: "center",
     textTransform: "uppercase",
-    letterSpacing: 1.2,
+    letterSpacing: 1.5,
     fontSize: 10,
     color: colors.primary,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "Inter_700Bold",
   },
   modalTitle: {
     marginTop: 4,
     textAlign: "center",
-    fontSize: 26,
-    color: colors.foreground,
+    fontSize: 28,
+    color: "#111",
     fontFamily: "Sora_800ExtraBold",
   },
   modalStars: {
-    marginTop: 12,
+    marginTop: 24,
     flexDirection: "row",
     justifyContent: "center",
-    gap: 6,
+    gap: 12,
   },
-  modalStatsRow: { marginTop: 14, flexDirection: "row", gap: 8 },
+  modalStatsRow: { marginTop: 28, flexDirection: "row", gap: 10 },
   modalStat: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.secondary,
+    borderColor: "rgba(226, 224, 221, 0.6)",
+    backgroundColor: "#f4f3ee",
     alignItems: "center",
-    paddingVertical: 8,
+    paddingVertical: 12,
   },
   modalStatLabel: {
     fontSize: 9,
     color: colors.mutedForeground,
     textTransform: "uppercase",
     letterSpacing: 1,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "Inter_700Bold",
   },
   modalStatValue: {
-    marginTop: 2,
-    fontSize: 14,
-    color: colors.foreground,
+    marginTop: 4,
+    fontSize: 16,
+    color: "#111",
+    fontFamily: "Sora_800ExtraBold",
+  },
+  modalStatValueMuted: {
+    color: colors.mutedForeground,
+    fontSize: 12,
+  },
+  modalActionRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 24,
+  },
+  modalSecondaryBtn: {
+    flex: 1,
+    height: 52,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f4f3ee",
+    flexDirection: "row",
+    gap: 8,
+  },
+  modalSecondaryBtnText: {
+    color: "#111",
     fontFamily: "Sora_700Bold",
+    fontSize: 15,
+  },
+  modalPrimaryBtn: {
+    flex: 1,
+    height: 52,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primary,
+  },
+  modalPrimaryBtnText: {
+    color: "#fff",
+    fontFamily: "Sora_700Bold",
+    fontSize: 15,
   },
 });

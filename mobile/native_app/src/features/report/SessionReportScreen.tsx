@@ -1,12 +1,12 @@
 import React from "react";
-import { Alert, StyleSheet, Text, View, ScrollView, TouchableOpacity } from "react-native";
+import { Alert, Modal, StyleSheet, Text, View, ScrollView, TouchableOpacity } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { AppHeader } from "../../ui/AppHeader";
 import { GameTypeModal } from "../../ui/GameTypeModal";
 import { KpiCard } from "../../ui/KpiCard";
 import { PoolBall } from "../../ui/PoolBall";
 import { colors } from "../../core/theme/theme";
-import { Target, MapPin, Trophy, Share2, ArrowUpRight, Clock, Sparkles, ChevronRight, Info } from "lucide-react-native";
+import { Target, MapPin, Trophy, Share2, ArrowUpRight, Clock, Sparkles, ChevronRight, Info, Check, Lock, X } from "lucide-react-native";
 import { useAppState } from "../../data/AppStateContext";
 import { buildRackReportRows, completedSessionsSorted, computeSessionMetrics, formatDurationLabel } from "../../domain/metrics";
 import { computeTier } from "../../domain/tier";
@@ -24,6 +24,7 @@ export function SessionReportScreen() {
   const route = useRoute<any>();
   const { completedSessions, startSession, deleteSession, data } = useAppState();
   const [showGameTypeModal, setShowGameTypeModal] = React.useState(false);
+  const [showCoachModal, setShowCoachModal] = React.useState(false);
   const sorted = completedSessionsSorted(completedSessions);
   const selected =
     sorted.find((s) => s.id === route.params?.sessionId) ??
@@ -181,7 +182,7 @@ export function SessionReportScreen() {
           <TouchableOpacity
             style={styles.aiCoachBtn}
             activeOpacity={0.85}
-            onPress={() => nav.navigate("Subscription")}
+            onPress={() => setShowCoachModal(true)}
           >
             <Sparkles size={16} color="#FFFFFF" />
             <Text style={styles.aiCoachText}>AI Coach</Text>
@@ -426,6 +427,67 @@ export function SessionReportScreen() {
           </View>
         </View>
       </ScrollView>
+      <Modal transparent visible={showCoachModal} animationType="fade" onRequestClose={() => setShowCoachModal(false)}>
+        <View style={styles.coachModalBackdrop}>
+          <View style={styles.coachModalCard}>
+            <TouchableOpacity
+              style={styles.coachCloseBtn}
+              activeOpacity={0.85}
+              onPress={() => setShowCoachModal(false)}
+            >
+              <X size={16} color="rgba(255,255,255,0.75)" />
+            </TouchableOpacity>
+
+            <View style={styles.coachHeaderRow}>
+              <View style={styles.coachIconWrap}>
+                <Sparkles size={20} color="#FFFFFF" />
+              </View>
+              <View>
+                <Text style={styles.coachTitle}>AI Coach</Text>
+                <Text style={styles.coachSubtitle}>Personalized session breakdown</Text>
+              </View>
+            </View>
+
+            <View style={styles.coachBadgeRow}>
+              <View style={styles.coachLockPill}>
+                <Lock size={12} color="#FFFFFF" />
+                <Text style={styles.coachLockText}>Premium</Text>
+              </View>
+            </View>
+
+            <View style={styles.coachFeatureList}>
+              {[
+                "Shot-by-shot feedback from your misses",
+                "Personalized weekly improvement roadmap",
+                "Drill recommendations for weak patterns",
+              ].map((feature) => (
+                <View key={feature} style={styles.coachFeatureRow}>
+                  <View style={styles.coachCheckWrap}>
+                    <Check size={12} color="#FFFFFF" />
+                  </View>
+                  <Text style={styles.coachFeatureText}>{feature}</Text>
+                </View>
+              ))}
+            </View>
+
+            <TouchableOpacity
+              style={styles.coachUnlockBtn}
+              activeOpacity={0.9}
+              onPress={() => {
+                setShowCoachModal(false);
+                nav.navigate("Subscription");
+              }}
+            >
+              <Sparkles size={15} color="#FFFFFF" />
+              <Text style={styles.coachUnlockText}>Unlock AI Coach</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.coachLaterBtn} onPress={() => setShowCoachModal(false)} activeOpacity={0.85}>
+              <Text style={styles.coachLaterText}>Maybe later</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
       <GameTypeModal
         visible={showGameTypeModal}
         onSelect={handleCreateSession}
@@ -968,6 +1030,136 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontFamily: "Inter_700Bold",
+  },
+  coachModalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(16,18,27,0.55)",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 20,
+  },
+  coachModalCard: {
+    width: "100%",
+    maxWidth: 420,
+    borderRadius: 24,
+    padding: 18,
+    backgroundColor: "#241337",
+    borderWidth: 1,
+    borderColor: "rgba(174,126,255,0.45)",
+    shadowColor: "#8b3dff",
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.33,
+    shadowRadius: 28,
+    elevation: 12,
+  },
+  coachCloseBtn: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 3,
+  },
+  coachHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  coachIconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: "rgba(139,61,255,0.72)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  coachTitle: {
+    fontSize: 24,
+    color: "#FFFFFF",
+    fontFamily: "Sora_700Bold",
+  },
+  coachSubtitle: {
+    marginTop: 1,
+    fontSize: 12,
+    color: "rgba(255,255,255,0.7)",
+    fontFamily: "Inter_500Medium",
+  },
+  coachBadgeRow: {
+    marginTop: 12,
+    flexDirection: "row",
+  },
+  coachLockPill: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.25)",
+    backgroundColor: "rgba(255,255,255,0.09)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  coachLockText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    fontFamily: "Inter_600SemiBold",
+  },
+  coachFeatureList: {
+    marginTop: 14,
+    gap: 10,
+  },
+  coachFeatureRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  coachCheckWrap: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "rgba(32,181,118,0.9)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  coachFeatureText: {
+    flex: 1,
+    color: "#FFFFFF",
+    fontSize: 13,
+    lineHeight: 18,
+    fontFamily: "Inter_500Medium",
+  },
+  coachUnlockBtn: {
+    marginTop: 16,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: "#8b3dff",
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 8,
+  },
+  coachUnlockText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontFamily: "Sora_700Bold",
+  },
+  coachLaterBtn: {
+    marginTop: 8,
+    height: 36,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  coachLaterText: {
+    color: "rgba(255,255,255,0.75)",
+    fontSize: 12,
+    fontFamily: "Inter_500Medium",
   },
   newSessionBtn: {
     height: 48,

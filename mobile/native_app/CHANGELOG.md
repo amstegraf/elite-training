@@ -4,6 +4,9 @@ All notable changes to the native app are tracked here.
 
 ## v0.1.0-alpha (in progress)
 
+- Session report AI Coach action now opens a prototype-style upsell modal first; subscription navigation happens from modal CTA ("Unlock AI Coach") instead of direct button tap.
+- Drill table now draws color-matched dashed guide lines from object balls to their `targetPocket` when pocket targets are defined in drill JSON.
+- Drill UI polish: upgraded drill table visuals with proper pockets and rail diamonds, added animated result stars in completion modal, and improved modal action button spacing/padding to match prototype.
 - Implemented drill feature from prototype with JSON-backed structure: added My Drills entry (profile menu), new Drills list + Drill detail/play screens, table layout renderer, attempt/timer/result flow, and local dummy drill loader with schema validation for future scaling.
 - Build script updated: added `--no-bump` so APK export can update only `cue-path-latest.apk` without creating a new versioned file.
 - Game-type modal updated to use clickable pool-ball visuals for 8/9/10 selection instead of box buttons.
